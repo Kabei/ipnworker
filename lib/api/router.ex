@@ -35,7 +35,7 @@ defmodule Ipnworker.Router do
                   {hash, timestamp, key, type, _from, _wallet_validator, _args, _msg_sig, _size} =
                     msg
 
-                  case :ets.insert_new(:msgd, {{type, key}, hash, timestamp}) do
+                  case :ets.insert_new(:msg, {{type, key}, hash, timestamp}) do
                     true ->
                       :ets.insert(:msg, msg)
 

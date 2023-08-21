@@ -1,4 +1,4 @@
-defmodule AssetStore do
+defmodule MainStore do
   use GenServer
   alias Exqlite.Sqlite3NIF
   require SqliteStore
@@ -6,14 +6,14 @@ defmodule AssetStore do
   @version 0
 
   @creations %{
-    "account" => SQL.readFile!("lib/sql/wallet.sql"),
-    "assets" => SQL.readFile!("lib/sql/token.sql") ++ SQL.readFile!("lib/sql/domain.sql"),
-    "blockchain" => SQL.readFile!("lib/sql/block.sql"),
+    "account" => SQL.readFile!("lib/sql/accounts.sql"),
+    "assets" => SQL.readFile!("lib/sql/assets.sql"),
+    "blockchain" => SQL.readFile!("lib/sql/blockchain.sql"),
     "dns" => SQL.readFile!("lib/sql/dns.sql"),
-    "main" => SQL.readFile!("lib/sql/env.sql")
+    "main" => SQL.readFile!("lib/sql/main.sql")
   }
 
-  @statements SQL.readFileStmt!("lib/sql/assets.stmt.sql")
+  @statements SQL.readFileStmt!("lib/sql/main.stmt.sql")
 
   # SQL.readFileStmt!("lib/sql/assets_alter.stmt.sql")
   @alter []
@@ -29,13 +29,13 @@ defmodule AssetStore do
   @name "main"
   @filename "main.db"
 
-  def start_link(basepath) do
-    GenServer.start_link(__MODULE__, basepath, name: __MODULE__)
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   @impl true
-  def init(basepath) do
-    filename = Path.join(basepath, @filename)
+  def init(_) do
+    filename = Path.join(:persistent_term.get(:store_dir), @filename)
 
     {:ok, conn} = SqliteStore.open_setup(@name, filename, @creations, @attaches)
     # execute alter tables if exists new version

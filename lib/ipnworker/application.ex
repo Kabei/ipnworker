@@ -11,24 +11,36 @@ defmodule Ipnworker.Application do
     # miner = System.get_env("MINER") |> to_atom()
 
     make_folders()
+    load_keys()
 
-    # case miner do
-    #   nil -> raise IppanStartUpError, "Set up a miner"
-    #   _ -> :ok
+    # if is_nil(miner) do
+    #   raise RuntimeError, "Set up a miner"
     # end
 
     children = [
-      # {MemTables, []},
+      {MemTables, []},
+      {MainStore, []},
       Supervisor.child_spec({Phoenix.PubSub, [name: :workers]}, id: :workers),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cores]}, id: :cores),
-      {AssetStore, :persistent_term.get(:store_dir)},
-      # {MinerClient, [miner]},
-      # {NodeMonitor, miner},
+      # {ClusterClient, miner},
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]
 
     opts = [strategy: :one_for_one, name: Ipnworker.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp load_keys do
+    seed_kem = System.get_env("NET_KEY") |> Fast64.decode64()
+    seed = System.get_env("SECRET_KEY") |> Fast64.decode64()
+
+    {:ok, net_pubkey, net_privkey} = NtruKem.gen_key_pair_from_seed(seed_kem)
+    {:ok, {pubkey, privkey}} = Cafezinho.Impl.keypair_from_seed(seed)
+
+    :persistent_term.put(:pubkey, pubkey)
+    :persistent_term.put(:privkey, privkey)
+    :persistent_term.put(:net_pubkey, net_pubkey)
+    :persistent_term.put(:net_privkey, net_privkey)
   end
 
   defp make_folders do
@@ -37,15 +49,18 @@ defmodule Ipnworker.Application do
     block_dir = Path.join(data_dir, "blocks")
     decode_dir = Path.join(data_dir, "blocks/decoded")
     store_dir = Path.join(data_dir, "store")
-    # set variable
+    save_dir = Path.join(data_dir, "store/save")
+    # set variables
     :persistent_term.put(:data_dir, data_dir)
     :persistent_term.put(:block_dir, block_dir)
     :persistent_term.put(:decode_dir, decode_dir)
     :persistent_term.put(:store_dir, store_dir)
+    :persistent_term.put(:save_dir, save_dir)
     # make folders
     File.mkdir(data_dir)
     File.mkdir(store_dir)
     File.mkdir(block_dir)
     File.mkdir(decode_dir)
+    File.mkdir(save_dir)
   end
 end
