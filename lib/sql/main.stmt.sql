@@ -4,6 +4,9 @@ REPLACE INTO main.env values(?1, ?2, ?3);
 --name: get_env
 SELECT value FROM main.env WHERE name=?1;
 
+--name: all_env
+SELECT name, value FROM main.env;
+
 --name: delete_env
 DELETE FROM main.env WHERE name=?1;
 
@@ -113,3 +116,35 @@ SELECT hash FROM blockchain.block WHERE round = ?1 ORDER BY creator ASC;
 
 --name: total_rounds_block
 SELECT count(1) FROM blockchain.block WHERE round = ?;
+
+
+--name: insert_validator
+INSERT INTO blockchain.validator values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12);
+
+--name: get_validator
+SELECT * FROM blockchain.validator WHERE id = ?1;
+
+--name: exists_validator
+SELECT 1 FROM blockchain.validator WHERE id = ?1;
+
+--name: owner_validator
+SELECT 1 FROM blockchain.validator WHERE id = ?1 AND owner = ?2;
+
+--name: total_validator
+SELECT COUNT(1) FROM blockchain.validator;
+
+--name: delete_validator
+DELETE FROM blockchain.validator WHERE id = ?1;
+
+
+--name: insert_refund
+REPLACE INTO assets.refund VALUES(?1,?2,?3,?4,?5,?6);
+
+--name: exists_refund
+SELECT 1 FROM assets.refund WHERE hash = ?1 AND `to` = ?2 AND expiry_in > ?3;
+
+--name: delete_refund
+DELETE FROM assets.refund WHERE hash = ?;
+
+--name: delete_expiry_refund
+DELETE FROM assets.refund WHERE expiry_in < ?1;

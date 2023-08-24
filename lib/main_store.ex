@@ -13,9 +13,9 @@ defmodule MainStore do
     "main" => SQL.readFile!("lib/sql/main.sql")
   }
 
-  @statements SQL.readFileStmt!("lib/sql/main.stmt.sql")
+  @statements SQL.readStmtFile!("lib/sql/main.stmt.sql")
 
-  # SQL.readFileStmt!("lib/sql/assets_alter.stmt.sql")
+  # SQL.readStmtFile!("lib/sql/assets_alter.stmt.sql")
   @alter []
 
   # databases

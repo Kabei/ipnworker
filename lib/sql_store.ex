@@ -1,9 +1,63 @@
+defmodule DetsStore do
+  defmacro put(dets, key, value) do
+    quote do
+      DetsPlus.insert(unquote(dets), {unquote(key), unquote(value)})
+    end
+  end
+
+  defmacro get(dets, name) do
+    quote do
+      case DetsPlus.lookup(unquote(dets), unquote(name)) do
+        [object] -> object
+        [] -> nil
+      end
+    end
+  end
+
+  defmacro delete(dets, name) do
+    quote do
+      DetsPlus.delete(unquote(dets), unquote(name))
+    end
+  end
+end
+
+defmodule BalanceStore do
+  defmacro has_balance?(dets, key, value) do
+    quote do
+      [{balance, _lock}] = DetsPlus.lookup(unquote(dets), unquote(key))
+
+      balance >= unquote(value)
+    end
+  end
+
+  defmacro can_be_unlock?(dets, key, value) do
+    quote do
+      {_balance, lock_amount} = DetsPlus.lookup(unquote(dets), unquote(key))
+
+      lock_amount >= unquote(value)
+    end
+  end
+end
+
 defmodule SqliteStore do
   alias Exqlite.{Sqlite3, Sqlite3NIF}
 
-  defmacro step(conn, stmt, params) do
+  defmacro total(conn, stmts, name, params \\ []) do
     quote do
-      Sqlite3NIF.bind_step(unquote(conn), unquote(stmt), unquote(params))
+      {:row, [n]} =
+        Sqlite3NIF.bind_step(
+          unquote(conn),
+          Map.get(unquote(stmts), unquote(name)),
+          unquote(params)
+        )
+
+      n
+    end
+  end
+
+  defmacro step(conn, stmts, name, params) do
+    quote do
+      Sqlite3NIF.bind_step(unquote(conn), Map.get(unquote(stmts), unquote(name)), unquote(params))
     end
   end
 
@@ -19,15 +73,31 @@ defmodule SqliteStore do
     end
   end
 
-  defmacro exists?(conn, stmt, id) do
+  defmacro exists?(conn, stmts, stmt_name, args) when is_list(args) do
     quote do
-      {:row, [1]} == Sqlite3NIF.step(unquote(conn), unquote(stmt), unquote([id]))
+      {:row, [1]} ==
+        Sqlite3NIF.bind_step(
+          unquote(conn),
+          Map.get(unquote(stmts), unquote(stmt_name)),
+          unquote(args)
+        )
+    end
+  end
+
+  defmacro exists?(conn, stmts, stmt_name, id) do
+    quote do
+      {:row, [1]} ==
+        Sqlite3NIF.bind_step(
+          unquote(conn),
+          Map.get(unquote(stmts), unquote(stmt_name)),
+          unquote([id])
+        )
     end
   end
 
   defmacro get(conn, stmt, id) do
     quote do
-      case Sqlite3NIF.step(unquote(conn), unquote(stmt), unquote([id])) do
+      case Sqlite3NIF.bind_step(unquote(conn), unquote(stmt), unquote([id])) do
         {:row, []} -> nil
         {:row, data} -> data
         _ -> nil
@@ -35,9 +105,77 @@ defmodule SqliteStore do
     end
   end
 
-  defmacro fetch_all(conn, stmt, limit \\ 100, offset \\ 0) do
+  defmacro lookup(table, conn, stmts, stmt_name, id) do
     quote do
-      Sqlite3.fetch_all(unquote(conn), unquote(stmt), [unquote(limit), unquote(offset)])
+      case :ets.lookup(unquote(table), unquote(id)) do
+        [x] ->
+          x
+
+        [] ->
+          case Sqlite3NIF.bind_step(
+                 unquote(conn),
+                 Map.get(unquote(stmts), unquote(stmt_name)),
+                 unquote([id])
+               ) do
+            {:row, []} ->
+              nil
+
+            {:row, data} ->
+              :ets.insert(unquote(table), List.to_tuple(data))
+
+              if :ets.info(unquote(table), :size) > 10_000_000 do
+                :ets.delete(unquote(table), :ets.first(unquote(table)))
+              end
+
+              data
+
+            _ ->
+              nil
+          end
+      end
+    end
+  end
+
+  defmacro lookup_map(table, conn, stmts, stmt_name, params, mod_format) do
+    quote do
+      case :ets.lookup(unquote(table), unquote(params)) do
+        [x] ->
+          x
+
+        [] ->
+          case Sqlite3NIF.bind_step(
+                 unquote(conn),
+                 Map.get(unquote(stmts), unquote(stmt_name)),
+                 unquote(params)
+               ) do
+            {:row, []} ->
+              nil
+
+            {:row, data} ->
+              :ets.insert(unquote(table), List.to_tuple(data))
+
+              if :ets.info(unquote(table), :size) > 10_000_000 do
+                :ets.delete(unquote(table), :ets.first(unquote(table)))
+              end
+
+              unquote(mod_format).to_map(data)
+
+            _ ->
+              nil
+          end
+      end
+    end
+  end
+
+  defmacro fetch_all(conn, stmts, name, limit \\ 100, offset \\ 0) do
+    quote do
+      Sqlite3.fetch_all(unquote(conn), Map.get(unquote(stmts), unquote(name)), [unquote(limit), unquote(offset)])
+    end
+  end
+
+  defmacro all(conn, stmts, name) do
+    quote do
+      Sqlite3.fetch_all(unquote(conn), Map.get(unquote(stmts), unquote(name)), [])
     end
   end
 

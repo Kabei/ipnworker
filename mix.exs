@@ -34,13 +34,13 @@ defmodule Ipnworker.MixProject do
   defp deps do
     [
       {:benchee, "~> 1.0", only: [:dev, :test]},
-      {:globalconst, "~> 0.3.2"},
       {:ecto, "~> 3.10"},
       {:poolboy, "~> 1.5.2"},
       {:jason, "~> 1.4"},
       {:cbor, "~> 1.0"},
       {:bandit, ">= 0.7.7"},
       {:httpoison, "~> 2.0"},
+      {:dnslib, git: "https://github.com/lateio/dnslib", branch: "master", override: true},
       {:phoenix_pubsub, "~> 2.1"},
       {:cafezinho, "~> 0.4.0"},
       {:paged_file, "~> 1.1"},

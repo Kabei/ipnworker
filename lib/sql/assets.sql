@@ -27,4 +27,12 @@ CREATE TABLE IF NOT EXISTS domain(
 ) WITHOUT ROWID;
     
 CREATE INDEX IF NOT EXISTS idx_domain_renew ON domain(renewed_at);
-  
+
+CREATE TABLE IF NOT EXISTS refund(
+  hash BLOB PRIMARY KEY NOT NULL,
+  sender BLOB NOT NULL,
+  `to` BLOB NOT NULL,
+  token TEXT NOT NULL,
+  amount BIGINT NOT NULL,
+  expiry_in BIGINT NOT NULL
+) WITHOUT ROWID;

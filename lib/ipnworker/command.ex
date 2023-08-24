@@ -1,6 +1,7 @@
 defmodule Ippan.CommandHandler do
   alias Ippan.{Events, Block}
-  require Global
+  alias Sqlite3NIF
+  require SqliteStore
 
   import Ippan.Block,
     only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
@@ -14,26 +15,26 @@ defmodule Ippan.CommandHandler do
   def valid!(hash, msg, signature, size, node_validator_id) do
     [type, timestamp, from | args] = @json.decode!(msg)
 
-    if timestamp < Global.expiry_time() do
-      raise(IppanError, "Invalid timestamp")
+    # if timestamp < :persistent_term.get(:expiry_time, 0) do
+    #   raise(IppanError, "Invalid timestamp")
+    # end
+
+    %{deferred: deferred, mod: mod, fun: fun, validator: valid_validator} = Events.lookup(type)
+
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmt)
+
+    {_id, wallet_pubkey, wallet_validator, _created_at} =
+      SqliteStore.lookup(:wallet, conn, stmts, "get_wallet", from)
+
+    if valid_validator and wallet_validator != node_validator_id do
+      raise(IppanError, "Invalid validator")
     end
-
-    %{validator: valid_validator, deferred: deferred} = Events.lookup(type)
-
-    {wallet_pubkey, wallet_validator} =
-      case valid_validator do
-        true ->
-          {_id, wallet_pubkey, wallet_validator, _created_at} = WalletStore.lookup(from)
-          if wallet_validator != node_validator_id, do: raise(IppanError, "Invalid validator")
-          {wallet_pubkey, wallet_validator}
-
-        _false ->
-          {_id, wallet_pubkey, wallet_validator, _created_at} = WalletStore.lookup(from)
-          {wallet_pubkey, wallet_validator}
-      end
 
     sig_flag = :binary.at(from, 0)
     chech_signature!(sig_flag, signature, hash, wallet_pubkey)
+
+    :ok = apply(mod, fun, args)
 
     case deferred do
       false ->
@@ -89,7 +90,6 @@ defmodule Ippan.CommandHandler do
 
   defp do_iterate(key, messages, decode_message, acc_size) do
     [msg] = :ets.lookup(:msg, key)
-    :ets.delete(:msg, key)
 
     {acc_msg, acc_decode, size} =
       case msg do
@@ -133,6 +133,7 @@ defmodule Ippan.CommandHandler do
 
     case @max_block_size > acc_size do
       false ->
+        :ets.delete(:msg, key)
         do_iterate(:ets.next(:msg, key), acc_msg, acc_decode, acc_size)
 
       _true ->

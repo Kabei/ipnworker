@@ -2,27 +2,28 @@ defmodule Ipnworker.Application do
   @moduledoc false
 
   use Application
-  # import Ippan.Utils, only: [to_atom: 1]
+  import Ippan.Utils, only: [to_atom: 1]
 
   @otp_app :ipnworker
 
   @impl true
   def start(_type, _args) do
-    # miner = System.get_env("MINER") |> to_atom()
+    miner = System.get_env("MINER") |> to_atom()
 
+    start_node()
     make_folders()
     load_keys()
 
-    # if is_nil(miner) do
-    #   raise RuntimeError, "Set up a miner"
-    # end
+    if is_nil(miner) do
+      raise RuntimeError, "Set up a miner"
+    end
 
     children = [
       {MemTables, []},
       {MainStore, []},
       Supervisor.child_spec({Phoenix.PubSub, [name: :workers]}, id: :workers),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cores]}, id: :cores),
-      # {ClusterClient, miner},
+      {NodeMonitor, miner},
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]
 
@@ -30,8 +31,16 @@ defmodule Ipnworker.Application do
     Supervisor.start_link(children, opts)
   end
 
+  defp start_node do
+    name = System.get_env("NODE") |> to_atom()
+    cookie = System.get_env("COOKIE") |> to_atom()
+
+    Node.start(name)
+    Node.set_cookie(name, cookie)
+  end
+
   defp load_keys do
-    seed_kem = System.get_env("NET_KEY") |> Fast64.decode64()
+    seed_kem = System.get_env("CLUSTER_KEY") |> Fast64.decode64()
     seed = System.get_env("SECRET_KEY") |> Fast64.decode64()
 
     {:ok, net_pubkey, net_privkey} = NtruKem.gen_key_pair_from_seed(seed_kem)

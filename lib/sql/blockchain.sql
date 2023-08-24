@@ -15,16 +15,38 @@ CREATE TABLE IF NOT EXISTS block(
 ) WITHOUT ROWID;
 
 CREATE TABLE IF NOT EXISTS validator(
-    id BIGINT PRIMARY KEY NOT NULL,
-    hostname VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(30) NOT NULL,
-    owner BLOB NOT NULL,
-    pubkey BLOB NOT NULL,
-    net_pubkey BLOB NOT NULL,
-    avatar TEXT,
-    fee_type TINYINT NOT NULL,
-    fee DOUBLE NOT NULL,
-    stake BIGINT NOT NULL DEFAULT 0,
-    created_at BIGINT NOT NULL,
-    updated_at BIGINT NOT NULL
+  id BIGINT PRIMARY KEY NOT NULL,
+  hostname VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(30) NOT NULL,
+  owner BLOB NOT NULL,
+  pubkey BLOB NOT NULL,
+  net_pubkey BLOB NOT NULL,
+  avatar TEXT,
+  fee_type TINYINT NOT NULL,
+  fee DOUBLE NOT NULL,
+  stake BIGINT NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS round(
+  id BIGINT PRIMARY KEY NOT NULL,
+  hash BLOB NOT NULL,
+  prev BLOB,
+  blocks BIGINT NOT NULL,
+  timestamp BIGINT NOT NULL,
+  vsn TINTYINT NOT NULL
+) WITHOUT ROWID;
+    
+CREATE TABLE IF NOT EXISTS jackpot(
+  round_id BIGINT NOT NULL,
+  winner_id BLOB,
+  amount BIGINT DEFAULT 0,
+  PRIMARY KEY(round_id, winner_id)
+) WITHOUT ROWID;
+    
+CREATE TABLE IF NOT EXISTS snapshot(
+  round_id BIGINT PRIMARY KEY NOT NULL,
+  hash BLOB NOT NULL,
+  size BIGINT NOT NULL
+) WITHOUT ROWID;

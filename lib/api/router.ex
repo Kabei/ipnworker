@@ -3,7 +3,6 @@ defmodule Ipnworker.Router do
   alias Ippan.CommandHandler
   alias Phoenix.PubSub
   require Logger
-  require Global
 
   @json Application.compile_env(:ipnworker, :json)
   @max_size Application.compile_env(:ipnworker, :message_max_size)
@@ -22,7 +21,7 @@ defmodule Ipnworker.Router do
 
           case :ets.member(:hash, hash) do
             true ->
-              vid = Global.validator_id()
+              vid = :persistent_term.get(:vid)
               sig = Fast64.decode64(sig)
               size = byte_size(body) + byte_size(sig)
               {msg, deferred} = CommandHandler.valid!(hash, body, sig, size, vid)

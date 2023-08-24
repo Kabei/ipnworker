@@ -6,7 +6,7 @@ defmodule SQL do
     |> String.split(~r/;\n\n/, trim: true)
   end
 
-  def readFileStmt!(filename, args \\ %{}) do
+  def readStmtFile!(filename, args \\ %{}) do
     data =
       File.read!(filename)
       |> String.trim()
