@@ -29,14 +29,14 @@ defmodule Ippan.Func.Wallet do
 
   def unsubscribe(
         %{
-          validator: validator_id,
+          validator: validator,
           conn: conn,
           stmts: stmts
         },
         new_validator_id
       ) do
     cond do
-      validator_id == new_validator_id ->
+      validator.id == new_validator_id ->
         raise IppanError, "Already subscribe"
 
       not SqliteStore.exists?(conn, stmts, "exists_validator", new_validator_id) ->

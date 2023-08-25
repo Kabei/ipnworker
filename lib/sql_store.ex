@@ -1,43 +1,25 @@
-defmodule DetsStore do
-  defmacro put(dets, key, value) do
-    quote do
-      DetsPlus.insert(unquote(dets), {unquote(key), unquote(value)})
-    end
-  end
+# defmodule DetsStore do
+#   defmacro put(dets, key, value) do
+#     quote do
+#       DetsPlus.insert(unquote(dets), {unquote(key), unquote(value)})
+#     end
+#   end
 
-  defmacro get(dets, name) do
-    quote do
-      case DetsPlus.lookup(unquote(dets), unquote(name)) do
-        [object] -> object
-        [] -> nil
-      end
-    end
-  end
+#   defmacro get(dets, name) do
+#     quote do
+#       case DetsPlus.lookup(unquote(dets), unquote(name)) do
+#         [object] -> object
+#         [] -> nil
+#       end
+#     end
+#   end
 
-  defmacro delete(dets, name) do
-    quote do
-      DetsPlus.delete(unquote(dets), unquote(name))
-    end
-  end
-end
-
-defmodule BalanceStore do
-  defmacro has_balance?(dets, key, value) do
-    quote do
-      [{balance, _lock}] = DetsPlus.lookup(unquote(dets), unquote(key))
-
-      balance >= unquote(value)
-    end
-  end
-
-  defmacro can_be_unlock?(dets, key, value) do
-    quote do
-      {_balance, lock_amount} = DetsPlus.lookup(unquote(dets), unquote(key))
-
-      lock_amount >= unquote(value)
-    end
-  end
-end
+#   defmacro delete(dets, name) do
+#     quote do
+#       DetsPlus.delete(unquote(dets), unquote(name))
+#     end
+#   end
+# end
 
 defmodule SqliteStore do
   alias Exqlite.{Sqlite3, Sqlite3NIF}
@@ -169,7 +151,10 @@ defmodule SqliteStore do
 
   defmacro fetch_all(conn, stmts, name, limit \\ 100, offset \\ 0) do
     quote do
-      Sqlite3.fetch_all(unquote(conn), Map.get(unquote(stmts), unquote(name)), [unquote(limit), unquote(offset)])
+      Sqlite3.fetch_all(unquote(conn), Map.get(unquote(stmts), unquote(name)), [
+        unquote(limit),
+        unquote(offset)
+      ])
     end
   end
 

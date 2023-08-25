@@ -35,8 +35,8 @@ defmodule Ippan.Func.Domain do
       not Match.account?(owner) ->
         raise IppanError, "Invalid owner argument"
 
-      not SqliteStore.exists?(conn, stmts, "owner_domain", [domain_name, account_id]) ->
-        raise IppanError, "domain already has a owner"
+      SqliteStore.exists?(conn, stmts, "exists_domain", domain_name) ->
+        raise IppanError, "domain already exists"
 
       true ->
         amount = Domain.price(domain_name, days)

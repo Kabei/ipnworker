@@ -106,7 +106,7 @@ defmodule Ippan.CommandHandler do
           acc_msg = Map.put(messages, hash, msg_sig)
 
           acc_decode =
-            Map.put(hash, decode_message, [hash, timestamp, type, from, wallet_validator, args])
+            Map.put(hash, decode_message, [hash, timestamp, type, from, wallet_validator, args, size])
 
           {acc_msg, acc_decode, size}
 
@@ -124,7 +124,7 @@ defmodule Ippan.CommandHandler do
           acc_msg = Map.put(hash, messages, msg_sig)
 
           acc_decode =
-            Map.put(hash, decode_message, [hash, timestamp, type, from, wallet_validator, args])
+            Map.put(hash, decode_message, [hash, timestamp, type, from, wallet_validator, args, size])
 
           {acc_msg, acc_decode, size}
       end

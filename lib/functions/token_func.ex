@@ -8,7 +8,7 @@ defmodule Ippan.Func.Token do
   @token Application.compile_env(:ipnworker, :token)
   @max_tokens Application.compile_env(:ipnworker, :max_tokens)
 
-  def pre_new(
+  def new(
         %{id: account_id, conn: conn, dets: dets, stmts: stmts},
         id,
         owner_id,
@@ -33,6 +33,9 @@ defmodule Ippan.Func.Token do
 
       map_filter != opts ->
         raise IppanError, "Invalid option arguments"
+
+      SqliteStore.exists?(conn, stmts, "exists_token", id) ->
+        raise IppanError, "Token already exists"
 
       @max_tokens < SqliteStore.total(conn, stmts, "total_token") ->
         raise IppanError, "Maximum tokens exceeded"

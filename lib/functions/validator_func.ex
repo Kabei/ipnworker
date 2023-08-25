@@ -50,6 +50,9 @@ defmodule Ippan.Func.Validator do
       not Match.hostname?(hostname) ->
         raise IppanError, "Invalid hostname"
 
+      SqliteStore.exists?(conn, stmts, "exists_validator", id) ->
+        raise IppanError, "Validator already exists"
+
       @max_validators < SqliteStore.total(conn, stmts, "total_validators") ->
         raise IppanError, "Maximum validators exceeded"
 
