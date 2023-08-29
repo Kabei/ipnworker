@@ -62,7 +62,6 @@ defmodule DetsPlus do
       :auto_save,
       :bloom_size,
       :bloom,
-      # :in_transaction,
       :creation_stats,
       :ets,
       :file_entries,
@@ -321,13 +320,16 @@ defmodule DetsPlus do
   end
 
   @doc """
-    Inserts one or more objects into the table. If there already exists an object with a key matching the key of some of the given objects, the old object will be replaced.
+    Inserts one object into the table. If there already exists an object with a key matching the key of some of the given objects, the old object will be replaced.
   """
   @spec insert(pid(), tuple() | map()) :: :ok | {:error, atom()}
   def insert(pid, object) do
     cast(pid, {:insert, {keyfun(object), object}})
   end
 
+  @doc """
+    Inserts one or more objects into the table. If there already exists an object with a key matching the key of some of the given objects, the old object will be replaced.
+  """
   @spec multi_insert(pid(), [tuple() | map()]) :: :ok | {:error, atom()}
   def multi_insert(pid, objects) do
     objects =
@@ -354,6 +356,28 @@ defmodule DetsPlus do
       |> Enum.map(fn object -> {keyfun(object), hashfun(object), object} end)
 
     call(pid, {:insert_new, objects})
+  end
+
+  @spec map_put(pid() | atom(), binary, binary, map) :: :ok
+  def map_put(pid, key, index, value) do
+    case call(pid, {:lookup, key, default_hash(key)}) do
+      nil ->
+        cast(pid, {:insert, {key, %{index => value}}})
+
+      x ->
+        cast(pid, {:insert, {key, Map.put(x, index, value)}})
+    end
+  end
+
+  @spec update(pid() | atom(), binary, map) :: :ok
+  def update(pid, key, value) do
+    case call(pid, {:lookup, key, default_hash(key)}) do
+      nil ->
+        cast(pid, {:insert, {key, value}})
+
+      x ->
+        cast(pid, {:insert, {key, Map.merge(x, value)}})
+    end
   end
 
   @doc """
@@ -678,8 +702,7 @@ defmodule DetsPlus do
     end
   end
 
-  def handle_call(:sync, from, state = %State{sync: sync, sync_waiters: sync_waiters})
-      when is_pid(sync) do
+  def handle_call(:sync, from, state = %State{sync_waiters: sync_waiters}) do
     {:noreply, %State{state | sync_waiters: [from | sync_waiters]}}
   end
 
@@ -768,20 +791,6 @@ defmodule DetsPlus do
   def handle_cast({:sync_complete, _sync_pid, _new_filename, _new_state}, state = %State{}) do
     {:noreply, state}
   end
-
-  # def handle_cast(
-  #       :commit_begin,
-  #       state
-  #     ) do
-  #   {:noreply, %{state }}
-  # end
-
-  # def handle_cast(
-  #       :commit_complete,
-  #       state
-  #     ) do
-  #   {:noreply, %{state | in_transaction: false}}
-  # end
 
   @impl true
   def handle_info(:auto_save, state = %State{sync: sync, ets: ets}) do

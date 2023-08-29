@@ -10,9 +10,8 @@ defmodule Ippan.Func.Validator do
 
   def new(
         %{id: account_id, conn: conn, stmts: stmts, dets: dets},
-        id,
-        owner_id,
         hostname,
+        owner_id,
         name,
         pubkey,
         net_pubkey,
@@ -20,8 +19,7 @@ defmodule Ippan.Func.Validator do
         fee,
         opts \\ %{}
       )
-      when is_positive(id) and
-             byte_size(name) <= 20 and between_size(hostname, 4, 50) and fee_type in 0..2 and
+      when byte_size(name) <= 20 and between_size(hostname, 4, 50) and fee_type in 0..2 and
              fee > 0 and is_float(fee) do
     map_filter = Map.take(opts, Validator.optionals())
     pubkey = Fast64.decode64(pubkey)
@@ -50,7 +48,7 @@ defmodule Ippan.Func.Validator do
       not Match.hostname?(hostname) ->
         raise IppanError, "Invalid hostname"
 
-      SqliteStore.exists?(conn, stmts, "exists_validator", id) ->
+      SqliteStore.exists?(conn, stmts, "exists_host_validator", hostname) ->
         raise IppanError, "Validator already exists"
 
       @max_validators < SqliteStore.total(conn, stmts, "total_validators") ->

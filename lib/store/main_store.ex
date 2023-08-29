@@ -23,11 +23,14 @@ defmodule MainStore do
     "account" => "accounts.db",
     "assets" => "assets.db",
     "dns" => "dns.db",
-    "blockchain" => "blockchain.db"
+    "blockchain" => "blockchain.db",
+    "network" => "file:network.db?mode=ro"
   }
 
   @name "main"
   @filename "main.db"
+  @key_conn :asset_conn
+  @key_stmt :asset_stmt
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -44,8 +47,8 @@ defmodule MainStore do
     {:ok, stmts} = SqliteStore.prepare_statements(conn, @statements)
     SqliteStore.begin(conn)
     # put in global conn and statements
-    :persistent_term.put(:asset_conn, conn)
-    :persistent_term.put(:asset_stmt, stmts)
+    :persistent_term.put(@key_conn, conn)
+    :persistent_term.put(@key_stmt, stmts)
 
     {:ok, %{}, :hibernate}
   end
@@ -63,12 +66,12 @@ defmodule MainStore do
 
   @impl true
   def terminate(_reason, _state) do
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
+    conn = :persistent_term.get(@key_conn)
+    stmts = :persistent_term.get(@key_stmt)
     SqliteStore.release_statements(conn, stmts)
     Sqlite3NIF.close(conn)
-    :persistent_term.erase(:asset_stmt)
-    :persistent_term.erase(:asset_conn)
+    :persistent_term.erase(@key_conn)
+    :persistent_term.erase(@key_stmt)
     :ok
   end
 end
