@@ -53,5 +53,13 @@ config :ipnworker, :message_timeout, :timer.seconds(5)
 config :ipnworker, :max_validators, 1000
 config :ipnworker, :max_tokens, 10_000
 
+# P2P client
+config :ipnworker, :p2p_client, [
+  :binary,
+  reuseaddr: true,
+  packet: 2,
+  packet_size: 16_000
+]
+
 config :ipnworker, json: Jason
 config :blake3, rayon: true

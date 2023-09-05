@@ -1,4 +1,5 @@
 defmodule Ippan.Block do
+  @behaviour Ippan.Struct
   @type t :: %__MODULE__{
           height: non_neg_integer(),
           creator: non_neg_integer(),
@@ -10,11 +11,11 @@ defmodule Ippan.Block do
           timestamp: non_neg_integer(),
           count: non_neg_integer(),
           size: non_neg_integer(),
-          error: boolean(),
-          vsn: integer()
+          errors: pos_integer(),
+          vsn: pos_integer()
         }
 
-  @file_extension "mpk"
+  @block_extension Application.compile_env(:ipnworker, :block_extension)
   defstruct [
     :height,
     :creator,
@@ -26,10 +27,11 @@ defmodule Ippan.Block do
     :timestamp,
     count: 0,
     size: 0,
-    error: false,
+    errors: 0,
     vsn: 0
   ]
 
+  @impl true
   def to_list(x) do
     [
       x.height,
@@ -42,16 +44,22 @@ defmodule Ippan.Block do
       x.timestamp,
       x.count,
       x.size,
-      x.error
+      x.errors
     ]
   end
 
-  def to_tuple(x) do
-    {{x.creator, x.height}, x.hash, x.prev, x.hashfile, x.signature, x.round, x.timestamp,
-     x.count, x.size, x.error}
+  @impl true
+  def list_to_tuple([creator, height | _] = x) do
+    {{creator, height}, list_to_map(x)}
   end
 
-  def to_map([
+  @impl true
+  def to_tuple(x) do
+    {{x.creator, x.height}, x}
+  end
+
+  @impl true
+  def list_to_map([
         height,
         creator,
         hash,
@@ -62,7 +70,7 @@ defmodule Ippan.Block do
         timestamp,
         count,
         size,
-        error
+        errors
       ]) do
     %{
       height: height,
@@ -74,28 +82,13 @@ defmodule Ippan.Block do
       timestamp: timestamp,
       round: round,
       count: count,
-      error: error,
+      errors: errors,
       size: size
     }
   end
 
-  def to_map(
-        {{creator, height}, hash, prev, hashfile, signature, round, timestamp, count, size, error}
-      ) do
-    %{
-      height: height,
-      creator: creator,
-      prev: prev,
-      hash: hash,
-      hashfile: hashfile,
-      signature: signature,
-      round: round,
-      timestamp: timestamp,
-      count: count,
-      error: error,
-      size: size
-    }
-  end
+  @impl true
+  def to_map({{_creator, _height}, x}), do: x
 
   @spec put_hash(term()) :: term()
   def put_hash(
@@ -143,12 +136,12 @@ defmodule Ippan.Block do
 
   def block_path(validator_id, height) do
     block_dir = Application.get_env(:ipnworker, :block_dir)
-    Path.join([block_dir, "#{validator_id}.#{height}.#{@file_extension}"])
+    Path.join([block_dir, "#{validator_id}.#{height}.#{@block_extension}"])
   end
 
   def decode_path(validator_id, height) do
     decode_dir = Application.get_env(:ipnworker, :decode_dir)
-    Path.join([decode_dir, "#{validator_id}.#{height}.#{@file_extension}"])
+    Path.join([decode_dir, "#{validator_id}.#{height}.#{@block_extension}"])
   end
 
   def url(hostname, creator_id, height) do

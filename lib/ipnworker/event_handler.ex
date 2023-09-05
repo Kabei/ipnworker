@@ -1,4 +1,4 @@
-defmodule Ippan.CommandHandler do
+defmodule Ippan.EventHandler do
   alias Ippan.{Events, Block}
   alias Sqlite3NIF
   require SqliteStore
@@ -9,7 +9,7 @@ defmodule Ippan.CommandHandler do
   # @libsecp256k1 ExSecp256k1.Impl
   @json Application.compile_env(:ipnworker, :json)
   @max_block_size Application.compile_env(:ipnworker, :block_max_size)
-  @block_file_ext Application.compile_env(:ipnworker, :block_file_ext)
+  @block_extension Application.compile_env(:ipnworker, :block_extension)
 
   @spec valid!(binary, binary, binary, non_neg_integer(), non_neg_integer()) :: any | no_return()
   def valid!(hash, msg, signature, size, node_validator_id) do
@@ -73,7 +73,7 @@ defmodule Ippan.CommandHandler do
   end
 
   def generate_files(creator_id, block_id) do
-    filename = "#{creator_id}.#{block_id}.#{@block_file_ext}"
+    filename = "#{creator_id}.#{block_id}.#{@block_extension}"
     block_path = Path.join(Application.get_env(:ipnworker, :block_dir), filename)
     decode_path = Path.join(Application.get_env(:ipnworker, :decode_dir), filename)
 
@@ -106,7 +106,15 @@ defmodule Ippan.CommandHandler do
           acc_msg = Map.put(messages, hash, msg_sig)
 
           acc_decode =
-            Map.put(hash, decode_message, [hash, timestamp, type, from, wallet_validator, args, size])
+            Map.put(hash, decode_message, [
+              hash,
+              timestamp,
+              type,
+              from,
+              wallet_validator,
+              args,
+              size
+            ])
 
           {acc_msg, acc_decode, size}
 
@@ -124,7 +132,15 @@ defmodule Ippan.CommandHandler do
           acc_msg = Map.put(hash, messages, msg_sig)
 
           acc_decode =
-            Map.put(hash, decode_message, [hash, timestamp, type, from, wallet_validator, args, size])
+            Map.put(hash, decode_message, [
+              hash,
+              timestamp,
+              type,
+              from,
+              wallet_validator,
+              args,
+              size
+            ])
 
           {acc_msg, acc_decode, size}
       end

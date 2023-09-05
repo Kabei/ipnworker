@@ -1,12 +1,12 @@
 defmodule Ipnworker.Router do
   use Plug.Router
-  alias Ippan.CommandHandler
+  alias Ippan.EventHandler
   alias Phoenix.PubSub
   require Logger
 
   @json Application.compile_env(:ipnworker, :json)
   @max_size Application.compile_env(:ipnworker, :message_max_size)
-  @file_extension Application.compile_env(:ipnworker, :block_file_ext)
+  @block_extension Application.compile_env(:ipnworker, :block_extension)
 
   plug(:match)
   plug(:dispatch)
@@ -24,7 +24,7 @@ defmodule Ipnworker.Router do
               vid = :persistent_term.get(:vid)
               sig = Fast64.decode64(sig)
               size = byte_size(body) + byte_size(sig)
-              {msg, deferred} = CommandHandler.valid!(hash, body, sig, size, vid)
+              {msg, deferred} = EventHandler.valid!(hash, body, sig, size, vid)
 
               case deferred do
                 false ->
@@ -68,7 +68,7 @@ defmodule Ipnworker.Router do
 
   get "/v1/download/block/:vid/:height" do
     data_dir = Application.get_env(:ipnworker, :block_dir)
-    block_path = Path.join([data_dir, "#{vid}.#{height}.#{@file_extension}"])
+    block_path = Path.join([data_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
       conn
@@ -81,7 +81,7 @@ defmodule Ipnworker.Router do
 
   get "/v1/download/block/decoded/:vid/:height" do
     decode_dir = Application.get_env(:ipnworker, :decode_dir)
-    block_path = Path.join([decode_dir, "#{vid}.#{height}.#{@file_extension}"])
+    block_path = Path.join([decode_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
       conn

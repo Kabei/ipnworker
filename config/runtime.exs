@@ -4,20 +4,9 @@ import Config
 cpus = System.schedulers_online()
 
 # Environment variables setup
+port = System.get_env("PORT", "5815") |> String.to_integer()
+cluster_port = System.get_env("CLUSTER_PORT", "4848") |> String.to_integer()
 http_port = System.get_env("HTTP_PORT", "8080") |> String.to_integer()
-
-data_dir = System.get_env("DATA_DIR", "data")
-kem_dir = System.get_env("KEM_DIR", "priv/kem.key")
-falcon_dir = System.get_env("FALCON_DIR", "priv/falcon.key")
-key_dir = System.get_env("KEY_DIR", "priv/secret.key")
-
-# Folder cert
-config :ipnworker, :kem_dir, kem_dir
-config :ipnworker, :falcon_dir, falcon_dir
-config :ipnworker, :key_dir, key_dir
-
-# Node setup
-config :ipnworker, :vid, System.get_env("VID", "0") |> String.to_integer()
 
 # HTTP server
 config :ipnworker, :http,
@@ -40,6 +29,23 @@ config :ipnworker, :http,
       send_timeout_close: true,
       reuseaddr: true
     ]
+  ]
+
+# Cluster setup
+config :ipnworker, :cluster,
+  handler_module: Ippan.ClusterServer,
+  transport_module: ThousandIsland.Transports.TCP,
+  num_acceptors: max(cpus, 10),
+  port: cluster_port,
+  transport_options: [
+    backlog: 1024,
+    nodelay: true,
+    linger: {true, 30},
+    send_timeout: 30_000,
+    send_timeout_close: true,
+    reuseaddr: true,
+    packet: 2,
+    packet_size: 64_000
   ]
 
 # NTP servers

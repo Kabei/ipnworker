@@ -2,6 +2,7 @@ defmodule Ipnworker.Application do
   @moduledoc false
 
   use Application
+  alias Ippan.ClusterNode
   import Ippan.Utils, only: [to_atom: 1]
 
   @otp_app :ipnworker
@@ -21,9 +22,8 @@ defmodule Ipnworker.Application do
     children = [
       {MemTables, []},
       {MainStore, []},
-      Supervisor.child_spec({Phoenix.PubSub, [name: :workers]}, id: :workers),
-      Supervisor.child_spec({Phoenix.PubSub, [name: :cores]}, id: :cores),
-      {NodeMonitor, miner},
+      Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
+      ClusterNode,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]
 
@@ -32,11 +32,14 @@ defmodule Ipnworker.Application do
   end
 
   defp start_node do
-    name = System.get_env("NODE") |> to_atom()
-    cookie = System.get_env("COOKIE") |> to_atom()
+    :persistent_term.put(:node, System.get_env("NODE"))
+    :persistent_term.put(:vid, String.to_integer(System.get_env("VID", "0")))
+    # name = System.get_env("NODE") |> to_atom()
+    # cookie = System.get_env("COOKIE") |> to_atom()
 
-    Node.start(name)
-    Node.set_cookie(name, cookie)
+    # :persistent_term.put(:node, System.get_env("NODE"))
+    # Node.start(name)
+    # Node.set_cookie(name, cookie)
   end
 
   defp load_keys do

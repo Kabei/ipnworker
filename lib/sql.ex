@@ -3,6 +3,7 @@ defmodule SQL do
     File.read!(filename)
     |> String.trim()
     |> put_args(args)
+
     |> String.split(~r/;\n\n/, trim: true)
   end
 

@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS msg_round(
+  id BIGINT NOT NULL,
+  creator BIGINT NOT NULL,
+  hash BLOB NOT NULL,
+  messages BLOB NOT NULL,
+  signature BLOB NOT NULL,
+  PRIMARY KEY(id)
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS msg_block(
+  creator BIGINT NOT NULL,
+  height BIGINT NOT NULL,
+  data BLOB NOT NULL,
+  PRIMARY KEY(creator, height)
+) WITHOUT ROWID;

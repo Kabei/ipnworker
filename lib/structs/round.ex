@@ -1,38 +1,51 @@
 defmodule Ippan.Round do
+  @behaviour Ippan.Struct
   @type t :: %__MODULE__{
           id: non_neg_integer(),
           hash: binary(),
           prev: binary() | nil,
+          creator: binary(),
           blocks: non_neg_integer(),
-          timestamp: non_neg_integer(),
-          vsn: pos_integer()
+          timestamp: non_neg_integer()
         }
 
-  @blockchain_version Application.compile_env(:ipnworker, :verison) |> to_string()
+  defstruct [:id, :hash, :prev, :creator, :blocks, :timestamp]
 
-  defstruct [:id, :hash, :prev, :blocks, :timestamp, :vsn]
-
+  @impl true
   def to_list(x) do
-    [x.id, x.hash, x.prev, x.blocks, x.timestamp, x.vsn]
+    [x.id, x.hash, x.prev, x.creator, x.blocks, x.timestamp]
   end
 
+  @impl true
   def to_tuple(x) do
-    {x.id, x.hash, x.prev, x.blocks, x.timestamp, x.vsn}
+    {x.id, x}
   end
 
-  def to_map({id, hash, prev, blocks, timestamp, vsn}) do
-    %{id: id, hash: hash, prev: prev, blocks: blocks, timestamp: timestamp, vsn: vsn}
+  @impl true
+  def list_to_tuple([id | _] = x) do
+    {id, list_to_map(x)}
   end
 
-  def to_map([id, hash, prev, blocks, timestamp, vsn]) do
-    %{id: id, hash: hash, prev: prev, blocks: blocks, timestamp: timestamp, vsn: vsn}
+  @impl true
+  def list_to_map([id, hash, prev, creator, blocks, timestamp]) do
+    %{
+      id: id,
+      hash: hash,
+      prev: prev,
+      creator: creator,
+      blocks: blocks,
+      timestamp: timestamp
+    }
   end
 
-  def compute_hash(round, prev, hashes) do
+  @impl true
+  def to_map({_id, map}), do: map
+
+  def compute_hash(round, prev, creator, hashes) do
     ([
        to_string(round),
        normalize(prev),
-       @blockchain_version
+       to_string(creator)
      ] ++
        hashes)
     |> IO.iodata_to_binary()
