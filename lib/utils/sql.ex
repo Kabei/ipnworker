@@ -3,8 +3,10 @@ defmodule SQL do
     File.read!(filename)
     |> String.trim()
     |> put_args(args)
-
-    |> String.split(~r/;\n\n/, trim: true)
+    |> String.split(~r/;\s\s/, trim: true)
+    |> Enum.filter(fn txt ->
+      String.trim(txt) |> String.starts_with?("--") |> Kernel.not()
+    end)
   end
 
   def readStmtFile!(filename, args \\ %{}) do

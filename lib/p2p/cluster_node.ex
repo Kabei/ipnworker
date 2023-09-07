@@ -1,5 +1,6 @@
 defmodule Ippan.ClusterNode do
   alias Ippan.Network
+  require SqliteStore
 
   use Network,
     app: :ipnworker,

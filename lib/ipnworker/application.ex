@@ -3,25 +3,19 @@ defmodule Ipnworker.Application do
 
   use Application
   alias Ippan.ClusterNode
-  import Ippan.Utils, only: [to_atom: 1]
 
   @otp_app :ipnworker
 
   @impl true
   def start(_type, _args) do
-    miner = System.get_env("MINER") |> to_atom()
-
     start_node()
     make_folders()
     load_keys()
 
-    if is_nil(miner) do
-      raise RuntimeError, "Set up a miner"
-    end
-
     children = [
       {MemTables, []},
       {MainStore, []},
+      {PgStore, [:init]},
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNode,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
@@ -32,14 +26,15 @@ defmodule Ipnworker.Application do
   end
 
   defp start_node do
+    miner = System.get_env("MINER")
+
+    if is_nil(miner) do
+      raise RuntimeError, "Set up a miner"
+    end
+
     :persistent_term.put(:node, System.get_env("NODE"))
     :persistent_term.put(:vid, String.to_integer(System.get_env("VID", "0")))
-    # name = System.get_env("NODE") |> to_atom()
-    # cookie = System.get_env("COOKIE") |> to_atom()
-
-    # :persistent_term.put(:node, System.get_env("NODE"))
-    # Node.start(name)
-    # Node.set_cookie(name, cookie)
+    :persistent_term.put(:miner, System.get_env("MINER"))
   end
 
   defp load_keys do

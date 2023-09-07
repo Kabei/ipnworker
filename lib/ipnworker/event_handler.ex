@@ -1,4 +1,5 @@
 defmodule Ippan.EventHandler do
+  alias Ippan.Wallet
   alias Ippan.{Events, Block}
   alias Sqlite3NIF
   require SqliteStore
@@ -15,24 +16,24 @@ defmodule Ippan.EventHandler do
   def valid!(hash, msg, signature, size, node_validator_id) do
     [type, timestamp, from | args] = @json.decode!(msg)
 
-    # if timestamp < :persistent_term.get(:expiry_time, 0) do
-    #   raise(IppanError, "Invalid timestamp")
-    # end
+    if timestamp < :persistent_term.get(:time_expired, 0) do
+      raise(IppanError, "Invalid timestamp")
+    end
 
     %{deferred: deferred, mod: mod, fun: fun, validator: valid_validator} = Events.lookup(type)
 
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
 
-    {_id, wallet_pubkey, wallet_validator, _created_at} =
-      SqliteStore.lookup(:wallet, conn, stmts, "get_wallet", from)
+    %{pubkey: wallet_pubkey, validator: wallet_validator} =
+      SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
 
     if valid_validator and wallet_validator != node_validator_id do
       raise(IppanError, "Invalid validator")
     end
 
     sig_flag = :binary.at(from, 0)
-    chech_signature!(sig_flag, signature, hash, wallet_pubkey)
+    check_signature!(sig_flag, signature, hash, wallet_pubkey)
 
     :ok = apply(mod, fun, args)
 
@@ -45,10 +46,10 @@ defmodule Ippan.EventHandler do
             type,
             from,
             wallet_validator,
-            :erlang.term_to_binary(args),
-            [msg, signature],
+            args,
             size
           },
+          [msg, signature],
           deferred
         }
 
@@ -63,10 +64,10 @@ defmodule Ippan.EventHandler do
             type,
             from,
             wallet_validator,
-            :erlang.term_to_binary(args),
-            [msg, signature],
+            args,
             size
           },
+          [msg, signature],
           deferred
         }
     end
@@ -225,7 +226,7 @@ defmodule Ippan.EventHandler do
         |> Map.values()
 
       if count != length(decode_events) do
-        raise(IppanError, "Invalid block messages count")
+        raise IppanError, "Invalid block messages count"
       end
 
       export_path =
@@ -241,7 +242,7 @@ defmodule Ippan.EventHandler do
 
   # check signature by type
   # verify ed25519 signature
-  defp chech_signature!("0", signature, hash, wallet_pubkey) do
+  defp check_signature!("0", signature, hash, wallet_pubkey) do
     if Cafezinho.Impl.verify(
          signature,
          hash,
@@ -251,19 +252,19 @@ defmodule Ippan.EventHandler do
   end
 
   # verify falcon-512 signature
-  defp chech_signature!("1", signature, hash, wallet_pubkey) do
+  defp check_signature!("1", signature, hash, wallet_pubkey) do
     if Falcon.verify(hash, signature, wallet_pubkey) != :ok,
       do: raise(IppanError, "Invalid signature verify")
   end
 
   # verify secp256k1 signature
-  # defp chech_signature!("2", signature, hash, wallet_pubkey) do
+  # defp check_signature!("2", signature, hash, wallet_pubkey) do
   #   if @libsecp256k1.verify(hash, signature, wallet_pubkey) !=
   #        :ok,
   #      do: raise(IppanError, "Invalid signature verify")
   # end
 
-  defp chech_signature!(_, _signature, _hash, _wallet_pubkey) do
+  defp check_signature!(_, _signature, _hash, _wallet_pubkey) do
     raise(IppanError, "Signature type not supported")
   end
 end

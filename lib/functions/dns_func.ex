@@ -66,8 +66,7 @@ defmodule Ippan.Func.Dns do
     dns_hash = Base.decode16!(dns_hash16, case: :mixed)
 
     dns =
-      SqliteStore.lookup(:dns, conn, stmts, "get_dns", [domain, dns_hash])
-      |> DNS.to_map()
+      SqliteStore.lookup_map(:dns, conn, stmts, "get_dns", {domain, dns_hash}, DNS)
 
     cond do
       map_filter == %{} ->

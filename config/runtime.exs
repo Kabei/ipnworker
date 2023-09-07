@@ -48,6 +48,18 @@ config :ipnworker, :cluster,
     packet_size: 64_000
   ]
 
+# remote database setup
+config :ipnworker, :repo,
+  hostname: System.get_env("PGHOST", "localhost"),
+  database: System.get_env("PGDATABASE", "ippan"),
+  username: System.get_env("PGUSER", "kambei"),
+  password: System.get_env("PGPASSWORD", "secret"),
+  port: System.get_env("PGPORT", "5432") |> String.to_integer(),
+  pool_size: System.get_env("PGPOOL", "1") |> String.to_integer(),
+  prepare: :unnamed,
+  parameters: [plan_cache_mode: "force_custom_plan"],
+  timeout: 60_000
+
 # NTP servers
 config :ipnworker, :ntp_servers, [
   ~c"0.north-america.pool.ntp.org",

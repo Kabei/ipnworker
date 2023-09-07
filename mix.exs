@@ -35,6 +35,7 @@ defmodule Ipnworker.MixProject do
     [
       {:benchee, "~> 1.0", only: [:dev, :test]},
       {:ecto, "~> 3.10"},
+      {:postgrex, "~> 0.17.3"},
       {:poolboy, "~> 1.5.2"},
       {:jason, "~> 1.4"},
       {:cbor, "~> 1.0"},

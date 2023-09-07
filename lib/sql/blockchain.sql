@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS block(
   count INTEGER DEFAULT 0,
   size BIGINT DEFAULT 0,
   failures INTEGER,
-  vsn integer,
+  vsn INTEGER,
   PRIMARY KEY(height, creator)
 ) WITHOUT ROWID;
 
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS round(
     
 CREATE TABLE IF NOT EXISTS jackpot(
   round_id BIGINT NOT NULL,
-  winner_id BLOB,
-  amount BIGINT DEFAULT 0,
+  winner_id BLOB NOT NULL,
+  amount BIGINT,
   PRIMARY KEY(round_id, winner_id)
 ) WITHOUT ROWID;
     

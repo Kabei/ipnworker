@@ -1,7 +1,8 @@
 defmodule Ipnworker.Router do
   use Plug.Router
+  alias Ippan.ClusterNode
   alias Ippan.EventHandler
-  alias Phoenix.PubSub
+  # alias Phoenix.PubSub
   require Logger
 
   @json Application.compile_env(:ipnworker, :json)
@@ -24,7 +25,7 @@ defmodule Ipnworker.Router do
               vid = :persistent_term.get(:vid)
               sig = Fast64.decode64(sig)
               size = byte_size(body) + byte_size(sig)
-              {msg, deferred} = EventHandler.valid!(hash, body, sig, size, vid)
+              {msg, msg_sig, deferred} = EventHandler.valid!(hash, body, sig, size, vid)
 
               case deferred do
                 false ->
@@ -46,8 +47,15 @@ defmodule Ipnworker.Router do
               timestamp = elem(msg, 1)
               :ets.insert(:hash, {hash, timestamp})
 
-              PubSub.local_broadcast(:cores, "msg", %{data: msg, deferred: deferred})
-              json(conn, %{"hash" => Base.encode16(hash, case: :lower)})
+              miner_id = :persistent_term.get(:miner)
+
+              case ClusterNode.call(miner_id, "new_msg", [msg, msg_sig]) do
+                {:ok} ->
+                  json(conn, %{"hash" => Base.encode16(hash, case: :lower)})
+
+                _ ->
+                  send_resp(conn, 503, "")
+              end
 
             false ->
               send_resp(conn, 400, "Already exists")

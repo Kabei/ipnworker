@@ -39,7 +39,7 @@ defmodule SqliteStore do
     end
   end
 
-  defmacro step(conn, stmts, name, args) do
+  defmacro step(conn, stmts, name, args \\ []) do
     quote bind_quoted: [conn: conn, stmts: stmts, name: name, args: args] do
       Sqlite3NIF.bind_step(conn, Map.get(stmts, name), args)
     end
@@ -91,33 +91,6 @@ defmodule SqliteStore do
     end
   end
 
-  defmacro lookup(table, conn, stmts, name, id) do
-    quote bind_quoted: [table: table, conn: conn, stmts: stmts, name: name, id: id] do
-      case :ets.lookup(table, id) do
-        [x] ->
-          x
-
-        [] ->
-          case Sqlite3NIF.bind_step(conn, Map.get(stmts, name), [id]) do
-            {:row, []} ->
-              nil
-
-            {:row, data} ->
-              :ets.insert(table, List.to_tuple(data))
-
-              if :ets.info(table, :size) > 10_000_000 do
-                :ets.delete(table, :ets.first(table))
-              end
-
-              data
-
-            _ ->
-              nil
-          end
-      end
-    end
-  end
-
   defmacro lookup_map(table, conn, stmts, name, id, mod_format) do
     quote bind_quoted: [
             table: table,
@@ -128,22 +101,25 @@ defmodule SqliteStore do
             mod_format: mod_format
           ] do
       case :ets.lookup(table, id) do
-        [x] ->
-          mod_format.to_map(x)
+        [{_, map}] ->
+          map
 
         [] ->
-          case Sqlite3NIF.bind_step(conn, Map.get(stmts, name), [id]) do
+          args = if(is_tuple(id), do: Tuple.to_list(id), else: [id])
+
+          case Sqlite3NIF.bind_step(conn, Map.get(stmts, name), args) do
             {:row, []} ->
               nil
 
             {:row, data} ->
-              :ets.insert(table, List.to_tuple(data))
+              {_, map} = result = mod_format.list_to_tuple(data)
+              :ets.insert(table, result)
 
               if :ets.info(table, :size) > 10_000_000 do
                 :ets.delete(table, :ets.first(table))
               end
 
-              mod_format.to_map(data)
+              map
 
             _ ->
               nil
@@ -153,17 +129,23 @@ defmodule SqliteStore do
   end
 
   defmacro fetch_all(conn, stmts, name, limit \\ 100, offset \\ 0) do
-    quote do
-      Sqlite3.fetch_all(unquote(conn), Map.get(unquote(stmts), unquote(name)), [
-        unquote(limit),
-        unquote(offset)
-      ])
+    quote bind_quoted: [conn: conn, stmts: stmts, name: name, limit: limit, offset: offset] do
+      stmt = Map.get(stmts, name)
+      Sqlite3NIF.bind(conn, stmt, [limit, offset])
+
+      case Sqlite3.fetch_all(conn, stmt, 100) do
+        {:ok, data} -> data
+        _ -> []
+      end
     end
   end
 
   defmacro all(conn, stmts, name) do
-    quote do
-      Sqlite3.fetch_all(unquote(conn), Map.get(unquote(stmts), unquote(name)), [])
+    quote bind_quoted: [conn: conn, stmts: stmts, name: name] do
+      case Sqlite3.fetch_all(conn, Map.get(stmts, name), 100) do
+        {:ok, data} -> data
+        _ -> []
+      end
     end
   end
 
@@ -239,16 +221,18 @@ defmodule SqliteStore do
     base = Path.dirname(main_file)
 
     for {name, filename} <- attaches do
-      path = Path.join(base, filename)
-      IO.inspect(path)
-      creation = Map.get(creations, name, [])
-      {:ok, conn} = Sqlite3.open(path, [])
+      if not String.contains?(filename, "?") do
+        path = Path.join(base, filename)
+        # IO.inspect(path)
+        creation = Map.get(creations, name, [])
+        {:ok, conn} = Sqlite3.open(path, [])
 
-      for sql <- creation do
-        :ok = Sqlite3NIF.execute(conn, sql)
+        for sql <- creation do
+          :ok = Sqlite3NIF.execute(conn, sql)
+        end
+
+        Sqlite3NIF.close(conn)
       end
-
-      Sqlite3NIF.close(conn)
     end
 
     # create main database
