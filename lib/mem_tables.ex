@@ -4,11 +4,15 @@ defmodule MemTables do
   # @set_opts [:set, :public, read_concurrency: true, write_concurrency: true]
   @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: true]
 
-  @tables_name %{msg: "msg", hash: "hash"}
+  @tables_name %{msg: "msg", hash: "hash", wallet: "wallet", token: "token", validator: "validator", env: "env"}
 
   @tables_opt %{
     msg: @set_named_opts,
-    hash: @set_named_opts
+    hash: @set_named_opts,
+    wallet: @set_named_opts,
+    validator: @set_named_opts,
+    token: @set_named_opts,
+    env: @set_named_opts
   }
 
   @tables Map.to_list(@tables_name)

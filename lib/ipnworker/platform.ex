@@ -2,10 +2,10 @@ defmodule Platform do
     alias Ippan.{Env, Token, Wallet, Validator}
     require SqliteStore
 
-    @token Application.compile_env(:ipncore, :token)
+    @token Application.compile_env(:ipnworker, :token)
 
     def start do
-      vid = Application.get_env(:ipncore, :vid)
+      vid = Application.get_env(:ipnworker, :vid)
       conn = :persistent_term.get(:asset_conn)
       stmts = :persistent_term.get(:asset_stmt)
       :persistent_term.put(:vid, vid)
@@ -23,7 +23,7 @@ defmodule Platform do
 
     defp load_genesis_file(conn, stmts) do
       {data = %{"tokens" => _, "validators" => _, "wallets" => _}, _binding} =
-        Path.join(:code.priv_dir(:ipncore), "genesis.exs")
+        Path.join(:code.priv_dir(:ipnworker), "genesis.exs")
         |> Code.eval_file()
 
       for {key, values} <- data do
