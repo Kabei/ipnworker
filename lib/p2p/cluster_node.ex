@@ -12,7 +12,6 @@ defmodule Ippan.ClusterNode do
     sup: Ippan.ClusterSup
 
   def on_init(_) do
-    miner = System.get_env("MINER")
     nodes = System.get_env("NODES")
 
     if is_nil(nodes) do
@@ -48,11 +47,15 @@ defmodule Ippan.ClusterNode do
 
     SqliteStore.sync(net_conn)
 
-    connect_to_miner(net_conn, net_stmts, miner)
+    connect_to_miner()
   end
 
-  defp connect_to_miner(conn, stmts, node_id) do
-    case SqliteStore.fetch(conn, stmts, "get_node", [node_id]) do
+  defp connect_to_miner do
+    miner = :persistent_term.get(:miner)
+    conn = :persistent_term.get(:net_conn)
+    stmts = :persistent_term.get(:net_stmt)
+
+    case SqliteStore.fetch(conn, stmts, "get_node", [miner]) do
       nil ->
         :ok
 
