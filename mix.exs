@@ -10,7 +10,7 @@ defmodule Ipnworker.MixProject do
       app: :ipnworker,
       version: @version,
       config_path: "config/config.exs",
-      elixir: "~> 1.15",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
