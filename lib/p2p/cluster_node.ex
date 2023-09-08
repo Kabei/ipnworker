@@ -1,5 +1,5 @@
 defmodule Ippan.ClusterNode do
-  alias Ippan.Network
+  alias Ippan.{LocalNode, Network}
   require SqliteStore
 
   use Network,
@@ -8,18 +8,68 @@ defmodule Ippan.ClusterNode do
     table: :cnw,
     pubsub: :cluster,
     topic: "cluster",
-    opts: Application.compile_env(:ipnworker, :p2p_client),
+    conn_opts: [reconnect: true, retry: :infinity],
     sup: Ippan.ClusterSup
+
+  def on_init(_) do
+    miner = System.get_env("MINER")
+    nodes = System.get_env("NODES")
+
+    if is_nil(nodes) do
+      IO.puts(IO.ANSI.red() <> "ERROR: variable NODES is missing" <> IO.ANSI.reset())
+      System.halt(1)
+    end
+
+    pk = :persistent_term.get(:pubkey)
+    net_pk = :persistent_term.get(:net_pubkey)
+    net_conn = :persistent_term.get(:net_conn)
+    net_stmts = :persistent_term.get(:net_stmt)
+    default_port = Application.get_env(:ipnworker, :cluster)[:port]
+
+    SqliteStore.step(net_conn, net_stmts, "delete_nodes", [])
+
+    String.split(nodes, ",", trim: true)
+    |> Enum.reduce([], fn x, acc ->
+      acc ++ [x |> String.trim() |> String.split("@", parts: 2)]
+    end)
+    |> Enum.each(fn [name_id, hostname] ->
+      data =
+        %LocalNode{
+          id: name_id,
+          hostname: hostname,
+          port: default_port,
+          pubkey: pk,
+          net_pubkey: net_pk
+        }
+        |> LocalNode.to_list()
+
+      SqliteStore.step(net_conn, net_stmts, "insert_node", data)
+    end)
+
+    SqliteStore.sync(net_conn)
+
+    connect_to_miner(net_conn, net_stmts, miner)
+  end
+
+  defp connect_to_miner(conn, stmts, node_id) do
+    case SqliteStore.fetch(conn, stmts, "get_node", [node_id]) do
+      nil ->
+        :ok
+
+      node ->
+        connect_async(LocalNode.list_to_map(node))
+    end
+  end
 
   @impl Network
   def fetch(id) do
     SqliteStore.lookup_map(
       :cluster,
-      :persistent_term.get(:asset_conn),
-      :persistent_term.get(:asset_stmt),
+      :persistent_term.get(:net_conn),
+      :persistent_term.get(:net_stmt),
       "get_node",
       id,
-      LocalCluster
+      LocalNode
     )
   end
 
@@ -27,13 +77,5 @@ defmodule Ippan.ClusterNode do
   def handle_request(_method, _data, _state), do: "not found"
 
   @impl Network
-  # def handle_message(
-  #       "msg",
-  #       _from,
-  #       [hash, timestamp, type, from, args, size] = data,
-  #       %{conn: conn, stmts: stmts, dets: dets} = state
-  #     ) do
-  # end
-
   def handle_message(_event, _data, _state), do: :ok
 end

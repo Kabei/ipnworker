@@ -21,43 +21,47 @@ defmodule Ipnworker.Router do
           hash = Blake3.hash(body)
 
           case :ets.member(:hash, hash) do
-            true ->
+            false ->
               vid = :persistent_term.get(:vid)
+              height = :persistent_term.get(:height)
               sig = Fast64.decode64(sig)
               size = byte_size(body) + byte_size(sig)
               {msg, msg_sig, deferred} = EventHandler.valid!(hash, body, sig, size, vid)
 
-              case deferred do
-                false ->
-                  :ets.insert(:msg, msg)
-
-                _true ->
+              dtx_key =
+                if deferred do
                   {hash, timestamp, key, type, _from, _wallet_validator, _args, _msg_sig, _size} =
                     msg
 
-                  case :ets.insert_new(:msg, {{type, key}, hash, timestamp}) do
+                  case :ets.insert_new(:dtx, {{type, key}, hash, timestamp, height}) do
                     true ->
-                      :ets.insert(:msg, msg)
+                      {type, key}
 
                     false ->
                       raise IppanError, "Invalid deferred transaction"
                   end
-              end
-
-              timestamp = elem(msg, 1)
-              :ets.insert(:hash, {hash, timestamp})
+                end
 
               miner_id = :persistent_term.get(:miner)
 
+              :ets.insert(:hash, {hash, height})
+
               case ClusterNode.call(miner_id, "new_msg", [msg, msg_sig]) do
-                {:ok} ->
+                "ok" ->
                   json(conn, %{"hash" => Base.encode16(hash, case: :lower)})
 
-                _ ->
-                  send_resp(conn, 503, "")
+                %{"error" => message} ->
+                  :ets.delete(:hash, hash)
+                  :ets.delete(:dtx, dtx_key)
+                  send_resp(conn, 400, message)
+
+                {:error, _} ->
+                  :ets.delete(:hash, hash)
+                  :ets.delete(:dtx, dtx_key)
+                  send_resp(conn, 503, "Service unavailable")
               end
 
-            false ->
+            true ->
               send_resp(conn, 400, "Already exists")
           end
 

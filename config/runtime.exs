@@ -4,7 +4,6 @@ import Config
 cpus = System.schedulers_online()
 
 # Environment variables setup
-port = System.get_env("PORT", "5815") |> String.to_integer()
 cluster_port = System.get_env("CLUSTER_PORT", "4848") |> String.to_integer()
 http_port = System.get_env("HTTP_PORT", "8080") |> String.to_integer()
 

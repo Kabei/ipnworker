@@ -40,7 +40,7 @@ defmodule Ippan.EventHandler do
     case deferred do
       false ->
         {
-          {
+          [
             hash,
             timestamp,
             type,
@@ -48,7 +48,7 @@ defmodule Ippan.EventHandler do
             wallet_validator,
             args,
             size
-          },
+          ],
           [msg, signature],
           deferred
         }
@@ -57,7 +57,7 @@ defmodule Ippan.EventHandler do
         key = hd(args) |> to_string()
 
         {
-          {
+          [
             hash,
             timestamp,
             key,
@@ -66,7 +66,7 @@ defmodule Ippan.EventHandler do
             wallet_validator,
             args,
             size
-          },
+          ],
           [msg, signature],
           deferred
         }
@@ -161,16 +161,16 @@ defmodule Ippan.EventHandler do
   @spec verify_file!(term, term) :: :ok | no_return()
   def verify_file!(
         %{
-          height: height,
-          hash: hash,
-          hashfile: hashfile,
-          creator: creator_id,
-          prev: prev,
-          signature: signature,
-          timestamp: timestamp,
-          count: count,
-          size: size,
-          vsn: version
+          "height" => height,
+          "hash"  => hash,
+          "hashfile"  => hashfile,
+          "creator" => creator_id,
+          "prev" => prev,
+          "signature" => signature,
+          "timestamp" => timestamp,
+          "count" => count,
+          "size" => size,
+          "vsn" => version
         },
         %{hostname: hostname, pubkey: pubkey}
       ) do

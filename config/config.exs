@@ -56,9 +56,10 @@ config :ipnworker, :max_tokens, 10_000
 # P2P client
 config :ipnworker, :p2p_client, [
   :binary,
+  active: false,
   reuseaddr: true,
   packet: 2,
-  packet_size: 16_000
+  packet_size: 64_000
 ]
 
 config :ipnworker, json: Jason

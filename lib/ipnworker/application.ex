@@ -12,11 +12,15 @@ defmodule Ipnworker.Application do
     make_folders()
     load_keys()
 
+    cluster_opts = Application.get_env(:ipnworker, :cluster)
+
     children = [
-      {MemTables, []},
-      {MainStore, []},
+      MemTables,
+      MainStore,
+      NetStore,
       {PgStore, [:init]},
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
+      {ThousandIsland, cluster_opts},
       ClusterNode,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]
@@ -26,15 +30,25 @@ defmodule Ipnworker.Application do
   end
 
   defp start_node do
+    vid = System.get_env("VID")
+    name = System.get_env("NAME")
     miner = System.get_env("MINER")
 
-    if is_nil(miner) do
-      raise RuntimeError, "Set up a miner"
-    end
+    cond do
+      is_nil(vid) ->
+        raise IppanStartUpError, "variable VID (ValidatorID) is missing"
 
-    :persistent_term.put(:node, System.get_env("NODE"))
-    :persistent_term.put(:vid, String.to_integer(System.get_env("VID", "0")))
-    :persistent_term.put(:miner, System.get_env("MINER"))
+      is_nil(name) ->
+        raise IppanStartUpError, "variable NAME is missing"
+
+      is_nil(miner) ->
+        raise IppanStartUpError, "variable MINER is missing"
+
+      true ->
+        :persistent_term.put(:vid, String.to_integer(vid))
+        :persistent_term.put(:name, name)
+        :persistent_term.put(:miner, miner)
+    end
   end
 
   defp load_keys do

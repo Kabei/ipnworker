@@ -11,6 +11,7 @@ defmodule Ippan.Func.Validator do
   def new(
         %{id: account_id, conn: conn, stmts: stmts, dets: dets},
         hostname,
+        port,
         owner_id,
         name,
         pubkey,
@@ -20,7 +21,7 @@ defmodule Ippan.Func.Validator do
         opts \\ %{}
       )
       when byte_size(name) <= 20 and between_size(hostname, 4, 50) and fee_type in 0..2 and
-             fee > 0 and is_float(fee) do
+             fee > 0 and is_float(fee) and check_port(port) do
     map_filter = Map.take(opts, Validator.optionals())
     pubkey = Fast64.decode64(pubkey)
     net_pubkey = Fast64.decode64(net_pubkey)

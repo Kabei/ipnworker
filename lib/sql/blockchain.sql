@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS validator(
   id BIGINT PRIMARY KEY NOT NULL,
   hostname VARCHAR(50) UNIQUE NOT NULL,
+  port INTEGER NOT NULL,
   name VARCHAR(30) NOT NULL,
   owner BLOB NOT NULL,
   pubkey BLOB NOT NULL,
@@ -26,7 +27,7 @@ CREATE TABLE IF NOT EXISTS block(
   count INTEGER DEFAULT 0,
   size BIGINT DEFAULT 0,
   failures INTEGER,
-  vsn INTEGER,
+  vsn integer,
   PRIMARY KEY(height, creator)
 ) WITHOUT ROWID;
 
@@ -40,8 +41,8 @@ CREATE TABLE IF NOT EXISTS round(
     
 CREATE TABLE IF NOT EXISTS jackpot(
   round_id BIGINT NOT NULL,
-  winner_id BLOB NOT NULL,
-  amount BIGINT,
+  winner_id BLOB,
+  amount BIGINT DEFAULT 0,
   PRIMARY KEY(round_id, winner_id)
 ) WITHOUT ROWID;
     
