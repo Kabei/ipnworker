@@ -7,7 +7,7 @@ defmodule Ippan.Event do
           fun: atom() | function() | nil,
           deferred: boolean(),
           auth: boolean(),
-          validator: boolean(),
+          validator: integer(),
           before: atom() | function() | nil
         }
 
@@ -20,7 +20,7 @@ defmodule Ippan.Event do
     :fun,
     :before,
     deferred: false,
-    validator: true,
+    validator: 1,
     auth: true
   ]
 end

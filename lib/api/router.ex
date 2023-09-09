@@ -1,8 +1,10 @@
 defmodule Ipnworker.Router do
   use Plug.Router
+  alias Ippan.Validator
   alias Ippan.ClusterNode
   alias Ippan.EventHandler
   # alias Phoenix.PubSub
+  require SqliteStore
   require Logger
 
   @json Application.compile_env(:ipnworker, :json)
@@ -13,6 +15,8 @@ defmodule Ipnworker.Router do
   plug(:dispatch)
 
   post "/v1/call" do
+    IO.inspect(conn)
+
     try do
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
@@ -69,8 +73,28 @@ defmodule Ipnworker.Router do
           send_resp(conn, 400, "Signature missing")
       end
     rescue
-      e in [IppanError] ->
+      e in IppanError ->
         send_resp(conn, 400, e.message)
+
+      e in IppanRedirectError ->
+        conn = :persistent_term.get(:asset_conn)
+        stmts = :persistent_term.get(:asset_stmt)
+
+        %{hostname: hostname} =
+          SqliteStore.lookup_map(
+            :validator,
+            conn,
+            stmts,
+            "get_validator",
+            String.to_integer(e.message),
+            Validator
+          )
+
+        url = "https://#{hostname}#{conn.request_path}"
+
+        conn
+        |> put_resp_header("location", url)
+        |> send_resp(302, "")
 
       e ->
         Logger.debug(Exception.format(:error, e, __STACKTRACE__))

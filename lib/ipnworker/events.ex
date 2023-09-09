@@ -22,7 +22,7 @@ defmodule Ippan.Events do
       fun: :subscribe,
       before: :pre_sub,
       deferred: true,
-      validator: false
+      validator: 0
     }
   end
 
@@ -135,7 +135,8 @@ defmodule Ippan.Events do
       name: "balance.lock",
       base: :balance,
       mod: Balance,
-      fun: :lock
+      fun: :lock,
+      validator: 2
     }
   end
 
@@ -145,7 +146,8 @@ defmodule Ippan.Events do
       name: "balance.unlock",
       base: :balance,
       mod: Balance,
-      fun: :unlock
+      fun: :unlock,
+      validator: 2
     }
   end
 
@@ -172,10 +174,10 @@ defmodule Ippan.Events do
   def lookup(302) do
     %Event{
       id: 302,
-      name: "tx.burn",
-      base: :tx,
+      name: "tx.refundable",
       mod: Tx,
-      fun: :burn
+      base: :tx,
+      fun: :send_refundable
     }
   end
 
@@ -192,10 +194,10 @@ defmodule Ippan.Events do
   def lookup(304) do
     %Event{
       id: 304,
-      name: "tx.refundable",
-      mod: Tx,
+      name: "tx.burn",
       base: :tx,
-      fun: :send_refundable
+      mod: Tx,
+      fun: :burn
     }
   end
 

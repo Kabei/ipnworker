@@ -3,7 +3,7 @@ defmodule Ippan.Func.Balance do
   require SqliteStore
   require BalanceStore
 
-  def lock(%{id: account_id, conn: conn, stmts: stmts, dets: dets}, token_id, to_id, amount)
+  def lock(%{id: account_id, conn: conn, stmts: stmts, dets: dets}, to_id, token_id, amount)
       when is_integer(amount) do
     token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
 
@@ -25,7 +25,7 @@ defmodule Ippan.Func.Balance do
     end
   end
 
-  def unlock(%{id: account_id, conn: conn, stmts: stmts, dets: dets}, token_id, to_id, amount)
+  def unlock(%{id: account_id, conn: conn, stmts: stmts, dets: dets}, to_id, token_id, amount)
       when is_integer(amount) do
     token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
 

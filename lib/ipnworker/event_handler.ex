@@ -20,17 +20,41 @@ defmodule Ippan.EventHandler do
       raise(IppanError, "Invalid timestamp")
     end
 
-    %{deferred: deferred, mod: mod, fun: fun, validator: valid_validator} = Events.lookup(type)
+    %{deferred: deferred, mod: mod, fun: fun, validator: check_validator} = Events.lookup(type)
 
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
 
     %{pubkey: wallet_pubkey, validator: wallet_validator} =
-      SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
+      case check_validator do
+        1 ->
+          result =
+            SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
 
-    if valid_validator and wallet_validator != node_validator_id do
-      raise(IppanError, "Invalid validator")
-    end
+          v = result.validator
+
+          if v != node_validator_id do
+            raise IppanRedirectError, "#{v}"
+          end
+
+          result
+
+        0 ->
+          SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
+
+        2 ->
+          key = hd(args)
+
+          result =
+            %{validator: wallet_validator} =
+            SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", key, Wallet)
+
+          if wallet_validator != node_validator_id do
+            raise IppanRedirectError, "#{wallet_validator}"
+          end
+
+          result
+      end
 
     sig_flag = :binary.at(from, 0)
     check_signature!(sig_flag, signature, hash, wallet_pubkey)
@@ -162,8 +186,8 @@ defmodule Ippan.EventHandler do
   def verify_file!(
         %{
           "height" => height,
-          "hash"  => hash,
-          "hashfile"  => hashfile,
+          "hash" => hash,
+          "hashfile" => hashfile,
           "creator" => creator_id,
           "prev" => prev,
           "signature" => signature,
