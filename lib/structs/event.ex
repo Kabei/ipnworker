@@ -2,25 +2,23 @@ defmodule Ippan.Event do
   @type t :: %__MODULE__{
           id: non_neg_integer(),
           name: String.t(),
-          base: atom(),
+          # base: atom(),
           mod: module(),
           fun: atom() | function() | nil,
           deferred: boolean(),
-          auth: boolean(),
-          validator: integer(),
-          before: atom() | function() | nil
+          validator: integer()
+          # before: atom() | function() | nil
         }
 
-  @enforce_keys [:id, :name, :base, :mod, :fun]
+  @enforce_keys [:id, :name, :mod, :fun]
   defstruct [
     :id,
     :name,
-    :base,
+    # :base,
     :mod,
     :fun,
-    :before,
+    # :before,
     deferred: false,
-    validator: 1,
-    auth: true
+    validator: true
   ]
 end
