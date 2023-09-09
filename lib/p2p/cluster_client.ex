@@ -66,8 +66,7 @@ defmodule Ippan.ClusterClient do
           {:noreply, Map.put(new_state, :tRef, tRef), :hibernate}
 
         error ->
-          IO.inspect("ERROR 2")
-          IO.inspect(error)
+          IO.inspect("ERROR 2 #{inspect(error)}")
           retry_connect(state, retry, error)
       end
     else
@@ -84,12 +83,10 @@ defmodule Ippan.ClusterClient do
   end
 
   defp retry_connect(state, retry, error) do
-    IO.inspect("retry #{inspect(error)}")
-
     cond do
-      # error == :halt ->
-      #   IO.inspect(error)
-      #   {:stop, :normal, state}
+      error == :halt ->
+        IO.inspect(error)
+        {:stop, :normal, state}
 
       retry == :infinity ->
         :timer.sleep(@time_to_reconnect)
@@ -122,7 +119,7 @@ defmodule Ippan.ClusterClient do
     Logger.debug("tcp_closed | #{id}")
     @adapter.close(socket)
     @node.on_disconnect(state)
-    {:stop, state}
+    {:stop, :normal, state}
   end
 
   if Mix.env() == :dev do
