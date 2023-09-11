@@ -1,24 +1,26 @@
 defmodule Ippan.Block do
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
-          height: non_neg_integer(),
+          id: non_neg_integer() | nil,
           creator: non_neg_integer(),
-          round: non_neg_integer(),
+          height: non_neg_integer(),
+          round: non_neg_integer() | nil,
           hash: binary(),
           hashfile: binary() | nil,
           prev: binary() | nil,
           signature: binary(),
           timestamp: non_neg_integer(),
           count: non_neg_integer(),
+          rejected: pos_integer(),
           size: non_neg_integer(),
-          errors: pos_integer(),
           vsn: pos_integer()
         }
 
   @block_extension Application.compile_env(:ipnworker, :block_extension)
   defstruct [
-    :height,
+    :id,
     :creator,
+    :height,
     :round,
     :hash,
     :hashfile,
@@ -26,16 +28,17 @@ defmodule Ippan.Block do
     :signature,
     :timestamp,
     count: 0,
+    rejected: 0,
     size: 0,
-    errors: 0,
     vsn: 0
   ]
 
   @impl true
   def to_list(x) do
     [
-      x.height,
+      x.id,
       x.creator,
+      x.height,
       x.hash,
       x.prev,
       x.hashfile,
@@ -43,25 +46,27 @@ defmodule Ippan.Block do
       x.round,
       x.timestamp,
       x.count,
+      x.rejected,
       x.size,
-      x.errors
+      x.vsn
     ]
   end
 
   @impl true
-  def list_to_tuple([creator, height | _] = x) do
-    {{creator, height}, list_to_map(x)}
+  def list_to_tuple([id | _] = x) do
+    {id, list_to_map(x)}
   end
 
   @impl true
   def to_tuple(x) do
-    {{x.creator, x.height}, x}
+    {x.id, x}
   end
 
   @impl true
   def list_to_map([
-        height,
+        id,
         creator,
+        height,
         hash,
         prev,
         hashfile,
@@ -69,10 +74,12 @@ defmodule Ippan.Block do
         round,
         timestamp,
         count,
+        rejected,
         size,
-        errors
+        vsn
       ]) do
     %{
+      id: id,
       height: height,
       creator: creator,
       prev: prev,
@@ -82,13 +89,14 @@ defmodule Ippan.Block do
       timestamp: timestamp,
       round: round,
       count: count,
-      errors: errors,
-      size: size
+      rejected: rejected,
+      size: size,
+      vsn: vsn
     }
   end
 
   @impl true
-  def to_map({{_creator, _height}, x}), do: x
+  def to_map({_id, x}), do: x
 
   @spec put_hash(term()) :: term()
   def put_hash(
@@ -100,7 +108,7 @@ defmodule Ippan.Block do
           timestamp: timestamp
         }
       ) do
-    Map.put(block, :hash, compute_hash(height, creator, prev, hashfile, timestamp))
+    Map.put(block, :hash, compute_hash(creator, height, prev, hashfile, timestamp))
   end
 
   @spec put_signature(term()) :: term()
@@ -110,11 +118,10 @@ defmodule Ippan.Block do
   end
 
   @spec compute_hash(integer(), integer(), binary(), binary(), integer()) :: binary
-  def compute_hash(height, creator, prev, hashfile, timestamp) do
+  def compute_hash(creator, height, prev, hashfile, timestamp) do
     [
       to_string(creator),
       to_string(height),
-      # to_string(round),
       normalize(prev),
       normalize(hashfile),
       to_string(timestamp)

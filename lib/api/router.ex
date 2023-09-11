@@ -47,22 +47,30 @@ defmodule Ipnworker.Router do
                 end
 
               miner_id = :persistent_term.get(:miner)
+              inserted = :ets.insert_new(:hash, {hash, height})
 
-              :ets.insert(:hash, {hash, height})
+              cond do
+                inserted ->
+                  case ClusterNode.call(miner_id, "new_msg", [msg, msg_sig]) do
+                    %{"height" => height} ->
+                      json(conn, %{
+                        "hash" => Base.encode16(hash, case: :lower),
+                        "height" => height
+                      })
 
-              case ClusterNode.call(miner_id, "new_msg", [msg, msg_sig]) do
-                "ok" ->
-                  json(conn, %{"hash" => Base.encode16(hash, case: :lower)})
+                    %{"error" => message} ->
+                      :ets.delete(:hash, hash)
+                      :ets.delete(:dtx, dtx_key)
+                      send_resp(conn, 400, message)
 
-                %{"error" => message} ->
-                  :ets.delete(:hash, hash)
+                    {:error, _} ->
+                      :ets.delete(:hash, hash)
+                      :ets.delete(:dtx, dtx_key)
+                      send_resp(conn, 503, "Service unavailable")
+                  end
+
+                deferred ->
                   :ets.delete(:dtx, dtx_key)
-                  send_resp(conn, 400, message)
-
-                {:error, _} ->
-                  :ets.delete(:hash, hash)
-                  :ets.delete(:dtx, dtx_key)
-                  send_resp(conn, 503, "Service unavailable")
               end
 
             true ->

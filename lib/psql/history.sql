@@ -2,19 +2,14 @@ BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS history;
 
-DO $$
-BEGIN
-IF to_regtype('block_index') IS NULL THEN
-  CREATE TYPE block_index AS (creator BIGINT, height BIGINT);
-END IF;
-END$$;
-
 CREATE TABLE IF NOT EXISTS history.rounds(
   "id" BIGINT PRIMARY KEY NOT NULL,
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
-  "blocks" BIGINT NOT NULL,
-  "timestamp" BIGINT NOT NULL
+  "creator" BIGINT,
+  "coinbase" BIGINT,
+  "blocks" BIGINT,
+  "timestamp" BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS history.jackpot(
@@ -31,7 +26,9 @@ CREATE TABLE IF NOT EXISTS history.snapshot(
 );
 
 CREATE TABLE IF NOT EXISTS history.blocks(
-  "index" block_index PRIMARY KEY NOT NULL,
+  "id" BIGINT PRIMARY KEY,
+  "creator" BIGINT NOT NULL,
+  "height" BIGINT NOT NULL,
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
   "hashfile" BYTEA,
@@ -40,54 +37,54 @@ CREATE TABLE IF NOT EXISTS history.blocks(
   "timestamp" BIGINT NOT NULL,
   "count" INTEGER DEFAULT 0,
   "size" BIGINT DEFAULT 0,
-  "failures" INTEGER,
+  "rejected" INTEGER,
   "vsn" INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS history.events(
   "hash" BYTEA NOT NULL,
-  "timestamp" BIGINT NOT NULL,
+  "block_id" BIGINT,
   "type" INTEGER NOT NULL,
-  "block" block_index,
   "from" BYTEA,
+  "timestamp" BIGINT NOT NULL,
   "signature" BYTEA,
   "args" TEXT
 );
 
-CREATE INDEX IF NOT EXISTS events_block_idx ON history.events("block");
+CREATE INDEX IF NOT EXISTS events_block_id_idx ON history.events("block_id");
 
 
 DO $$
 BEGIN
 IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
-SELECT create_hypertable('history.rounds', 'timestamp', chunk_time_interval => 604800000, if_not_exists => TRUE);
-SELECT create_hypertable('history.jackpot', 'timestamp', chunk_time_interval => 604800000, if_not_exists => TRUE);
-SELECT create_hypertable('history.snapshot', 'timestamp', chunk_time_interval => 2592000000, if_not_exists => TRUE);
-SELECT create_hypertable('history.blocks', 'timestamp', chunk_time_interval => 604800000, if_not_exists => TRUE);
-SELECT create_hypertable('history.events', 'timestamp', chunk_time_interval => 86400000, if_not_exists => TRUE);
+SELECT create_hypertable('history.rounds', 'id', chunk_time_interval => 151200, if_not_exists => TRUE);
+SELECT create_hypertable('history.jackpot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
+SELECT create_hypertable('history.snapshot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
+SELECT create_hypertable('history.blocks', 'id', chunk_time_interval => 7560000, if_not_exists => TRUE);
+SELECT create_hypertable('history.events', 'block_id', chunk_time_interval => 7560000, if_not_exists => TRUE);
 END IF;
 END$$;
 
 
-PREPARE insert_event(bytea, bigint, integer, block_index, bytea, bytea, text)
+PREPARE insert_event(bytea, bigint, integer, bytea, bigint, bytea, text)
 AS INSERT INTO history.events VALUES($1,$2,$3,$4,$5,$6,$7);
 
 PREPARE last_events(integer, integer)
-AS SELECT hash, timestamp, "type", block, "from" FROM history.events ORDER BY (block).creator, (block).height DESC, timestamp DESC LIMIT $1 OFFSET $2;
+AS SELECT hash, timestamp, "type", block_id, "from" FROM history.events ORDER BY block_id DESC, timestamp DESC LIMIT $1 OFFSET $2;
 
-PREPARE get_details_event(bytea, integer)
-AS SELECT "signature", "args" FROM history.events WHERE hash = $1 AND timestamp = $2 LIMIT 1;
+PREPARE get_details_event(bytea, bigint)
+AS SELECT "signature", "args" FROM history.events WHERE hash = $1 AND block_id = $2 LIMIT 1;
 
 
-PREPARE insert_block(block_index, bytea, bytea, bytea, bigint, bytea, bigint, integer, bigint, integer, integer)
-AS INSERT INTO history.blocks VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);
+PREPARE insert_block(bigint, bigint, bigint, bytea, bytea, bytea, bigint, bytea, bigint, integer, bigint, integer, integer)
+AS INSERT INTO history.blocks VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13);
 
 PREPARE last_blocks(integer, integer)
-AS SELECT * FROM history.blocks ORDER BY "round", (index).creator, (index).height DESC LIMIT $1 OFFSET $2;
+AS SELECT * FROM history.blocks ORDER BY id DESC LIMIT $1 OFFSET $2;
 
 
-PREPARE insert_round(bigint, bytea, bytea, bigint, bigint)
-AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5);
+PREPARE insert_round(bigint, bytea, bytea, bigint, bigint, bigint, bigint)
+AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5,$6,$7);
 
 PREPARE last_rounds(integer, integer)
 AS SELECT * FROM history.rounds ORDER BY "id" LIMIT $1 OFFSET $2;

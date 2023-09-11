@@ -25,7 +25,7 @@ defmodule MapUtil do
   end
 
   def to_atoms(map, filter) do
-    for {k, v} <- Map.take(map, filter), into: %{}, do: {String.to_existing_atom(k), v}
+    for {k, v} <- Map.take(map, filter), into: %{}, do: {String.to_atom(k), v}
   end
 
   def to_existing_atoms(map) do
@@ -33,7 +33,7 @@ defmodule MapUtil do
   end
 
   def to_existing_atoms(map, filter) do
-    for {k, v} <- Map.take(map, filter), into: %{}, do: {String.to_atom(k), v}
+    for {k, v} <- Map.take(map, filter), into: %{}, do: {String.to_existing_atom(k), v}
   end
 
   def drop_nils(map) do
@@ -183,7 +183,6 @@ defmodule MapUtil do
     map
   end
 
-  @spec transform(map, any, any) :: any | no_return()
   def transform(map, key, fun) do
     val = Map.get(map, key)
 
