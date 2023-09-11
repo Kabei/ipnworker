@@ -37,7 +37,7 @@ defmodule Ipnworker.Router do
                   {hash, timestamp, key, type, _from, _wallet_validator, _args, _msg_sig, _size} =
                     msg
 
-                  case :ets.insert_new(:dtx, {{type, key}, hash, timestamp, height}) do
+                  case :ets.insert_new(:dmsg, {{type, key}, hash, timestamp, height}) do
                     true ->
                       {type, key}
 
@@ -60,17 +60,17 @@ defmodule Ipnworker.Router do
 
                     %{"error" => message} ->
                       :ets.delete(:hash, hash)
-                      :ets.delete(:dtx, dtx_key)
+                      :ets.delete(:dmsg, dtx_key)
                       send_resp(conn, 400, message)
 
                     {:error, _} ->
                       :ets.delete(:hash, hash)
-                      :ets.delete(:dtx, dtx_key)
+                      :ets.delete(:dmsg, dtx_key)
                       send_resp(conn, 503, "Service unavailable")
                   end
 
                 deferred ->
-                  :ets.delete(:dtx, dtx_key)
+                  :ets.delete(:dmsg, dtx_key)
               end
 
             true ->
