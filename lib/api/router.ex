@@ -30,47 +30,42 @@ defmodule Ipnworker.Router do
               height = :persistent_term.get(:height)
               sig = Fast64.decode64(sig)
               size = byte_size(body) + byte_size(sig)
-              {msg, msg_sig, deferred} = EventHandler.valid!(hash, body, sig, size, vid)
+
+              handle_result =
+                [deferred, msg, _msg_sig] = EventHandler.valid!(hash, body, sig, size, vid)
 
               dtx_key =
                 if deferred do
-                  {hash, timestamp, key, type, _from, _wallet_validator, _args, _msg_sig, _size} =
-                    msg
+                  [hash, type, key | _rest] = msg
 
-                  case :ets.insert_new(:dmsg, {{type, key}, hash, timestamp, height}) do
+                  case :ets.insert_new(:dhash, {{type, key}, hash}) do
                     true ->
                       {type, key}
 
                     false ->
-                      raise IppanError, "Invalid deferred transaction"
+                      raise IppanError, "Deferred transaction already exists"
                   end
                 end
 
               miner_id = :persistent_term.get(:miner)
-              inserted = :ets.insert_new(:hash, {hash, height})
+              :ets.insert(:hash, {hash, height})
 
-              cond do
-                inserted ->
-                  case ClusterNode.call(miner_id, "new_msg", [msg, msg_sig]) do
-                    %{"height" => height} ->
-                      json(conn, %{
-                        "hash" => Base.encode16(hash, case: :lower),
-                        "height" => height
-                      })
+              case ClusterNode.call(miner_id, "new_msg", handle_result) do
+                %{"height" => height} ->
+                  json(conn, %{
+                    "hash" => Base.encode16(hash, case: :lower),
+                    "height" => height
+                  })
 
-                    %{"error" => message} ->
-                      :ets.delete(:hash, hash)
-                      :ets.delete(:dmsg, dtx_key)
-                      send_resp(conn, 400, message)
+                %{"error" => message} ->
+                  :ets.delete(:hash, hash)
+                  :ets.delete(:dhash, dtx_key)
+                  send_resp(conn, 400, message)
 
-                    {:error, _} ->
-                      :ets.delete(:hash, hash)
-                      :ets.delete(:dmsg, dtx_key)
-                      send_resp(conn, 503, "Service unavailable")
-                  end
-
-                deferred ->
-                  :ets.delete(:dmsg, dtx_key)
+                {:error, _} ->
+                  :ets.delete(:hash, hash)
+                  :ets.delete(:dhash, dtx_key)
+                  send_resp(conn, 503, "Service unavailable")
               end
 
             true ->

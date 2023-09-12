@@ -13,7 +13,7 @@ defmodule Ippan.EventHandler do
   @block_extension Application.compile_env(:ipnworker, :block_extension)
 
   @spec valid!(binary, binary, binary, non_neg_integer(), non_neg_integer()) :: any | no_return()
-  def valid!(hash, msg, signature, size, node_validator_id) do
+  def valid!(hash, msg, signature, size, validator_node_id) do
     [type, timestamp, from | args] = @json.decode!(msg)
 
     if timestamp < :persistent_term.get(:time_expired, 0) do
@@ -25,23 +25,25 @@ defmodule Ippan.EventHandler do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
 
-    %{pubkey: wallet_pubkey, validator: wallet_validator} =
+    %{pubkey: wallet_pubkey} =
       case check_validator do
+        # check "from" validator subscribe
         1 ->
           result =
+            %{validator: wallet_validator} =
             SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
 
-          v = result.validator
-
-          if v != node_validator_id do
-            raise IppanRedirectError, "#{v}"
+          if wallet_validator != validator_node_id do
+            raise IppanRedirectError, "#{validator_node_id}"
           end
 
           result
 
+        # no check validator
         0 ->
           SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
 
+        # check "to" validator subscribe
         2 ->
           key = hd(args)
 
@@ -49,7 +51,7 @@ defmodule Ippan.EventHandler do
             %{validator: wallet_validator} =
             SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", key, Wallet)
 
-          if wallet_validator != node_validator_id do
+          if wallet_validator != validator_node_id do
             raise IppanRedirectError, "#{wallet_validator}"
           end
 
@@ -63,37 +65,35 @@ defmodule Ippan.EventHandler do
 
     case deferred do
       false ->
-        {
+        [
+          deferred,
           [
             hash,
-            timestamp,
             type,
             from,
-            wallet_validator,
             args,
+            timestamp,
             size
           ],
-          [msg, signature],
-          deferred
-        }
+          [msg, signature]
+        ]
 
       _true ->
         key = hd(args) |> to_string()
 
-        {
+        [
+          deferred,
           [
             hash,
-            timestamp,
-            key,
             type,
+            key,
             from,
-            wallet_validator,
             args,
+            timestamp,
             size
           ],
-          [msg, signature],
-          deferred
-        }
+          [msg, signature]
+        ]
     end
   end
 

@@ -6,7 +6,7 @@ defmodule MemTables do
 
   @tables_name %{
     hash: "hash",
-    dmsg: "dmsg",
+    dhash: "dhash",
     wallet: "wallet",
     token: "token",
     validator: "validator",
@@ -15,7 +15,7 @@ defmodule MemTables do
 
   @tables_opt %{
     hash: @set_named_opts,
-    dmsg: @set_named_opts,
+    dhash: @set_named_opts,
     wallet: @set_named_opts,
     validator: @set_named_opts,
     token: @set_named_opts,
