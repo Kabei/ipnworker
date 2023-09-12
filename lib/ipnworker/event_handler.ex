@@ -61,7 +61,16 @@ defmodule Ippan.EventHandler do
     sig_flag = :binary.at(from, 0)
     check_signature!(sig_flag, signature, hash, wallet_pubkey)
 
-    :ok = apply(mod, fun, args)
+    source = %{
+      conn: conn,
+      hash: hash,
+      size: size,
+      dets: :persistent_term.get(:dets_balance),
+      timestamp: timestamp,
+      validator: :persistent_term.get(:validator)
+    }
+
+    :ok = apply(mod, fun, [source | args])
 
     case deferred do
       false ->

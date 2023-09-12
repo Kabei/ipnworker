@@ -46,8 +46,21 @@ defmodule Ippan.ClusterNode do
     end)
 
     SqliteStore.sync(net_conn)
-
+    init_db()
     connect_to_miner()
+  end
+
+  defp init_db do
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmt)
+
+    case SqliteStore.fetch(conn, stmts, "last_block_created") do
+      nil ->
+        :persistent_term.put(:height, 0)
+
+      [_, _, height] ->
+        :persistent_term.put(:height, height)
+    end
   end
 
   defp connect_to_miner do
