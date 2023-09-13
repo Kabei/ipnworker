@@ -14,15 +14,15 @@ defmodule Ippan.TxHandler do
       raise(IppanError, "Invalid timestamp")
     end
 
-    %{deferred: deferred, mod: mod, fun: fun, validator: check_validator} = Funcs.lookup(type)
+    %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} = Funcs.lookup(type)
 
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
 
     %{pubkey: wallet_pubkey} =
-      case check_validator do
+      case type_of_verification do
         # check from variable
-        1 ->
+        0 ->
           result =
             %{validator: wallet_validator} =
             SqliteStore.lookup_map(:wallet, conn, stmts, "get_wallet", from, Wallet)
@@ -33,8 +33,8 @@ defmodule Ippan.TxHandler do
 
           result
 
-        # check first argument
-        0 ->
+        # get first argument
+        1 ->
           %{pubkey: args |> hd |> Fast64.decode64()}
 
         # check first argument
@@ -100,8 +100,6 @@ defmodule Ippan.TxHandler do
         ]
     end
   end
-
-
 
   # check signature by type
   # verify ed25519 signature
