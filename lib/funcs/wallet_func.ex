@@ -3,23 +3,25 @@ defmodule Ippan.Func.Wallet do
   require SqliteStore
 
   def subscribe(
-        %{conn: conn, stmts: stmts},
+        %{conn: conn, stmts: stmts, validator: validator},
         pubkey,
         validator_id,
         sig_type
-      )
-      when is_integer(validator_id) do
+      ) do
     pubkey = Fast64.decode64(pubkey)
     id = Address.hash(sig_type, pubkey)
 
     cond do
-      sig_type not in 0..2 ->
+      validator_id != validator.id ->
+        raise IppanError, "Invalid validator"
+
+      sig_type not in 0..1 ->
         raise IppanError, "Invalid signature type"
 
       byte_size(pubkey) > 897 ->
         raise IppanError, "Invalid pubkey size"
 
-      SqliteStore.exists?(conn, stmts, "exists_wallet", [id, sig_type]) ->
+      SqliteStore.exists?(conn, stmts, "exists_wallet", [id]) ->
         raise IppanError, "Already exists"
 
       true ->

@@ -13,11 +13,13 @@ defmodule Ipnworker.Application do
     load_keys()
 
     cluster_opts = Application.get_env(:ipnworker, :cluster)
+    balance_path = Path.join(:persistent_term.get(:store_dir), "balance.dets")
 
     children = [
       MemTables,
       MainStore,
       NetStore,
+      {DetsPlus, [name: :balance, file: balance_path]},
       {PgStore, [:init]},
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       {ThousandIsland, cluster_opts},

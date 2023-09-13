@@ -50,7 +50,7 @@ config :ipnworker, :note_max_size, 255
 config :ipnworker, :max_tx_amount, 1_000_000_000_000_000
 config :ipnworker, :timeout_refund, :timer.hours(72)
 config :ipnworker, :message_timeout, :timer.seconds(5)
-config :ipnworker, :max_validators, 10_000
+config :ipnworker, :max_validators, 20_000
 config :ipnworker, :max_tokens, 10_000
 
 # P2P client

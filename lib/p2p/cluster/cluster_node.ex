@@ -1,4 +1,6 @@
 defmodule Ippan.ClusterNode do
+  alias Ippan.BlockHandler
+  alias Ippan.Validator
   alias Ippan.{LocalNode, Network}
   require SqliteStore
 
@@ -27,6 +29,7 @@ defmodule Ippan.ClusterNode do
 
     SqliteStore.step(net_conn, net_stmts, "delete_nodes", [])
 
+    # register nodes from env_file Nodes argument
     String.split(nodes, ",", trim: true)
     |> Enum.reduce([], fn x, acc ->
       acc ++ [x |> String.trim() |> String.split("@", parts: 2)]
@@ -47,12 +50,16 @@ defmodule Ippan.ClusterNode do
 
     SqliteStore.sync(net_conn)
     init_db()
-    connect_to_miner()
+    # connect_to_miner()
   end
 
   defp init_db do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
+    vid = :persistent_term.get(:vid)
+    :persistent_term.put(:dets_balance, Process.whereis(:balance))
+    v = SqliteStore.lookup_map(:validator, conn, stmts, "get_validator", vid, Validator)
+    :persistent_term.put(:validator, v)
 
     case SqliteStore.fetch(conn, stmts, "last_block_created") do
       nil ->
@@ -90,8 +97,32 @@ defmodule Ippan.ClusterNode do
   end
 
   @impl Network
+  def handle_request("verify_block", data, _state) do
+    BlockHandler.verify_file!(data)
+  end
+
   def handle_request(_method, _data, _state), do: "not found"
 
   @impl Network
+  def handle_message("validator.update", %{"id" => vid, "args" => args}, _state) do
+    map = MapUtil.to_atoms(args)
+
+    if :persistent_term.get(:vid) == vid do
+      validator = :persistent_term.get(:validator)
+      :persistent_term.put(:validator, Map.merge(validator, map))
+    end
+  end
+
+  def handle_message("round.new", %{"id" => id, "blocks" => blocks}, _state) do
+    vid = :persistent_term.get(:vid)
+    :persistent_term.put(:round, id)
+
+    Enum.each(blocks, fn %{"creator" => creator, "height" => height} ->
+      if creator == vid do
+        :persistent_term.put(:height, height)
+      end
+    end)
+  end
+
   def handle_message(_event, _data, _state), do: :ok
 end

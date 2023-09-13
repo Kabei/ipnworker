@@ -2,8 +2,7 @@ defmodule Ipnworker.Router do
   use Plug.Router
   alias Ippan.Validator
   alias Ippan.ClusterNode
-  alias Ippan.EventHandler
-  # alias Phoenix.PubSub
+  alias Ippan.TxHandler
   require SqliteStore
   require Logger
 
@@ -15,8 +14,6 @@ defmodule Ipnworker.Router do
   plug(:dispatch)
 
   post "/v1/call" do
-    IO.inspect(conn)
-
     try do
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
@@ -32,7 +29,7 @@ defmodule Ipnworker.Router do
               size = byte_size(body) + byte_size(sig)
 
               handle_result =
-                [deferred, msg, _msg_sig] = EventHandler.valid!(hash, body, sig, size, vid)
+                [deferred, msg, _msg_sig] = TxHandler.valid!(hash, body, sig, size, vid)
 
               dtx_key =
                 if deferred do
