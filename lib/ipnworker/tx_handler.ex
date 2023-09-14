@@ -10,6 +10,7 @@ defmodule Ippan.TxHandler do
   def valid!(hash, msg, signature, size, validator_node_id) do
     [type, timestamp, from | args] = @json.decode!(msg)
 
+    # if timestamp < :persistent_term.get(:time_expired, 0) or timestamp > :os.system_time(:millisecond) + 20000 do
     if timestamp < :persistent_term.get(:time_expired, 0) do
       raise(IppanError, "Invalid timestamp")
     end
@@ -52,8 +53,8 @@ defmodule Ippan.TxHandler do
           result
       end
 
-    sig_flag = :binary.first(from)
-    check_signature!(sig_flag, signature, hash, wallet_pubkey)
+    [sig_type, _] = String.split(from, "x", parts: 2)
+    check_signature!(sig_type, signature, hash, wallet_pubkey)
 
     source = %{
       conn: conn,
@@ -103,7 +104,7 @@ defmodule Ippan.TxHandler do
 
   # check signature by type
   # verify ed25519 signature
-  defp check_signature!(48, signature, hash, wallet_pubkey) do
+  defp check_signature!("0", signature, hash, wallet_pubkey) do
     if Cafezinho.Impl.verify(
          signature,
          hash,
@@ -113,7 +114,7 @@ defmodule Ippan.TxHandler do
   end
 
   # verify falcon-512 signature
-  defp check_signature!(49, signature, hash, wallet_pubkey) do
+  defp check_signature!("1", signature, hash, wallet_pubkey) do
     if Falcon.verify(hash, signature, wallet_pubkey) != :ok,
       do: raise(IppanError, "Invalid signature verify")
   end
