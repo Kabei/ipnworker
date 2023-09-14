@@ -48,21 +48,21 @@ defmodule Ipnworker.Router do
               :ets.insert(:hash, {hash, height})
 
               case ClusterNode.call(miner_id, "new_msg", handle_result) do
-                %{"height" => height} ->
+                {:ok, %{"height" => height}} ->
                   json(conn, %{
                     "hash" => Base.encode16(hash, case: :lower),
                     "height" => height
                   })
 
-                %{"error" => message} ->
-                  :ets.delete(:hash, hash)
-                  :ets.delete(:dhash, dtx_key)
-                  send_resp(conn, 400, message)
-
-                {:error, _} ->
+                {:error, :timeout} ->
                   :ets.delete(:hash, hash)
                   :ets.delete(:dhash, dtx_key)
                   send_resp(conn, 503, "Service unavailable")
+
+                {:error, message} ->
+                  :ets.delete(:hash, hash)
+                  :ets.delete(:dhash, dtx_key)
+                  send_resp(conn, 400, message)
               end
 
             true ->
@@ -102,9 +102,9 @@ defmodule Ipnworker.Router do
     end
   end
 
-  get "/v1/download/block/:vid/:height" do
-    data_dir = Application.get_env(:ipnworker, :block_dir)
-    block_path = Path.join([data_dir, "#{vid}.#{height}.#{@block_extension}"])
+  get "/v1/download/block/decoded/:vid/:height" do
+    decode_dir = Application.get_env(:ipnworker, :decode_dir)
+    block_path = Path.join([decode_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
       conn
@@ -115,9 +115,9 @@ defmodule Ipnworker.Router do
     end
   end
 
-  get "/v1/download/block/decoded/:vid/:height" do
-    decode_dir = Application.get_env(:ipnworker, :decode_dir)
-    block_path = Path.join([decode_dir, "#{vid}.#{height}.#{@block_extension}"])
+  get "/v1/download/block/:vid/:height" do
+    data_dir = Application.get_env(:ipnworker, :block_dir)
+    block_path = Path.join([data_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
       conn
