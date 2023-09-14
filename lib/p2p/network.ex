@@ -179,7 +179,7 @@ defmodule Ippan.Network do
             handle_message(event, data, state)
 
           m ->
-            Logger.debug(m)
+            Logger.debug(inspect(m))
             :ok
         end
       end
