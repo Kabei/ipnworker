@@ -49,11 +49,11 @@ defmodule Ippan.ClusterNode do
     end)
 
     SqliteStore.sync(net_conn)
-    init_db()
-    # connect_to_miner()
+    init()
+    connect_to_miner()
   end
 
-  defp init_db do
+  defp init do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
     vid = :persistent_term.get(:vid)

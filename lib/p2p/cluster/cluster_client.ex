@@ -39,7 +39,7 @@ defmodule Ippan.ClusterClient do
     connect(state)
   end
 
-  def connect(
+  defp connect(
         %{id: node_id, hostname: hostname, port: port, net_pubkey: net_pubkey, opts: opts} =
           state
       ) do

@@ -118,13 +118,6 @@ defmodule Ippan.TxHandler do
       do: raise(IppanError, "Invalid signature verify")
   end
 
-  # verify secp256k1 signature
-  # defp check_signature!("2", signature, hash, wallet_pubkey) do
-  #   if @libsecp256k1.verify(hash, signature, wallet_pubkey) !=
-  #        :ok,
-  #      do: raise(IppanError, "Invalid signature verify")
-  # end
-
   defp check_signature!(_, _signature, _hash, _wallet_pubkey) do
     raise(IppanError, "Signature type not supported")
   end
