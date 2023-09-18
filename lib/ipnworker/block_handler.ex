@@ -4,27 +4,45 @@ defmodule Ippan.BlockHandler do
   import Ippan.Block,
     only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
 
-  @max_block_size Application.compile_env(:ipnworker, :block_max_size)
+  @version Application.compile_env(:ipnworker, :version)
   @block_extension Application.compile_env(:ipnworker, :block_extension)
+  @max_block_data_size Application.compile_env(:ipnworker, :max_block_data_size)
+  @max_block_size Application.compile_env(:ipnworker, :block_max_size)
 
-  def generate_files(creator_id, block_id) do
-    filename = "#{creator_id}.#{block_id}.#{@block_extension}"
+  # Generate local block and decode block file
+  @spec generate_files(creator_id :: integer(), height :: integer()) :: map | nil
+  def generate_files(creator_id, height) do
+    filename = "#{creator_id}.#{height}.#{@block_extension}"
     block_path = Path.join(Application.get_env(:ipnworker, :block_dir), filename)
     decode_path = Path.join(Application.get_env(:ipnworker, :decode_dir), filename)
+    ets_msg = :ets.whereis(:msg)
 
-    {acc_msg, acc_decode} =
-      do_iterate(:ets.first(:msg), %{}, %{}, 0)
+    if :ets.info(ets_msg, :size) > 0 do
+      {acc_msg, acc_decode} =
+        do_iterate(ets_msg, :ets.first(ets_msg), %{}, %{}, 0)
 
-    File.write(block_path, encode_file!(acc_msg))
+      content = encode_file!(%{"msg" => acc_msg, "vsn" => @version})
 
-    File.write(decode_path, encode_file!(acc_decode))
+      File.write(block_path, content)
+      File.write(decode_path, encode_file!(%{"msg" => acc_decode, "vsn" => @version}))
+
+      {:ok, file_info} = File.stat(block_path)
+
+      %{
+        count: length(acc_msg),
+        creator: creator_id,
+        hash: hash_file(block_path),
+        height: height,
+        size: file_info.size
+      }
+    end
   end
 
-  defp do_iterate(:"$end_of_table", messages, decode_messages, _),
+  defp do_iterate(_ets_msg, :"$end_of_table", messages, decode_messages, _),
     do: {Map.values(messages), Map.values(decode_messages)}
 
-  defp do_iterate(key, messages, decode_message, acc_size) do
-    [msg] = :ets.lookup(:msg, key)
+  defp do_iterate(ets_msg, key, messages, decode_message, acc_size) do
+    [msg] = :ets.lookup(ets_msg, key)
 
     {acc_msg, acc_decode, size} =
       case msg do
@@ -33,7 +51,6 @@ defmodule Ippan.BlockHandler do
           timestamp,
           type,
           from,
-          wallet_validator,
           args,
           msg_sig,
           size
@@ -46,7 +63,6 @@ defmodule Ippan.BlockHandler do
               timestamp,
               type,
               from,
-              wallet_validator,
               args,
               size
             ])
@@ -59,7 +75,6 @@ defmodule Ippan.BlockHandler do
           _key,
           type,
           from,
-          wallet_validator,
           args,
           msg_sig,
           size
@@ -72,7 +87,6 @@ defmodule Ippan.BlockHandler do
               timestamp,
               type,
               from,
-              wallet_validator,
               args,
               size
             ])
@@ -82,10 +96,10 @@ defmodule Ippan.BlockHandler do
 
     acc_size = acc_size + size
 
-    case @max_block_size > acc_size do
+    case @max_block_data_size > acc_size do
       false ->
-        :ets.delete(:msg, key)
-        do_iterate(:ets.next(:msg, key), acc_msg, acc_decode, acc_size)
+        :ets.delete(ets_msg, key)
+        do_iterate(ets_msg, :ets.next(ets_msg, key), acc_msg, acc_decode, acc_size)
 
       _true ->
         {Map.values(acc_msg), Map.values(acc_decode)}

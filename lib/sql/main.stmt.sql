@@ -109,7 +109,7 @@ SELECT count(1) FROM blockchain.block WHERE id IS NULL;
 SELECT count(1) FROM blockchain.block WHERE creator=?;
 
 --name: last_block_created
-SELECT id, height, hash FROM blockchain.block WHERE creator=? ORDER BY id DESC LIMIT 1;
+SELECT id, hash FROM blockchain.block WHERE creator=? ORDER BY height DESC LIMIT 1;
 
 --name: get_round_blocks
 SELECT id FROM blockchain.block WHERE round = ? ORDER BY id ASC;
@@ -122,7 +122,7 @@ SELECT count(1) FROM blockchain.block WHERE round = ?;
 
 
 --name: insert_round
-INSERT INTO blockchain.round VALUES(?1,?2,?3,?4,?5,?6,?7);
+INSERT INTO blockchain.round VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11);
 
 --name: get_round
 SELECT * FROM blockchain.round WHERE id = ? LIMIT 1;

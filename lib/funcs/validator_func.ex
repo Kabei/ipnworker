@@ -25,7 +25,7 @@ defmodule Ippan.Func.Validator do
     map_filter = Map.take(opts, Validator.optionals())
     pubkey = Fast64.decode64(pubkey)
     net_pubkey = Fast64.decode64(net_pubkey)
-    stake = EnvStore.validator_stake()
+    next_id = SqliteStore.one(conn, stmts, "next_id_validator")
 
     cond do
       fee_type == 0 and fee < 1 ->
@@ -52,14 +52,17 @@ defmodule Ippan.Func.Validator do
       SqliteStore.exists?(conn, stmts, "exists_host_validator", hostname) ->
         raise IppanError, "Validator already exists"
 
-      @max_validators < SqliteStore.total(conn, stmts, "total_validators") ->
+      @max_validators <= next_id ->
         raise IppanError, "Maximum validators exceeded"
 
       true ->
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_url(:avatar)
 
-        case BalanceStore.has_balance?(dets, {account_id, @token}, stake) do
+        price = Validator.calc_price(next_id)
+        balance_key = BalanceStore.gen_key(account_id, @token)
+
+        case BalanceStore.has_balance?(dets, balance_key, price) do
           false ->
             raise IppanError, "Insufficient balance"
 
@@ -74,7 +77,7 @@ defmodule Ippan.Func.Validator do
 
     cond do
       opts == %{} ->
-        raise IppanError, "options is empty"
+        raise IppanError, "Options is empty"
 
       map_filter != opts ->
         raise IppanError, "Invalid option field"

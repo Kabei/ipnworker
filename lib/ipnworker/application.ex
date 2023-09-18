@@ -12,7 +12,6 @@ defmodule Ipnworker.Application do
     make_folders()
     load_keys()
 
-    cluster_opts = Application.get_env(:ipnworker, :cluster)
     balance_path = Path.join(:persistent_term.get(:store_dir), "balance.dets")
 
     children = [
@@ -22,7 +21,6 @@ defmodule Ipnworker.Application do
       {DetsPlus, [name: :balance, file: balance_path]},
       {PgStore, [:init]},
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
-      {ThousandIsland, cluster_opts},
       ClusterNode,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]

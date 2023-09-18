@@ -30,12 +30,15 @@ defmodule Ippan.Func.Tx do
              account_id != to and
              byte_size(note) <= @note_max_size do
     fee_amount = Utils.calc_fees!(validator.fee_type, validator.fee, amount, size)
+    balance_key = BalanceStore.gen_key(account_id, token_id)
 
     if @token == token_id do
-      BalanceStore.has_balance?(dets, {account_id, token_id}, amount + fee_amount)
+      BalanceStore.has_balance?(dets, balance_key, amount + fee_amount)
     else
-      BalanceStore.has_balance?(dets, {account_id, token_id}, amount) and
-        BalanceStore.has_balance?(dets, {account_id, @token}, fee_amount)
+      native_balance_key = BalanceStore.gen_key(account_id, @token)
+
+      BalanceStore.has_balance?(dets, balance_key, amount) and
+        BalanceStore.has_balance?(dets, native_balance_key, fee_amount)
     end
     |> case do
       true ->
@@ -91,12 +94,13 @@ defmodule Ippan.Func.Tx do
   def burn(%{id: account_id, conn: conn, dets: dets, stmts: stmts}, token_id, amount)
       when is_integer(amount) and amount > 0 do
     token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
+    balance_key = BalanceStore.gen_key(account_id, token_id)
 
     cond do
       "burn" not in token.props ->
         raise IppanError, "Token property invalid"
 
-      not BalanceStore.has_balance?(dets, {account_id, token_id}, amount) ->
+      not BalanceStore.has_balance?(dets, balance_key, amount) ->
         raise IppanError, "Token property invalid"
 
       true ->

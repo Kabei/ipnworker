@@ -42,13 +42,14 @@ CREATE TABLE IF NOT EXISTS history.blocks(
 );
 
 CREATE TABLE IF NOT EXISTS history.events(
-  "hash" BYTEA NOT NULL,
   "block_id" BIGINT,
+  "hash" BYTEA NOT NULL,
   "type" INTEGER NOT NULL,
   "from" BYTEA,
   "timestamp" BIGINT NOT NULL,
   "signature" BYTEA,
-  "args" TEXT
+  "args" TEXT,
+  PRIMARY KEY("block_id", "hash")
 );
 
 CREATE INDEX IF NOT EXISTS events_block_id_idx ON history.events("block_id");
@@ -66,11 +67,11 @@ END IF;
 END$$;
 
 
-PREPARE insert_event(bytea, bigint, integer, bytea, bigint, bytea, text)
+PREPARE insert_event(bigint, bytea, integer, bytea, bigint, bytea, text)
 AS INSERT INTO history.events VALUES($1,$2,$3,$4,$5,$6,$7);
 
 PREPARE last_events(integer, integer)
-AS SELECT hash, timestamp, "type", block_id, "from" FROM history.events ORDER BY block_id DESC, timestamp DESC LIMIT $1 OFFSET $2;
+AS SELECT block_id, hash, timestamp, "type", "from" FROM history.events ORDER BY block_id DESC, timestamp DESC LIMIT $1 OFFSET $2;
 
 PREPARE get_details_event(bytea, bigint)
 AS SELECT "signature", "args" FROM history.events WHERE hash = $1 AND block_id = $2 LIMIT 1;

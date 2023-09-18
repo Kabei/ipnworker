@@ -8,6 +8,7 @@ defmodule Ippan.ClusterNode do
     app: :ipnworker,
     name: :cluster,
     table: :cnw,
+    server: Ippan.ClusterNode.Server,
     pubsub: :cluster,
     topic: "cluster",
     conn_opts: [reconnect: true, retry: :infinity],
@@ -61,7 +62,7 @@ defmodule Ippan.ClusterNode do
     v = SqliteStore.lookup_map(:validator, conn, stmts, "get_validator", vid, Validator)
     :persistent_term.put(:validator, v)
 
-    case SqliteStore.fetch(conn, stmts, "last_block_created") do
+    case SqliteStore.fetch(conn, stmts, "last_block_created", []) do
       nil ->
         :persistent_term.put(:height, 0)
 

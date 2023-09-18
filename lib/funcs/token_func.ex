@@ -37,7 +37,7 @@ defmodule Ippan.Func.Token do
       SqliteStore.exists?(conn, stmts, "exists_token", id) ->
         raise IppanError, "Token already exists"
 
-      @max_tokens < SqliteStore.total(conn, stmts, "total_token") ->
+      @max_tokens < SqliteStore.one(conn, stmts, "total_token") ->
         raise IppanError, "Maximum tokens exceeded"
 
       true ->
@@ -47,7 +47,9 @@ defmodule Ippan.Func.Token do
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_any(:opts, Token.props())
 
-        case BalanceStore.has_balance?(dets, {account_id, @token}, price) do
+        balance_key = BalanceStore.gen_key(account_id, @token)
+
+        case BalanceStore.has_balance?(dets, balance_key, price) do
           false ->
             raise IppanError, "Insufficient balance"
 

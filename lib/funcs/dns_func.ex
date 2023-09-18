@@ -9,8 +9,6 @@ defmodule Ippan.Func.Dns do
   @data_range 1..255
   @ttl_range 0..2_147_483_648
 
-  # @dns_types ~w(A NS CNAME SOA PTR MX TXT AAAA SPF SRV DS SSHFP RRSIG NSEC DNSKEY CAA URI HINFO WKS)
-
   def new(
         %{
           id: account_id,
@@ -31,6 +29,7 @@ defmodule Ippan.Func.Dns do
     {_subdomain, domain} = Domain.split(fullname)
 
     dns_type = DNS.type_to_alpha(type)
+    balance_key = BalanceStore.gen_key(account_id, @token)
 
     cond do
       not Match.hostname?(fullname) ->
@@ -45,7 +44,7 @@ defmodule Ippan.Func.Dns do
       not SqliteStore.exists?(conn, stmts, "exists_domain", [domain, account_id]) ->
         raise IppanError, "Invalid owner"
 
-      not BalanceStore.has_balance?(dets, {account_id, @token}, size) ->
+      not BalanceStore.has_balance?(dets, balance_key, size) ->
         raise IppanError, "Insufficient balance"
 
       true ->
@@ -68,6 +67,8 @@ defmodule Ippan.Func.Dns do
     dns =
       SqliteStore.lookup_map(:dns, conn, stmts, "get_dns", {domain, dns_hash}, DNS)
 
+    balance_key = BalanceStore.gen_key(account_id, @token)
+
     cond do
       map_filter == %{} ->
         raise IppanError, "Invalid optional arguments"
@@ -78,7 +79,7 @@ defmodule Ippan.Func.Dns do
       not SqliteStore.exists?(conn, stmts, "owner_domain", [domain, account_id]) ->
         raise IppanError, "Invalid owner"
 
-      not BalanceStore.has_balance?(dets, {account_id, @token}, size) ->
+      not BalanceStore.has_balance?(dets, balance_key, size) ->
         raise IppanError, "Insufficient balance"
 
       not match?(
