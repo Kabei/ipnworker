@@ -87,7 +87,7 @@ DELETE FROM dns.dns WHERE domain = ?1 AND name=?2;
 DELETE FROM dns.dns WHERE domain = ?1;
 
 
---name: next_id_block
+--name: next_block_id
 SELECT COALESCE((SELECT id FROM blockchain.block ORDER BY id DESC LIMIT 1) + 1, 0);
 
 --name: insert_block
@@ -95,6 +95,9 @@ INSERT INTO blockchain.block values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);
 
 --name: exists_block
 SELECT 1 FROM blockchain.block WHERE id=? LIMIT 1;
+
+--name: exists_local_block
+SELECT 1 FROM blockchain.block WHERE creator=? AND height=? LIMIT 1;
 
 --name: get_block
 SELECT * FROM blockchain.block WHERE id=? LIMIT 1;
@@ -109,7 +112,13 @@ SELECT count(1) FROM blockchain.block WHERE id IS NULL;
 SELECT count(1) FROM blockchain.block WHERE creator=?;
 
 --name: last_block_created
-SELECT id, hash FROM blockchain.block WHERE creator=? ORDER BY height DESC LIMIT 1;
+SELECT height, hash FROM blockchain.block WHERE creator=? ORDER BY height DESC LIMIT 1;
+
+--name: last_block_id
+SELECT id FROM blockchain.block ORDER BY id DESC LIMIT 1;
+
+--name: last_block_height_created
+SELECT height FROM blockchain.block WHERE creator=? ORDER BY height DESC LIMIT 1;
 
 --name: get_round_blocks
 SELECT id FROM blockchain.block WHERE round = ? ORDER BY id ASC;
