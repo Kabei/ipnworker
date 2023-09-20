@@ -124,11 +124,23 @@ defmodule Ippan.ClusterNode do
     vid = :persistent_term.get(:vid)
     :persistent_term.put(:round, id)
 
-    Enum.each(blocks, fn %{"creator" => creator_id, "height" => height} ->
-      if creator_id == vid do
+    Enum.reduce(blocks, -1, fn %{"creator" => creator_id, "height" => height}, old_height ->
+      if creator_id == vid and height > old_height do
         :persistent_term.put(:height, height)
+        height
+      else
+        old_height
       end
     end)
+
+    List.last(blocks)
+    |> case do
+      nil ->
+        :ok
+
+      %{"id" => block_id} ->
+        :persistent_term.put(:block_id, block_id)
+    end
   end
 
   def handle_message(_event, _data, _state), do: :ok
