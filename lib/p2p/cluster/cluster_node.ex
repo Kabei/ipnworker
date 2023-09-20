@@ -124,8 +124,8 @@ defmodule Ippan.ClusterNode do
     vid = :persistent_term.get(:vid)
     :persistent_term.put(:round, id)
 
-    Enum.each(blocks, fn %{"creator" => creator, "height" => height} ->
-      if creator == vid do
+    Enum.each(blocks, fn %{"creator" => creator_id, "height" => height} ->
+      if creator_id == vid do
         :persistent_term.put(:height, height)
       end
     end)

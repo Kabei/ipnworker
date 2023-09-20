@@ -163,7 +163,7 @@ defmodule Ippan.BlockHandler do
         raise(IppanError, "Invalid block version")
       end
 
-      decode_events =
+      decode_msgs =
         Enum.reduce(messages, %{}, fn [msg, sig], acc ->
           hash = Blake3.hash(msg)
           size = byte_size(msg) + byte_size(sig)
@@ -175,13 +175,13 @@ defmodule Ippan.BlockHandler do
         end)
         |> Map.values()
 
-      if count != length(decode_events) do
+      if count != length(decode_msgs) do
         raise IppanError, "Invalid block messages count"
       end
 
       export_path = Path.join(:persistent_term.get(:decode_dir), filename)
 
-      :ok = File.write(export_path, encode_file!(decode_events))
+      :ok = File.write(export_path, encode_file!(decode_msgs))
     rescue
       e ->
         {:error, e.message}
