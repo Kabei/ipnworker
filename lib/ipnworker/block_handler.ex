@@ -106,7 +106,7 @@ defmodule Ippan.BlockHandler do
     end
   end
 
-  @spec verify_file!(map) :: :ok | no_return()
+  @spec verify_file!(map) :: :ok | {:error, term()}
   def verify_file!(%{
         "height" => height,
         "hash" => hash,
@@ -121,12 +121,12 @@ defmodule Ippan.BlockHandler do
         "hostname" => hostname,
         "pubkey" => pubkey
       }) do
-    remote_url = Block.url(hostname, creator_id, height)
-    output_path = Block.block_path(creator_id, height)
-    file_exists = File.exists?(output_path)
-    filename = Path.basename(output_path)
-
     try do
+      remote_url = Block.url(hostname, creator_id, height)
+      output_path = Block.block_path(creator_id, height)
+      file_exists = File.exists?(output_path)
+      filename = Path.basename(output_path)
+
       unless file_exists do
         :ok = Download.from(remote_url, output_path, @max_block_size)
       else
@@ -157,7 +157,7 @@ defmodule Ippan.BlockHandler do
       end
 
       {:ok, content} = File.read(output_path)
-      %{vsn: vsn, data: messages} = decode_file!(content)
+      %{"vsn" => vsn, "data" => messages} = decode_file!(content)
 
       if vsn != version do
         raise(IppanError, "Invalid block version")

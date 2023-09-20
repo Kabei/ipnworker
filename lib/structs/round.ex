@@ -5,16 +5,44 @@ defmodule Ippan.Round do
           hash: binary(),
           prev: binary() | nil,
           creator: non_neg_integer(),
+          signature: binary(),
           coinbase: non_neg_integer(),
-          blocks: non_neg_integer(),
-          timestamp: non_neg_integer()
+          count: non_neg_integer(),
+          tx_count: non_neg_integer(),
+          size: non_neg_integer(),
+          blocks: [map()] | nil,
+          extra: [any()] | nil
         }
 
-  defstruct [:id, :hash, :prev, :creator, :coinbase, :blocks, :timestamp]
+  defstruct [
+    :id,
+    :hash,
+    :prev,
+    :creator,
+    :signature,
+    :coinbase,
+    :count,
+    :tx_count,
+    :size,
+    :blocks,
+    :extra
+  ]
 
   @impl true
   def to_list(x) do
-    [x.id, x.hash, x.prev, x.creator, x.coinbase, x.blocks, x.timestamp]
+    [
+      x.id,
+      x.hash,
+      x.prev,
+      x.creator,
+      x.signature,
+      x.coinbase,
+      x.count,
+      x.tx_count,
+      x.size,
+      CBOR.encode(x.blocks),
+      CBOR.encode(x.extra)
+    ]
   end
 
   @impl true
@@ -28,15 +56,31 @@ defmodule Ippan.Round do
   end
 
   @impl true
-  def list_to_map([id, hash, prev, creator, coinbase, blocks, timestamp]) do
+  def list_to_map([
+        id,
+        hash,
+        prev,
+        creator,
+        signature,
+        coinbase,
+        count,
+        tx_count,
+        blocks,
+        extra,
+        size
+      ]) do
     %{
       id: id,
       hash: hash,
       prev: prev,
       creator: creator,
+      signature: signature,
       coinbase: coinbase,
-      blocks: blocks,
-      timestamp: timestamp
+      count: count,
+      tx_count: tx_count,
+      size: size,
+      blocks: CBOR.Decoder.decode(blocks) |> elem(0),
+      extra: CBOR.Decoder.decode(extra) |> elem(0)
     }
   end
 
@@ -52,6 +96,15 @@ defmodule Ippan.Round do
        hashes)
     |> IO.iodata_to_binary()
     |> Blake3.hash()
+  end
+
+  def reward(0, _txs_rejected, _size), do: 0
+  def reward(_tx_count, _txs_rejected, 0), do: 0
+
+  def reward(txs_count, txs_rejected, size) do
+    ((txs_count - txs_rejected) / size)
+    |> Kernel.*(1000)
+    |> trunc()
   end
 
   defp normalize(nil), do: ""

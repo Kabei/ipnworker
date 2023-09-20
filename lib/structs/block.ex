@@ -16,7 +16,7 @@ defmodule Ippan.Block do
           vsn: pos_integer()
         }
 
-  @block_extension Application.compile_env(:ipnworker, :block_extension)
+  @block_extension Application.compile_env(:ipncore, :block_extension)
   defstruct [
     :id,
     :creator,
@@ -32,6 +32,11 @@ defmodule Ippan.Block do
     size: 0,
     vsn: 0
   ]
+
+  @spec fields :: [binary()]
+  def fields do
+    ~w(id creator height round hash hashfile prev signature timestamp count rejected size vsn)
+  end
 
   @impl true
   def to_list(x) do
@@ -136,18 +141,28 @@ defmodule Ippan.Block do
     Cafezinho.Impl.sign(hash, privkey)
   end
 
+  def hashes_and_count_txs_and_size(blocks) do
+    Enum.reduce(blocks, {[], 0, 0}, fn x, {acc_hash, acc_tx, acc_size} ->
+      {
+        acc_hash ++ Map.get(x, "hash"),
+        acc_tx + Map.get(x, "count"),
+        acc_size + Map.get(x, "size")
+      }
+    end)
+  end
+
   def sign_block_confirm(hash) do
     privkey = :persistent_term.get(:privkey)
     Cafezinho.Impl.sign("#{hash} is valid", privkey)
   end
 
   def block_path(validator_id, height) do
-    block_dir = Application.get_env(:ipnworker, :block_dir)
+    block_dir = :persistent_term.get(:block_dir)
     Path.join([block_dir, "#{validator_id}.#{height}.#{@block_extension}"])
   end
 
   def decode_path(validator_id, height) do
-    decode_dir = Application.get_env(:ipnworker, :decode_dir)
+    decode_dir = :persistent_term.get(:decode_dir)
     Path.join([decode_dir, "#{validator_id}.#{height}.#{@block_extension}"])
   end
 
@@ -156,12 +171,12 @@ defmodule Ippan.Block do
   end
 
   def cluster_block_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipnworker, :http)[:port]
+    port = Application.get_env(:ipncore, :http)[:port]
     "http://#{hostname}:#{port}/v1/download/block/#{creator_id}/#{height}"
   end
 
   def cluster_decode_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipnworker, :http)[:port]
+    port = Application.get_env(:ipncore, :http)[:port]
     "http://#{hostname}:#{port}/v1/download/block/decoded/#{creator_id}/#{height}"
   end
 
