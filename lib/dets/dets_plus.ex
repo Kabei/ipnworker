@@ -105,6 +105,7 @@ defmodule DetsPlus do
     filename = Keyword.get(args, :file, name) |> do_string()
     auto_save = Keyword.get(args, :auto_save, :infinity)
     mode = Keyword.get(args, :access, :read_write)
+    var_name = Keyword.get(args, :var, :dets)
 
     state =
       with true <- File.exists?(filename),
@@ -143,7 +144,9 @@ defmodule DetsPlus do
         mode: mode
     }
 
-    GenServer.start_link(__MODULE__, state, hibernate_after: 5_000, name: name)
+    {:ok, pid} = GenServer.start_link(__MODULE__, state, hibernate_after: 5_000, name: name)
+    :persistent_term.put(var_name, pid)
+    {:ok, pid}
   end
 
   defmacrop call(pid, cmd, timeout \\ :infinity) do
@@ -1332,7 +1335,7 @@ defmodule DetsPlus do
     if Bloom.lookup(state, hash) and slot_count > 0 do
       slot = slot_idx(slot_count, hash)
 
-      {{_key, ret}, _n} =
+      {ret, _n} =
         file_lookup_slot_loop(state, key, hash, table_offset(state, table_idx), slot, slot_count)
 
       ret
