@@ -78,9 +78,9 @@ defmodule Ippan.TxHandler do
             from,
             args,
             timestamp,
+            [msg, signature],
             size
-          ],
-          [msg, signature]
+          ]
         ]
 
       _true ->
@@ -95,9 +95,9 @@ defmodule Ippan.TxHandler do
             from,
             args,
             timestamp,
+            [msg, signature],
             size
-          ],
-          [msg, signature]
+          ]
         ]
     end
   end

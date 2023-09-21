@@ -29,7 +29,7 @@ defmodule Ipnworker.Router do
               size = byte_size(body) + byte_size(sig)
 
               handle_result =
-                [deferred, msg, _msg_sig] = TxHandler.valid!(hash, body, sig, size, vid)
+                [deferred, msg] = TxHandler.valid!(hash, body, sig, size, vid)
 
               dtx_key =
                 if deferred do
