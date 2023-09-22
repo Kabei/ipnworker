@@ -16,7 +16,7 @@ defmodule Ippan.Block do
           vsn: pos_integer()
         }
 
-  @block_extension Application.compile_env(:ipncore, :block_extension)
+  @block_extension Application.compile_env(:ipnworker, :block_extension)
   defstruct [
     :id,
     :creator,
@@ -142,11 +142,13 @@ defmodule Ippan.Block do
   end
 
   def hashes_and_count_txs_and_size(blocks) do
+    IO.inspect(blocks)
+
     Enum.reduce(blocks, {[], 0, 0}, fn x, {acc_hash, acc_tx, acc_size} ->
       {
-        acc_hash ++ Map.get(x, "hash"),
-        acc_tx + Map.get(x, "count"),
-        acc_size + Map.get(x, "size")
+        acc_hash ++ [x.hash],
+        acc_tx + x.count,
+        acc_size + x.size
       }
     end)
   end
@@ -171,12 +173,12 @@ defmodule Ippan.Block do
   end
 
   def cluster_block_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipncore, :http)[:port]
+    port = Application.get_env(:ipnworker, :http)[:port]
     "http://#{hostname}:#{port}/v1/download/block/#{creator_id}/#{height}"
   end
 
   def cluster_decode_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipncore, :http)[:port]
+    port = Application.get_env(:ipnworker, :http)[:port]
     "http://#{hostname}:#{port}/v1/download/block/decoded/#{creator_id}/#{height}"
   end
 
