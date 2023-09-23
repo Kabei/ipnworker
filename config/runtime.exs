@@ -24,7 +24,7 @@ config :ipnworker, :http,
       backlog: 1024,
       nodelay: true,
       linger: {true, 30},
-      send_timeout: 10_000,
+      send_timeout: 20_000,
       send_timeout_close: true,
       reuseaddr: true
     ]

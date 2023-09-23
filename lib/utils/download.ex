@@ -29,7 +29,7 @@ defmodule Download do
 
   # 1 GB
   @max_file_size 1024 * 1024 * 1000
-  @timeout 5000
+  @timeout 60_000
   @module __MODULE__
 
   def from(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
