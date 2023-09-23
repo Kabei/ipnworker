@@ -104,8 +104,8 @@ defmodule Ipnworker.Router do
   end
 
   get "/v1/download/block/decoded/:vid/:height" do
-    decode_dir = :persistent_term.get(:decode_dir)
-    block_path = Path.join([decode_dir, "#{vid}.#{height}.#{@block_extension}"])
+    base_dir = :persistent_term.get(:decode_dir)
+    block_path = Path.join([base_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
       conn
@@ -117,15 +117,15 @@ defmodule Ipnworker.Router do
   end
 
   get "/v1/download/block/:vid/:height" do
-    data_dir = :persistent_term.get(:block_dir)
-    block_path = Path.join([data_dir, "#{vid}.#{height}.#{@block_extension}"])
+    base_dir = :persistent_term.get(:block_dir)
+    block_path = Path.join([base_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
       conn
       |> put_resp_content_type("application/octet-stream")
       |> send_file(200, block_path)
     else
-      if vid == :persistent_term.get(:vid) do
+      if vid == :persistent_term.get(:vid) |> to_string do
         miner = :persistent_term.get(:miner)
         node = ClusterNode.info(miner)
         url = Block.cluster_block_url(node.hostname, vid, height)
