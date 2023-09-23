@@ -65,9 +65,9 @@ defmodule Ippan.Round do
         coinbase,
         count,
         tx_count,
+        size,
         blocks,
-        extra,
-        size
+        extra
       ]) do
     %{
       id: id,
@@ -104,6 +104,20 @@ defmodule Ippan.Round do
     ((txs_count - txs_rejected) / size)
     |> Kernel.*(1000)
     |> trunc()
+  end
+
+  def from_remote(%{"blocks" => blocks} = msg_round) do
+    blocks =
+      Enum.reduce(blocks, [], fn b, acc ->
+        block =
+          MapUtil.to_atoms(b, ~w(hash height creator prev size hashfile timestamp count vsn))
+
+        acc ++ [block]
+      end)
+
+    msg_round
+    |> MapUtil.to_atoms(~w(id creator hash prev signature))
+    |> Map.put(:blocks, blocks)
   end
 
   defp normalize(nil), do: ""

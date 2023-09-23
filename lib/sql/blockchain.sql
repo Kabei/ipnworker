@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS validator(
   created_at BIGINT NOT NULL,
   updated_at BIGINT NOT NULL
 ) WITHOUT ROWID;
-
+ 
 CREATE TABLE IF NOT EXISTS block(
   id BIGINT PRIMARY KEY,
   creator BIGINT NOT NULL,
@@ -26,9 +26,9 @@ CREATE TABLE IF NOT EXISTS block(
   round BIGINT NOT NULL,
   timestamp BIGINT NOT NULL,
   count INTEGER DEFAULT 0,
+  rejected INTEGER,
   size BIGINT DEFAULT 0,
-  failures INTEGER,
-  vsn integer,
+  vsn INTEGER,
   UNIQUE(creator, height)
 ) WITHOUT ROWID;
 

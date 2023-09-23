@@ -7,9 +7,13 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
   "creator" BIGINT,
+  "signature" BYTEA,
   "coinbase" BIGINT,
-  "blocks" BIGINT,
-  "timestamp" BIGINT
+  "count" BIGINT,
+  "tx_count" BIGINT,
+  "size" BIGINT,
+  "blocks" BYTEA,
+  "extras" BYTEA
 );
 
 CREATE TABLE IF NOT EXISTS history.jackpot(
@@ -32,12 +36,12 @@ CREATE TABLE IF NOT EXISTS history.blocks(
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
   "hashfile" BYTEA,
-  "round" BIGINT NOT NULL,
   "signature" BYTEA NOT NULL,
+  "round" BIGINT NOT NULL,
   "timestamp" BIGINT NOT NULL,
   "count" INTEGER DEFAULT 0,
-  "size" BIGINT DEFAULT 0,
   "rejected" INTEGER,
+  "size" BIGINT DEFAULT 0,
   "vsn" INTEGER
 );
 
@@ -77,15 +81,15 @@ PREPARE get_details_event(bytea, bigint)
 AS SELECT "signature", "args" FROM history.events WHERE hash = $1 AND block_id = $2 LIMIT 1;
 
 
-PREPARE insert_block(bigint, bigint, bigint, bytea, bytea, bytea, bigint, bytea, bigint, integer, bigint, integer, integer)
+PREPARE insert_block(bigint, bigint, bigint, bytea, bytea, bytea, bytea, bigint, bigint, integer, integer, bigint, integer)
 AS INSERT INTO history.blocks VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13);
 
 PREPARE last_blocks(integer, integer)
 AS SELECT * FROM history.blocks ORDER BY id DESC LIMIT $1 OFFSET $2;
 
 
-PREPARE insert_round(bigint, bytea, bytea, bigint, bigint, bigint, bigint)
-AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5,$6,$7);
+PREPARE insert_round(bigint, bytea, bytea, bigint, bytea, bigint, bigint, bigint, bigint, bytea, bytea)
+AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);
 
 PREPARE last_rounds(integer, integer)
 AS SELECT * FROM history.rounds ORDER BY "id" LIMIT $1 OFFSET $2;
@@ -95,13 +99,13 @@ PREPARE insert_jackpot(bigint, bytea, bigint)
 AS INSERT INTO history.jackpot VALUES($1,$2,$3);
 
 PREPARE last_jackpots(integer, integer)
-AS SELECT j.*, r."timestamp" FROM history.jackpot j INNER JOIN history.rounds r ON r.id = j.round_id ORDER BY "round_id" LIMIT $1 OFFSET $2;
+AS SELECT * FROM history.jackpot ORDER BY round_id LIMIT $1 OFFSET $2;
 
 
 PREPARE insert_snapshot(bigint, bytea, bigint)
 AS INSERT INTO history.snapshot VALUES($1,$2,$3);
 
 PREPARE last_snapshots(integer, integer)
-AS SELECT s.*, r."timestamp" FROM history.snapshot s INNER JOIN history.rounds r ON r.id = s.round_id ORDER BY "round_id" LIMIT $1 OFFSET $2;
+AS SELECT * FROM history.snapshot ORDER BY round_id LIMIT $1 OFFSET $2;
 
 COMMIT;
