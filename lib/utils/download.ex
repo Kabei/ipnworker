@@ -149,7 +149,7 @@ defmodule Download do
   defp finish_download(reason, opts) do
     File.close(opts.file)
 
-    if elem(reason, 0) == :error do
+    if reason != :ok do
       File.rm!(opts.path)
     end
 
