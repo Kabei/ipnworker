@@ -1,5 +1,6 @@
 defmodule Ipnworker.Router do
   use Plug.Router
+  alias Ippan.Block
   alias Ippan.Validator
   alias Ippan.ClusterNode
   alias Ippan.TxHandler
@@ -124,7 +125,23 @@ defmodule Ipnworker.Router do
       |> put_resp_content_type("application/octet-stream")
       |> send_file(200, block_path)
     else
-      send_resp(conn, 404, "")
+      if vid == :persistent_term.get(:vid) do
+        miner = :persistent_term.get(:miner)
+        node = ClusterNode.info(miner)
+        url = Block.cluster_block_url(node.hostname, vid, height)
+
+        case Download.from(url, block_path) do
+          :ok ->
+            conn
+            |> put_resp_content_type("application/octet-stream")
+            |> send_file(200, block_path)
+
+          _ ->
+            send_resp(conn, 404, "")
+        end
+      else
+        send_resp(conn, 404, "")
+      end
     end
   end
 
