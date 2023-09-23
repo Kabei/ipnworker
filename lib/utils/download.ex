@@ -32,13 +32,26 @@ defmodule Download do
   @timeout 60_000
   @module __MODULE__
 
+  def await(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
+    File.rm(path)
+
+    Task.async(fn ->
+      with {:ok, file} <- create_file(path),
+           {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
+           {:ok, _pid} <- start_download(url, response_parsing_pid, path),
+           :ok <- wait_for_download(),
+           do: :ok
+    end)
+    |> Task.await(timeout)
+  end
+
   def from(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
     File.rm(path)
 
     with {:ok, file} <- create_file(path),
          {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
          {:ok, _pid} <- start_download(url, response_parsing_pid, path),
-         {:ok} <- wait_for_download(),
+         :ok <- wait_for_download(),
          do: :ok
   end
 
@@ -119,7 +132,7 @@ defmodule Download do
     end
   end
 
-  defp handle_async_response_chunk(%AsyncEnd{}, opts), do: finish_download({:ok}, opts)
+  defp handle_async_response_chunk(%AsyncEnd{}, opts), do: finish_download(:ok, opts)
 
   # Uncomment one line below if you are prefer to test not "Content-Length" header response, but a real file size
   # defp do_handle_content_length(_, opts), do: do_download(opts)

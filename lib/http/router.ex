@@ -130,14 +130,13 @@ defmodule Ipnworker.Router do
         node = ClusterNode.info(miner)
         url = Block.cluster_block_url(node.hostname, vid, height)
 
-        case Download.from(url, block_path) do
+        case Download.await(url, block_path) do
           :ok ->
             conn
             |> put_resp_content_type("application/octet-stream")
             |> send_file(200, block_path)
 
-          e ->
-            IO.inspect(e)
+          _e ->
             send_resp(conn, 404, "")
         end
       else
