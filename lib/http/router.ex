@@ -104,7 +104,7 @@ defmodule Ipnworker.Router do
   end
 
   get "/v1/download/block/decoded/:vid/:height" do
-    decode_dir = Application.get_env(:ipnworker, :decode_dir)
+    decode_dir = :persistent_term.get(:decode_dir)
     block_path = Path.join([decode_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
@@ -117,7 +117,7 @@ defmodule Ipnworker.Router do
   end
 
   get "/v1/download/block/:vid/:height" do
-    data_dir = Application.get_env(:ipnworker, :block_dir)
+    data_dir = :persistent_term.get(:block_dir)
     block_path = Path.join([data_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
@@ -144,26 +144,6 @@ defmodule Ipnworker.Router do
       end
     end
   end
-
-  # miner = System.get_env("MINER")
-
-  #     unless is_nil(miner) do
-  #       ip_local = String.split(miner, "@") |> List.last()
-  #       url = Block.cluster_block_url(ip_local, vid, height)
-
-  #       case Curl.download_block(url, block_path) do
-  #         :ok ->
-  #           conn
-  #           |> put_resp_content_type("application/octet-stream")
-  #           |> send_file(200, block_path)
-
-  #         res ->
-  #           Logger.debug(inspect(res))
-  #           send_resp(conn, 404, "")
-  #       end
-  #     else
-  #       send_resp(conn, 404, "")
-  #     end
 
   match _ do
     send_resp(conn, 404, "")

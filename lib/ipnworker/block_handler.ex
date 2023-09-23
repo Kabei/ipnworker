@@ -13,8 +13,8 @@ defmodule Ippan.BlockHandler do
   @spec generate_files(creator_id :: integer(), height :: integer()) :: map | nil
   def generate_files(creator_id, height) do
     filename = "#{creator_id}.#{height}.#{@block_extension}"
-    block_path = Path.join(Application.get_env(:ipnworker, :block_dir), filename)
-    decode_path = Path.join(Application.get_env(:ipnworker, :decode_dir), filename)
+    block_path = Path.join(:persistent_term.get(:block_dir), filename)
+    decode_path = Path.join(:persistent_term.get(:decode_dir), filename)
     ets_msg = :ets.whereis(:msg)
 
     if :ets.info(ets_msg, :size) > 0 do
