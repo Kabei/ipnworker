@@ -89,8 +89,6 @@ defmodule Ippan.ClusterClient do
   end
 
   defp retry_connect(state, retry, error) do
-    IO.inspect("retry #{inspect(error)}")
-
     cond do
       error == :halt ->
         # IO.inspect(error)
