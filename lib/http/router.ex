@@ -136,7 +136,8 @@ defmodule Ipnworker.Router do
             |> put_resp_content_type("application/octet-stream")
             |> send_file(200, block_path)
 
-          _ ->
+          e ->
+            IO.inspect(e)
             send_resp(conn, 404, "")
         end
       else
