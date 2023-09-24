@@ -6,7 +6,7 @@ defmodule Ippan.BlockHandler do
 
   @version Application.compile_env(:ipnworker, :version)
   @max_block_size Application.compile_env(:ipnworker, :block_max_size)
-  BlockHandler.verify_file(m)
+
   @spec verify_file!(map) :: :ok | :error
   def verify_file!(%{
         "count" => count,
