@@ -15,7 +15,7 @@ defmodule Ippan.Func.Balance do
       token.owner != account_id ->
         raise IppanError, "unauthorised"
 
-      "lock" in token.props ->
+      "lock" not in token.props ->
         raise IppanError, "Invalid property"
 
       BalanceStore.has_balance?(dets, balance_key, amount) ->
@@ -38,7 +38,7 @@ defmodule Ippan.Func.Balance do
       token.owner != account_id ->
         raise IppanError, "unauthorised"
 
-      "lock" in token.props ->
+      "lock" not in token.props ->
         raise IppanError, "Invalid property"
 
       BalanceStore.can_be_unlock?(dets, balance_key, amount) ->
