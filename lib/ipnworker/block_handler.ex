@@ -1,8 +1,8 @@
 defmodule Ippan.BlockHandler do
+  alias Ippan.Validator
   alias Ippan.{Block, TxHandler}
-
-  import Ippan.Block,
-    only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
+  import Ippan.Block, only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
+  require SqliteStore
 
   @version Application.compile_env(:ipnworker, :version)
   @max_block_size Application.compile_env(:ipnworker, :block_max_size)
@@ -72,15 +72,32 @@ defmodule Ippan.BlockHandler do
             raise(IppanError, "Invalid blockfile version")
           end
 
+          conn = :persistent_term.get(:asset_conn)
+          stmts = :persistent_term.get(:asset_stmt)
+
+          validator =
+            SqliteStore.lookup_map(
+              :validator,
+              conn,
+              stmts,
+              "get_validator",
+              creator_id,
+              Validator
+            )
+
           decode_msgs =
             Enum.reduce(messages, %{}, fn [msg, sig], acc ->
               hash = Blake3.hash(msg)
               size = byte_size(msg) + byte_size(sig)
 
-              [_deferred, msg] =
-                TxHandler.valid!(hash, msg, sig, size, creator_id)
+              try do
+                [_deferred, msg] =
+                  TxHandler.valid!(conn, stmts, hash, msg, sig, size, creator_id, validator)
 
-              Map.put(acc, hash, msg)
+                Map.put(acc, hash, msg)
+              catch
+                _ -> acc
+              end
             end)
             |> Map.values()
 

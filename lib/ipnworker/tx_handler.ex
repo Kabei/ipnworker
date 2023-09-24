@@ -6,8 +6,8 @@ defmodule Ippan.TxHandler do
 
   @json Application.compile_env(:ipnworker, :json)
 
-  @spec valid!(binary, binary, binary, integer, integer) :: list()
-  def valid!(hash, msg, signature, size, validator_node_id) do
+  @spec valid!(reference, map, binary, binary, binary, integer, integer, map) :: list()
+  def valid!(conn, stmts, hash, msg, signature, size, validator_node_id, validator) do
     [type, timestamp, from | args] = @json.decode!(msg)
 
     # if timestamp < :persistent_term.get(:time_expired, 0) or timestamp > :os.system_time(:millisecond) + 20000 do
@@ -16,9 +16,6 @@ defmodule Ippan.TxHandler do
     end
 
     %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} = Funcs.lookup(type)
-
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
 
     %{pubkey: wallet_pubkey} =
       case type_of_verification do
@@ -63,10 +60,10 @@ defmodule Ippan.TxHandler do
       size: size,
       stmts: stmts,
       timestamp: timestamp,
-      validator: :persistent_term.get(:validator)
+      validator: validator
     }
 
-    :ok = apply(mod, fun, [source | args])
+    apply(mod, fun, [source | args])
 
     case deferred do
       false ->

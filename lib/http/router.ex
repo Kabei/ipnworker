@@ -29,8 +29,12 @@ defmodule Ipnworker.Router do
               sig = Fast64.decode64(sig)
               size = byte_size(body) + byte_size(sig)
 
+              db_conn = :persistent_term.get(:asset_conn)
+              stmts = :persistent_term.get(:asset_stmt)
+              validator = :persistent_term.get(:validator)
+
               handle_result =
-                [deferred, msg] = TxHandler.valid!(hash, body, sig, size, vid)
+                [deferred, msg] = TxHandler.valid!(db_conn, stmts, hash, body, sig, size, vid, validator)
 
               dtx_key =
                 if deferred do
