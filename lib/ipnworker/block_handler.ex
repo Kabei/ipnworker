@@ -91,8 +91,10 @@ defmodule Ippan.BlockHandler do
               size = byte_size(msg) + byte_size(sig)
 
               try do
-                [_deferred, msg] =
-                  TxHandler.valid!(conn, stmts, hash, msg, sig, size, creator_id, validator)
+                msg =
+                  TxHandler.valid_from_file!(conn, stmts, hash, msg, sig, size, creator_id, validator)
+
+                IO.inspect(msg)
 
                 Map.put(acc, hash, msg)
               catch
@@ -110,7 +112,7 @@ defmodule Ippan.BlockHandler do
 
           export_path = Path.join(:persistent_term.get(:decode_dir), filename)
 
-          :ok = File.write(export_path, encode_file!(decode_msgs))
+          :ok = File.write(export_path, encode_file!(%{"" => , "vsn" => version}))
       end
     rescue
       error ->
