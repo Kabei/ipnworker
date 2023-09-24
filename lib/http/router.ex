@@ -34,7 +34,8 @@ defmodule Ipnworker.Router do
               validator = :persistent_term.get(:validator)
 
               handle_result =
-                [deferred, msg] = TxHandler.valid!(db_conn, stmts, hash, body, sig, size, vid, validator)
+                [deferred, msg] =
+                TxHandler.valid!(db_conn, stmts, hash, body, sig, size, vid, validator)
 
               dtx_key =
                 if deferred do
@@ -59,15 +60,20 @@ defmodule Ipnworker.Router do
                     "height" => height
                   })
 
-                {:error, :timeout} ->
-                  :ets.delete(:hash, hash)
-                  :ets.delete(:dhash, dtx_key)
-                  send_resp(conn, 503, "Service unavailable")
-
                 {:error, message} ->
                   :ets.delete(:hash, hash)
                   :ets.delete(:dhash, dtx_key)
-                  send_resp(conn, 400, message)
+
+                  case message do
+                    :timeout ->
+                      send_resp(conn, 503, "Service unavailable")
+
+                    :not_exists ->
+                      send_resp(conn, 503, "Service unavailable")
+
+                    message ->
+                      send_resp(conn, 400, message)
+                  end
               end
 
             true ->
