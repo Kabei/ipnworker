@@ -6,7 +6,7 @@ defmodule Ippan.BlockHandler do
 
   @version Application.compile_env(:ipnworker, :version)
   @max_block_size Application.compile_env(:ipnworker, :block_max_size)
-
+  BlockHandler.verify_file(m)
   @spec verify_file!(map) :: :ok | :error
   def verify_file!(%{
         "count" => count,
@@ -23,14 +23,18 @@ defmodule Ippan.BlockHandler do
         "vsn" => version
       }) do
     try do
+      IO.puts("Test 1")
       remote_url = Block.url(hostname, creator_id, height)
       output_path = Block.block_path(creator_id, height)
       file_exists = File.exists?(output_path)
       filename = Path.basename(output_path)
+      IO.puts("Test 2")
 
       unless file_exists do
+        IO.puts("Test 3")
         :ok = Download.from(remote_url, output_path, @max_block_size)
       else
+        IO.puts("Test 4")
         {:ok, filestat} = File.stat(output_path)
 
         if filestat.size != size do
@@ -38,7 +42,10 @@ defmodule Ippan.BlockHandler do
         end
       end
 
+      IO.puts("Test 5")
       {:ok, filestat} = File.stat(output_path)
+
+      IO.puts("Test 6")
 
       cond do
         filestat.size > @max_block_size or filestat.size != size ->
@@ -57,6 +64,7 @@ defmodule Ippan.BlockHandler do
           raise(IppanError, "Invalid block version")
 
         true ->
+          IO.puts("Test 7")
           {:ok, content} = File.read(output_path)
           %{"vsn" => vsn, "data" => messages} = decode_file!(content)
 
@@ -76,6 +84,9 @@ defmodule Ippan.BlockHandler do
             end)
             |> Map.values()
 
+          IO.puts("Test 8")
+          IO.inspect(decode_msgs)
+
           if count != length(decode_msgs) do
             raise IppanError, "Invalid block messages count"
           end
@@ -85,7 +96,8 @@ defmodule Ippan.BlockHandler do
           :ok = File.write(export_path, encode_file!(decode_msgs))
       end
     rescue
-      _error ->
+      error ->
+        IO.inspect(error)
         :error
     end
   end
