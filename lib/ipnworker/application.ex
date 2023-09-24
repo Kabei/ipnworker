@@ -12,13 +12,15 @@ defmodule Ipnworker.Application do
     make_folders()
     load_keys()
 
+    stats_path = Path.join(:persistent_term.get(:store_dir), "stats.dets")
     balance_path = Path.join(:persistent_term.get(:store_dir), "balance.dets")
 
     children = [
       MemTables,
       MainStore,
       NetStore,
-      {DetsPlus, [name: :balance, file: balance_path]},
+      {DetsPlus, [name: :stats, file: stats_path, var: :stats]},
+      {DetsPlus, [name: :balance, file: balance_path, var: :dets_balance]},
       {PgStore, [:init]},
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNode,

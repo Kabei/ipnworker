@@ -4,7 +4,7 @@ defmodule Ippan.Func.Token do
   require BalanceStore
 
   @type result :: Ippan.Request.result()
-  @max_number 9_223_372_036_854_775_807
+  @max_number 1_000_000_000_000_000_000_000_000_000
   @token Application.compile_env(:ipnworker, :token)
   @max_tokens Application.compile_env(:ipnworker, :max_tokens)
 
@@ -15,7 +15,7 @@ defmodule Ippan.Func.Token do
         name,
         decimal,
         symbol,
-        max_supply,
+        max_supply \\ 0,
         opts \\ %{}
       )
       when byte_size(id) <= 10 and byte_size(name) <= 100 and decimal in 0..18 and
@@ -83,6 +83,9 @@ defmodule Ippan.Func.Token do
 
   def delete(%{id: account_id, conn: conn, stmts: stmts}, id) when byte_size(id) <= 10 do
     cond do
+      TokenSupply.get(id) != 0 ->
+        raise IppanError, "Invalid operation"
+
       not SqliteStore.exists?(conn, stmts, "owner_token", [id, account_id]) ->
         raise IppanError, "Invalid owner"
 

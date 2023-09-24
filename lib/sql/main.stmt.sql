@@ -25,7 +25,7 @@ DELETE FROM account.wallet WHERE id=?;
 
 
 --name: insert_token
-INSERT INTO assets.token VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);
+INSERT INTO assets.token VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10);
 
 --name: get_token
 SELECT * FROM assets.token WHERE id = ? LIMIT 1;
@@ -40,7 +40,7 @@ SELECT 1 FROM assets.token WHERE id = ?1 AND owner = ?2;
 SELECT COUNT(1) FROM assets.token;
 
 --name: delete_token
-DELETE FROM assets.token WHERE id = ?1 AND owner = ?2 AND supply = 0 AND burned = 0;
+DELETE FROM assets.token WHERE id = ?1 AND owner = ?2;
 
 
 --name: insert_domain
@@ -182,3 +182,6 @@ DELETE FROM assets.refund WHERE hash = ? RETURNING sender, token, amount;
 
 --name: delete_expiry_refund
 DELETE FROM assets.refund WHERE expiry_in < ?1;
+
+--name: insert_jackpot
+INSERT INTO blockchain.jackpot VALUES(?1,?2,?3);

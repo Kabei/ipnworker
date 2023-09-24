@@ -83,7 +83,9 @@ defmodule Ippan.Func.Tx do
             end
           end)
 
-        if token.max_supply < total + token.supply do
+        supply = TokenSupply.get(token_id)
+
+        if token.max_supply < total + supply do
           raise ArgumentError, "Max supply exceeded"
         end
 
