@@ -99,12 +99,14 @@ defmodule Ippan.ClusterNode do
 
   @impl Network
   def handle_request("verify_block", data, _state) do
+    IO.puts("verify_block")
+    IO.inspect(data)
     case BlockHandler.verify_file!(data) do
-      {:error, _message} ->
-        false
-
-      _ ->
+      :ok ->
         true
+
+      :error ->
+        false
     end
   end
 
