@@ -17,10 +17,12 @@ defmodule Ipnworker.Application do
 
     children = [
       MemTables,
+      Supervisor.child_spec({DetsPlus, [name: :stats, file: stats_path, var: :stats]}, id: :stats),
+      Supervisor.child_spec({DetsPlus, [name: :balance, file: balance_path, var: :dets_balance]},
+        id: :balance
+      ),
       MainStore,
       NetStore,
-      {DetsPlus, [name: :stats, file: stats_path, var: :stats]},
-      {DetsPlus, [name: :balance, file: balance_path, var: :dets_balance]},
       {PgStore, [:init]},
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNode,
