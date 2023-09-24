@@ -1,4 +1,5 @@
 defmodule Ippan.Round do
+  alias Ippan.Block
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
           id: non_neg_integer(),
@@ -110,7 +111,7 @@ defmodule Ippan.Round do
     blocks =
       Enum.reduce(blocks, [], fn b, acc ->
         block =
-          MapUtil.to_atoms(b, ~w(hash height creator prev size hashfile timestamp count vsn))
+          MapUtil.to_atoms(b, Block.fields())
 
         acc ++ [block]
       end)
