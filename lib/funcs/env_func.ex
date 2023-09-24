@@ -3,7 +3,7 @@ defmodule Ippan.Func.Env do
     bin = :erlang.term_to_binary(value)
 
     cond do
-      byte_size(name) <= 256 ->
+      byte_size(name) >= 256 ->
         raise IppanError, "Name is too long"
 
       :persistent_term.get(:owner) == account_id and byte_size(bin) <= 4096 ->
