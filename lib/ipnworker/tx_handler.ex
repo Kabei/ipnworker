@@ -56,10 +56,12 @@ defmodule Ippan.TxHandler do
     source = %{
       conn: conn,
       dets: :persistent_term.get(:dets_balance),
+      id: from,
       hash: hash,
       size: size,
       stmts: stmts,
       timestamp: timestamp,
+      type: type,
       validator: validator
     }
 
