@@ -92,7 +92,16 @@ defmodule Ippan.BlockHandler do
 
               try do
                 msg =
-                  TxHandler.valid_from_file!(conn, stmts, hash, msg, sig, size, creator_id, validator)
+                  TxHandler.valid_from_file!(
+                    conn,
+                    stmts,
+                    hash,
+                    msg,
+                    sig,
+                    size,
+                    creator_id,
+                    validator
+                  )
 
                 IO.inspect(msg)
 
@@ -104,7 +113,6 @@ defmodule Ippan.BlockHandler do
             |> Map.values()
 
           IO.puts("Test 8")
-          IO.inspect(decode_msgs)
 
           if count != length(decode_msgs) do
             raise IppanError, "Invalid block messages count"
@@ -112,7 +120,7 @@ defmodule Ippan.BlockHandler do
 
           export_path = Path.join(:persistent_term.get(:decode_dir), filename)
 
-          :ok = File.write(export_path, encode_file!(%{"" => , "vsn" => version}))
+          :ok = File.write(export_path, encode_file!(%{"data" => decode_msgs, "vsn" => version}))
       end
     rescue
       error ->
