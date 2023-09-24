@@ -9,18 +9,18 @@ defmodule Ippan.BlockHandler do
 
   @spec verify_file!(map) :: :ok | :error
   def verify_file!(%{
-        "height" => height,
+        "count" => count,
+        "creator" => creator_id,
         "hash" => hash,
         "hashfile" => hashfile,
-        "creator" => creator_id,
-        "prev" => prev,
-        "signature" => signature,
-        "timestamp" => timestamp,
-        "count" => count,
-        "size" => size,
-        "vsn" => version,
+        "height" => height,
         "hostname" => hostname,
-        "pubkey" => pubkey
+        "prev" => prev,
+        "pubkey" => pubkey,
+        "signature" => signature,
+        "size" => size,
+        "timestamp" => timestamp,
+        "vsn" => version
       }) do
     try do
       remote_url = Block.url(hostname, creator_id, height)
@@ -89,4 +89,6 @@ defmodule Ippan.BlockHandler do
         :error
     end
   end
+
+  def verify_file!(_), do: :error
 end
