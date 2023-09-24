@@ -37,7 +37,7 @@ defmodule Ippan.Func.Token do
       SqliteStore.exists?(conn, stmts, "exists_token", id) ->
         raise IppanError, "Token already exists"
 
-      @max_tokens < SqliteStore.one(conn, stmts, "total_token") ->
+      @max_tokens < SqliteStore.one(conn, stmts, "total_tokens") ->
         raise IppanError, "Maximum tokens exceeded"
 
       true ->

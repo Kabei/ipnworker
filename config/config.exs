@@ -52,7 +52,6 @@ config :ipnworker, :timeout_refund, :timer.hours(72)
 config :ipnworker, :message_timeout, :timer.seconds(5)
 config :ipnworker, :max_validators, 20_000
 config :ipnworker, :max_tokens, 1_000
-config :ipnworker, :validator_price, 10_000_000_000
 
 # P2P client
 config :ipnworker, :p2p_client, [
