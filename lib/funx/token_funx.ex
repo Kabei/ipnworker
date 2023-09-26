@@ -4,8 +4,8 @@ defmodule Ippan.Funx.Token do
   require BalanceStore
 
   @type result :: Ippan.Request.result()
-  @token Application.compile_env(:ipnworker, :token)
-  @max_tokens Application.compile_env(:ipnworker, :max_tokens)
+  @token Application.compile_env(:ipncore, :token)
+  @max_tokens Application.compile_env(:ipncore, :max_tokens)
   @table_name "assets.token"
 
   def new(
@@ -84,7 +84,9 @@ defmodule Ippan.Funx.Token do
   end
 
   def delete(%{id: account_id, conn: conn, stmts: stmts}, id) do
-    if TokenSupply.get(id) == 0 do
+    tx = DetsPlux.tx(:supply)
+
+    if TokenSupply.get(tx, id) == 0 do
       SqliteStore.step(conn, stmts, "delete_token", [id, account_id])
     end
   end
