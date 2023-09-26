@@ -33,7 +33,7 @@ defmodule DetsPlux do
   @entry_size_size 4
   @entry_size_size_bits @entry_size_size * 8
 
-  # We're using sha256 as source - should not have conflicts ever
+  # We're using Blake3 as source - should not have conflicts ever
   @hash_size 8
   @hash_size_bits @hash_size * 8
 
