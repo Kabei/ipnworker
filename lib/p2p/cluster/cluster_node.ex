@@ -130,6 +130,7 @@ defmodule Ippan.ClusterNode do
     dets = :persistent_term.get(:dets_balance)
     pg_conn = PgStore.conn()
 
+    IO.inspect(round)
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       PgStore.begin(pg_conn)
 
@@ -169,6 +170,7 @@ defmodule Ippan.ClusterNode do
       TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
 
       r = Round.to_list(MapUtil.to_atoms(round))
+      IO.inspect(r)
       SqliteStore.step(conn, stmts, "insert_round", r)
       PgStore.insert_round(pg_conn, r)
       PgStore.commit(pg_conn)
