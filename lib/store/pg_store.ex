@@ -84,7 +84,7 @@ defmodule PgStore do
     Postgrex.prepare_execute(
       conn,
       "insert_round",
-      "EXECUTE insert_round($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+      "EXECUTE insert_round($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);",
       params
     )
   end
