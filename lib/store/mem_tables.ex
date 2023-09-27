@@ -1,12 +1,21 @@
 defmodule MemTables do
-  use GenServer
-
   # @set_opts [:set, :public, read_concurrency: true, write_concurrency: true]
-  @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: true]
+  @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: false]
+
+  @set_named_concurrent_opts [
+    :set,
+    :named_table,
+    :public,
+    read_concurrency: true,
+    write_concurrency: true
+  ]
 
   @tables_name %{
     hash: "hash",
     dhash: "dhash",
+    # used after process round
+    dtx: "dtx",
+    # cache
     wallet: "wallet",
     token: "token",
     validator: "validator",
@@ -16,10 +25,12 @@ defmodule MemTables do
   @tables_opt %{
     hash: @set_named_opts,
     dhash: @set_named_opts,
-    wallet: @set_named_opts,
-    validator: @set_named_opts,
-    token: @set_named_opts,
-    env: @set_named_opts
+    dtx: @set_named_concurrent_opts,
+    # cache
+    wallet: @set_named_concurrent_opts,
+    validator: @set_named_concurrent_opts,
+    token: @set_named_concurrent_opts,
+    env: @set_named_concurrent_opts
   }
 
   @tables Map.to_list(@tables_name)
@@ -27,19 +38,20 @@ defmodule MemTables do
   @save_extension "save"
   # @tmp_extension "save.tmp"
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+  def child_spec(args) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :init, [args]}
+    }
   end
 
-  @impl true
   def init(_args) do
     for {table, opts} <- @tables_opt do
       :ets.new(table, opts)
     end
 
     load_all()
-
-    {:ok, %{}}
+    :ignore
   end
 
   defmacrop default_dir(basename, extension) do
@@ -75,8 +87,8 @@ defmodule MemTables do
     end
   end
 
-  @impl true
-  def terminate(_reason, _state) do
+  @spec terminate :: :ok
+  def terminate do
     save_all()
     delete_all()
     :persistent_term.erase(:save_dir)

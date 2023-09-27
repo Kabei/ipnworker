@@ -12,17 +12,28 @@ defmodule PgStore do
   def child_spec(args) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [args]}
+      start: {__MODULE__, :init, [args]}
     }
   end
 
-  def start_link(args) do
+  def init(args) do
     opts = Application.get_env(:ipnworker, :repo)
     {:ok, conn} = Postgrex.start_link(opts)
     :persistent_term.put(@key, conn)
 
-    if List.first(args) == :init do
-      init(conn)
+    case args do
+      [:init] ->
+        for sql <- @creations do
+          {:ok, _result} = Postgrex.query(conn, sql, [])
+        end
+
+        # execute alter tables if exists new version
+        for sql <- @alter do
+          {:ok, _result} = Postgrex.query(conn, sql, [])
+        end
+
+      _ ->
+        nil
     end
 
     ("Connection: " <>
@@ -31,20 +42,7 @@ defmodule PgStore do
        ANSI.reset())
     |> IO.puts()
 
-    {:ok, conn}
-  end
-
-  def init(conn) do
-    # put in global conn
-
-    for sql <- @creations do
-      {:ok, _result} = Postgrex.query(conn, sql, [])
-    end
-
-    # execute alter tables if exists new version
-    for sql <- @alter do
-      {:ok, _result} = Postgrex.query(conn, sql, [])
-    end
+    :ignore
   end
 
   def conn do

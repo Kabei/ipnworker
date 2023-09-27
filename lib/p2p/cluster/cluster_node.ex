@@ -127,7 +127,7 @@ defmodule Ippan.ClusterNode do
     vid = :persistent_term.get(:vid)
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
-    dets = :persistent_term.get(:balance_dets)
+    dets = :persistent_term.get(:dets_balance)
     pg_conn = PgStore.conn()
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
