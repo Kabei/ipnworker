@@ -234,7 +234,7 @@ defmodule Ippan.TxHandler do
             block_id: block_id
           ],
           location: :keep do
-      %{fun: fun, mod: module} = Funcs.lookup(type)
+      %{fun: fun, modx: module} = Funcs.lookup(type)
 
       environment = %{
         conn: conn,
@@ -276,10 +276,10 @@ defmodule Ippan.TxHandler do
   end
 
   # only deferred transactions
-  def run_deferred_txs(conn, stmts, dets) do
-    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size]} <-
+  def run_deferred_txs(conn, stmts, dets, pg_conn) do
+    for {{type, _key}, msg = [hash, account_id, validator_id, args, timestamp, size]} <-
           :ets.tab2list(:dtx) do
-      %{mod: module, fun: fun} = Funcs.lookup(type)
+      %{modx: module, fun: fun} = Funcs.lookup(type)
 
       source = %{
         id: account_id,
@@ -293,7 +293,13 @@ defmodule Ippan.TxHandler do
         size: size
       }
 
-      apply(module, fun, [source | args])
+      case apply(module, fun, [source | args]) do
+        :ok ->
+          PgStore.insert_event(pg_conn, msg)
+
+        _ ->
+          :error
+      end
     end
 
     :ets.delete_all_objects(:dtx)

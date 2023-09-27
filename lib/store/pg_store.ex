@@ -47,7 +47,7 @@ defmodule PgStore do
     end
   end
 
-  def get do
+  def conn do
     :persistent_term.get(@key)
   end
 
@@ -77,7 +77,7 @@ defmodule PgStore do
     Postgrex.prepare_execute(
       conn,
       "insert_block",
-      "EXECUTE insert_block($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+      "EXECUTE insert_block($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)",
       params
     )
   end
@@ -86,7 +86,7 @@ defmodule PgStore do
     Postgrex.prepare_execute(
       conn,
       "insert_round",
-      "EXECUTE insert_round($1,$2,$3,$4,$5)",
+      "EXECUTE insert_round($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
       params
     )
   end

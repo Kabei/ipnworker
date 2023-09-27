@@ -1,8 +1,8 @@
 defmodule Ippan.ClusterNode do
-  alias Ippan.BlockHandler
-  alias Ippan.Validator
-  alias Ippan.{LocalNode, Network}
+  alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
+
+  @pubsub :cluster
 
   use Network,
     app: :ipnworker,
@@ -120,27 +120,74 @@ defmodule Ippan.ClusterNode do
     end
   end
 
-  def handle_message("round.new", %{"id" => id, "blocks" => blocks}, _state) do
+  @doc """
+  Create a new round. Received from a IPNCORE
+  """
+  def handle_message("round.new", round = %{"id" => round_id, "blocks" => blocks}, state) do
     vid = :persistent_term.get(:vid)
-    :persistent_term.put(:round, id)
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmt)
+    dets = :persistent_term.get(:balance_dets)
+    pg_conn = PgStore.conn()
 
-    Enum.reduce(blocks, -1, fn %{"creator" => creator_id, "height" => height}, old_height ->
-      if creator_id == vid and height > old_height do
-        :persistent_term.put(:height, height)
-        height
-      else
-        old_height
+    unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
+      PgStore.begin(conn)
+
+      for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
+        if vid == creator_id do
+          if :persistent_term.get(:height, 0) < height do
+            :persistent_term.put(:height, height)
+          end
+        end
+
+        if :persistent_term.get(:block_id, 0) < block_id do
+          :persistent_term.put(:block_id, block_id)
+        end
+
+        Task.async(fn ->
+          creator =
+            SqliteStore.lookup_map(
+              :validator,
+              conn,
+              stmts,
+              "get_validator",
+              creator_id,
+              Validator
+            )
+
+          :poolboy.transaction(
+            :minerpool,
+            fn pid ->
+              MinerWorker.create(pid, MapUtil.to_atoms(block), state.hostname, creator, round_id)
+            end,
+            :infinity
+          )
+        end)
       end
-    end)
+      |> Enum.map(fn t -> Task.await(t, :infinity) end)
 
-    List.last(blocks)
-    |> case do
-      nil ->
-        :ok
+      TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
 
-      %{"id" => block_id} ->
-        :persistent_term.put(:block_id, block_id)
+      r = Round.to_list(MapUtil.to_atoms(round))
+      SqliteStore.step(conn, stmts, "insert_round", r)
+      PgStore.insert_round(pg_conn, r)
+      PgStore.commit(pg_conn)
+
+      :persistent_term.put(:round, round_id)
     end
+  end
+
+  def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmts)
+
+    PubSub.broadcast(@pubsub, "jackpot", %{
+      "round_id" => round_id,
+      "winner" => winner_id,
+      "amount" => amount
+    })
+
+    SqliteStore.step(conn, stmts, "insert_jackpot", data)
   end
 
   def handle_message(_event, _data, _state), do: :ok

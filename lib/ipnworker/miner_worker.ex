@@ -22,6 +22,10 @@ defmodule MinerWorker do
     GenServer.call(server, {:mine, block, creator, round_id}, :infinity)
   end
 
+  def create(server, block, hostname, creator, round_id) do
+    GenServer.call(server, {:create, block, hostname, creator, round_id}, :infinity)
+  end
+
   # Create a block file from decode block file (foreign block)
   @impl true
   def handle_call(
@@ -121,12 +125,67 @@ defmodule MinerWorker do
     end
   end
 
+  def handle_call(
+        {
+          :create,
+          %{
+            id: block_id,
+            creator: creator_id,
+            height: height,
+            vsn: version
+          } = block,
+          hostname,
+          creator,
+          _current_round_id
+        },
+        _from,
+        state
+      ) do
+    try do
+      conn = :persistent_term.get(:asset_conn)
+      stmts = :persistent_term.get(:asset_stmt)
+      dets = :persistent_term.get(:dets_balance)
+      pg_conn = PgStore.conn()
+
+      # Request verify a remote blockfile
+      decode_path = Block.decode_path(creator_id, height)
+
+      # Download decode-file
+      if File.exists?(decode_path) do
+        :ok
+      else
+        # Download from Cluster node
+        url = Block.cluster_decode_url(hostname, creator_id, height)
+        :ok = Download.from(url, decode_path)
+      end
+
+      {:ok, content} = File.read(decode_path)
+
+      %{"data" => messages, "vsn" => version_file} =
+        Block.decode_file!(content)
+
+      if version != version_file, do: raise(IppanError, "Block file version failed")
+
+      mine_fun(version, messages, conn, stmts, dets, pg_conn, creator, block_id)
+
+      b = Block.to_list(block)
+      SqliteStore.step(conn, stmts, "insert_block", b)
+      PgStore.insert_block(pg_conn, b)
+
+      {:reply, :ok, state}
+    rescue
+      error ->
+        Logger.error(inspect(error))
+        {:reply, :error, state}
+    end
+  end
+
   # Process the block
-  defp mine_fun(@version, messages, conn, stmts, dets, validator, block_id) do
+  defp mine_fun(@version, messages, conn, stmts, dets, pg_conn, validator, block_id) do
     creator_id = validator.id
 
     Enum.reduce(messages, 0, fn
-      [hash, type, from, args, timestamp, size], acc ->
+      msg = [hash, type, from, args, timestamp, size], acc ->
         case TxHandler.handle_regular(
                conn,
                stmts,
@@ -140,8 +199,12 @@ defmodule MinerWorker do
                timestamp,
                block_id
              ) do
-          :error -> acc + 1
-          _ -> acc
+          :error ->
+            acc + 1
+
+          _ ->
+            PgStore.insert_event(pg_conn, msg)
+            acc
         end
 
       msg, acc ->

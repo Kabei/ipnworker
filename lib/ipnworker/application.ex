@@ -17,13 +17,12 @@ defmodule Ipnworker.Application do
 
     children = [
       MemTables,
-      Supervisor.child_spec({DetsPlus, [name: :stats, file: stats_path, var: :stats]}, id: :stats),
-      Supervisor.child_spec({DetsPlus, [name: :balance, file: balance_path, var: :dets_balance]},
-        id: :balance
-      ),
+      {DetsPlux, [name: :stats, file: stats_path]},
+      {DetsPlus, [name: :balance, file: balance_path, var: :dets_balance]},
       MainStore,
       NetStore,
       {PgStore, [:init]},
+      :poolboy.child_spec(:minerpool, [worker_module: MinerWorker, size: 5, max_overflow: 2]),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNode,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
