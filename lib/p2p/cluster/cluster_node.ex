@@ -131,7 +131,7 @@ defmodule Ippan.ClusterNode do
     pg_conn = PgStore.conn()
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
-      PgStore.begin(conn)
+      PgStore.begin(pg_conn)
 
       for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
         if vid == creator_id do

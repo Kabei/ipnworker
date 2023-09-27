@@ -142,6 +142,8 @@ SELECT * FROM blockchain.round LIMIT ?1 OFFSET ?2;
 --name: last_round
 SELECT id, hash FROM blockchain.round ORDER BY id DESC LIMIT 1;
 
+--name: exists_round
+SELECT 1 FROM blockchain.round WHERE id=? LIMIT 1;
 
 --name: insert_validator
 INSERT INTO blockchain.validator values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14);
