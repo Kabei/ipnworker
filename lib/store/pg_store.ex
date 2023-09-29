@@ -128,11 +128,11 @@ defmodule PgStore do
               bytea(value)
 
             true ->
-              String.replace(value, "'", "''")
+              "'#{String.replace(value, "'", "''")}'"
           end
 
         true ->
-          "'#{value}'"
+          "#{value}"
       end
     end
   end
