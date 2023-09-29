@@ -166,8 +166,8 @@ defmodule Ippan.ClusterNode do
             :infinity
           )
         end)
+        |> Enum.map(fn t -> Task.await(t, :infinity) end)
       end
-      |> Enum.map(fn t -> Task.await(t, :infinity) end)
 
       IO.inspect("step 2")
       TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
