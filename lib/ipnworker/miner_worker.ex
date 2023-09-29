@@ -159,6 +159,7 @@ defmodule MinerWorker do
         url = Block.cluster_decode_url(hostname, creator_id, height)
         :ok = Download.await(url, decode_path)
       end
+
       IO.inspect("Bstep 3")
       {:ok, content} = File.read(decode_path)
 
@@ -188,7 +189,7 @@ defmodule MinerWorker do
     creator_id = validator.id
 
     Enum.reduce(messages, 0, fn
-      msg = [hash, type, from, args, timestamp, size], acc ->
+      [hash, type, from, args, timestamp, size], acc ->
         case TxHandler.handle_regular(
                conn,
                stmts,
@@ -206,7 +207,17 @@ defmodule MinerWorker do
             acc + 1
 
           _ ->
-            r = PgStore.insert_event(pg_conn, msg)
+            r =
+              PgStore.insert_event(pg_conn, [
+                block_id,
+                hash,
+                type,
+                from,
+                timestamp,
+                nil,
+                CBOR.encode(args)
+              ])
+
             IO.inspect(r)
             acc
         end

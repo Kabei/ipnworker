@@ -259,7 +259,7 @@ defmodule Ippan.TxHandler do
         block_id
       ) do
     key = {type, arg_key}
-    body = [hash, account_id, validator_id, args, timestamp, size]
+    body = [hash, account_id, validator_id, args, timestamp, size, block_id]
 
     case :ets.lookup(:dtx, key) do
       [] ->
@@ -276,7 +276,7 @@ defmodule Ippan.TxHandler do
 
   # only deferred transactions
   def run_deferred_txs(conn, stmts, dets, pg_conn) do
-    for {{type, _key}, msg = [hash, account_id, validator_id, args, timestamp, size]} <-
+    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size, block_id]} <-
           :ets.tab2list(:dtx) do
       %{modx: module, fun: fun} = Funcs.lookup(type)
 
@@ -294,7 +294,15 @@ defmodule Ippan.TxHandler do
 
       case apply(module, fun, [source | args]) do
         :ok ->
-          PgStore.insert_event(pg_conn, msg)
+          PgStore.insert_event(pg_conn, [
+            block_id,
+            hash,
+            type,
+            account_id,
+            timestamp,
+            nil,
+            CBOR.encode(args)
+          ])
 
         _ ->
           :error
