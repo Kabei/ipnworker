@@ -206,7 +206,8 @@ defmodule MinerWorker do
             acc + 1
 
           _ ->
-            PgStore.insert_event(pg_conn, msg)
+            r = PgStore.insert_event(pg_conn, msg)
+            IO.inspect(r)
             acc
         end
 

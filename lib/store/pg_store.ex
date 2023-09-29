@@ -57,9 +57,8 @@ defmodule PgStore do
     Postgrex.prepare_execute(conn, "", "COMMIT;", [])
   end
 
-  def sync(conn) do
-    commit(conn)
-    begin(conn)
+  def rollback(conn) do
+    Postgrex.prepare_execute(conn, "", "ROLLBACK;", [])
   end
 
   def insert_event(conn, params) do

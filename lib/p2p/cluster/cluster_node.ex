@@ -134,7 +134,7 @@ defmodule Ippan.ClusterNode do
       IO.inspect(round)
 
       unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
-        PgStore.begin(pg_conn)
+        {:ok, _} = PgStore.begin(pg_conn)
         IO.inspect("step 1")
 
         for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
@@ -183,8 +183,8 @@ defmodule Ippan.ClusterNode do
         # IO.inspect(r)
         SqliteStore.step(conn, stmts, "insert_round", r)
         SqliteStore.sync(conn)
-        PgStore.insert_round(pg_conn, r)
-        PgStore.commit(pg_conn)
+        {:ok, _} = PgStore.insert_round(pg_conn, r)
+        {:ok, _} = PgStore.commit(pg_conn)
 
         # IO.inspect(result)
 
