@@ -50,11 +50,11 @@ defmodule PgStore do
   end
 
   def begin(conn) do
-    Postgrex.prepare_execute(conn, "", "BEGIN", [])
+    Postgrex.prepare_execute(conn, "", "BEGIN;", [])
   end
 
   def commit(conn) do
-    Postgrex.prepare_execute(conn, "", "COMMIT", [])
+    Postgrex.prepare_execute(conn, "", "COMMIT;", [])
   end
 
   def sync(conn) do

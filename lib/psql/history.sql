@@ -1,5 +1,5 @@
+set AUTOCOMMIT off;
 BEGIN;
-
 CREATE SCHEMA IF NOT EXISTS history;
 
 CREATE TABLE IF NOT EXISTS history.rounds(
