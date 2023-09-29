@@ -132,7 +132,7 @@ defmodule PgStore do
           end
 
         true ->
-          "#{value}"
+          "'#{value}'"
       end
     end
   end
