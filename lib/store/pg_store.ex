@@ -120,6 +120,9 @@ defmodule PgStore do
   defmacro type_parse(value) do
     quote bind_quoted: [value: value], location: :keep do
       cond do
+        is_nil(value) ->
+          "NULL"
+
         is_binary(value) ->
           case text?(value) do
             false ->
