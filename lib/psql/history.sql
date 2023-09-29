@@ -1,4 +1,3 @@
-set AUTOCOMMIT off;
 BEGIN;
 CREATE SCHEMA IF NOT EXISTS history;
 
