@@ -113,7 +113,7 @@ defmodule PgStore do
 
   defmacro bytea(x) do
     quote location: :keep do
-      "decode('#{Fast64.encode64(unquote(x))}', 'base64')"
+      "decode('#{Fast64.encode64(unquote(x))}','base64')"
     end
   end
 
