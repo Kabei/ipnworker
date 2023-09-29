@@ -50,15 +50,15 @@ defmodule PgStore do
   end
 
   def begin(conn) do
-    Postgrex.prepare_execute(conn, "", "BEGIN;", [])
+    Postgrex.query(conn, "BEGIN;", [])
   end
 
   def commit(conn) do
-    Postgrex.prepare_execute(conn, "", "COMMIT;", [])
+    Postgrex.query(conn, "COMMIT;", [])
   end
 
   def rollback(conn) do
-    Postgrex.prepare_execute(conn, "", "ROLLBACK;", [])
+    Postgrex.query(conn, "ROLLBACK;", [])
   end
 
   def insert_event(conn, params) do
