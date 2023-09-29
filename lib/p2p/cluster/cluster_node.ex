@@ -11,7 +11,7 @@ defmodule Ippan.ClusterNode do
     server: Ippan.ClusterNode.Server,
     pubsub: :cluster,
     topic: "cluster",
-    conn_opts: [reconnect: true, retry: 1],
+    conn_opts: [reconnect: true, retry: :infinity],
     sup: Ippan.ClusterSup
 
   def on_init(_) do
@@ -134,6 +134,7 @@ defmodule Ippan.ClusterNode do
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       PgStore.begin(pg_conn)
+      IO.inspect("step 1")
 
       for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
         if vid == creator_id do
@@ -168,13 +169,17 @@ defmodule Ippan.ClusterNode do
       end
       |> Enum.map(fn t -> Task.await(t, :infinity) end)
 
+      IO.inspect("step 2")
       TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
-
+      IO.inspect("step 3")
       r = Round.to_list(round)
-      IO.inspect(r)
+      # IO.inspect(r)
       SqliteStore.step(conn, stmts, "insert_round", r)
+      SqliteStore.sync(conn)
       PgStore.insert_round(pg_conn, r)
       PgStore.commit(pg_conn)
+
+      # IO.inspect(result)
 
       :persistent_term.put(:round, round_id)
     end

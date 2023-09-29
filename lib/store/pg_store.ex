@@ -138,9 +138,7 @@ defmodule PgStore do
   defp query_parse(query, params) do
     for {value, n} <- Enum.with_index(params), reduce: query do
       acc ->
-        p = "$#{n + 1}"
-
-        String.replace(acc, p, type_parse(value))
+        String.replace(acc, ~r/\$#{n + 1}\b/, type_parse(value))
     end
   end
 end

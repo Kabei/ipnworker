@@ -142,6 +142,7 @@ defmodule MinerWorker do
         state
       ) do
     try do
+      IO.inspect("step 1")
       conn = :persistent_term.get(:asset_conn)
       stmts = :persistent_term.get(:asset_stmt)
       dets = :persistent_term.get(:dets_balance)
@@ -149,7 +150,7 @@ defmodule MinerWorker do
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
-
+      IO.inspect("step 2")
       # Download decode-file
       if File.exists?(decode_path) do
         :ok
@@ -158,7 +159,7 @@ defmodule MinerWorker do
         url = Block.cluster_decode_url(hostname, creator_id, height)
         :ok = Download.from(url, decode_path)
       end
-
+      IO.inspect("step 3")
       {:ok, content} = File.read(decode_path)
 
       %{"data" => messages, "vsn" => version_file} =
@@ -167,7 +168,7 @@ defmodule MinerWorker do
       if version != version_file, do: raise(IppanError, "Block file version failed")
 
       mine_fun(version, messages, conn, stmts, dets, pg_conn, creator, block_id)
-
+      IO.inspect("step 4")
       b = Block.to_list(block)
       SqliteStore.step(conn, stmts, "insert_block", b)
       PgStore.insert_block(pg_conn, b)

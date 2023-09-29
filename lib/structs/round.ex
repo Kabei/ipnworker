@@ -30,6 +30,34 @@ defmodule Ippan.Round do
   ]
 
   @impl true
+  def to_list(%{
+        "id" => id,
+        "hash" => hash,
+        "prev" => prev,
+        "creator" => creator,
+        "signature" => signature,
+        "coinbase" => coinbase,
+        "count" => count,
+        "tx_count" => tx_count,
+        "size" => size,
+        "blocks" => blocks,
+        "extra" => extra
+      }) do
+    [
+      id,
+      hash,
+      prev,
+      creator,
+      signature,
+      coinbase,
+      count,
+      tx_count,
+      size,
+      CBOR.encode(blocks),
+      CBOR.encode(extra)
+    ]
+  end
+
   def to_list(x) do
     [
       x.id,

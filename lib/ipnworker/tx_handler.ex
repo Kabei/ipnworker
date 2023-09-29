@@ -8,11 +8,10 @@ defmodule Ippan.TxHandler do
 
   @spec valid!(reference, map, binary, binary, binary, integer, integer, map) :: list()
   def valid!(conn, stmts, hash, msg, signature, size, validator_node_id, validator) do
-    [type, timestamp, from | args] = @json.decode!(msg)
+    [type, nonce, from | args] = @json.decode!(msg)
 
-    # if timestamp < :persistent_term.get(:time_expired, 0) or timestamp > :os.system_time(:millisecond) + 20000 do
-    if timestamp < :persistent_term.get(:time_expired, 0) do
-      raise(IppanError, "Invalid timestamp")
+    if nonce < 1 do
+      raise ArgumentError, "Invalid nonce"
     end
 
     %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} = Funcs.lookup(type)
@@ -60,7 +59,7 @@ defmodule Ippan.TxHandler do
       hash: hash,
       size: size,
       stmts: stmts,
-      timestamp: timestamp,
+      nonce: nonce,
       type: type,
       validator: validator
     }
@@ -76,7 +75,7 @@ defmodule Ippan.TxHandler do
             type,
             from,
             args,
-            timestamp,
+            nonce,
             [msg, signature],
             size
           ]
@@ -93,7 +92,7 @@ defmodule Ippan.TxHandler do
             key,
             from,
             args,
-            timestamp,
+            nonce,
             [msg, signature],
             size
           ]

@@ -22,7 +22,12 @@ defmodule Ipnworker.Application do
       MainStore,
       NetStore,
       {PgStore, [:init]},
-      :poolboy.child_spec(:minerpool, [worker_module: MinerWorker, size: 5, max_overflow: 2]),
+      :poolboy.child_spec(:minerpool,
+        name: {:local, :minerpool},
+        worker_module: MinerWorker,
+        size: 5,
+        max_overflow: 2
+      ),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNode,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}

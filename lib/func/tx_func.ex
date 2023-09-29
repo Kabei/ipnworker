@@ -54,8 +54,11 @@ defmodule Ippan.Func.Tx do
     send(source, to, token, amount)
   end
 
-  def coinbase(%{id: account_id, conn: conn, stmts: stmts}, token_id, outputs)
-      when length(outputs) > 0 do
+  def coinbase(%{id: account_id, conn: conn, stmts: stmts}, token_id, outputs) do
+    if Enum.empty?(outputs) do
+      raise ArgumentError, "Bad outputs"
+    end
+
     token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
 
     cond do
