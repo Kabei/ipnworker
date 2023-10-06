@@ -2,7 +2,8 @@ defmodule Ipnworker.Application do
   @moduledoc false
 
   use Application
-  alias Ippan.ClusterNode
+  alias Ippan.Utils
+  alias Ippan.ClusterNodes
 
   @otp_app :ipnworker
 
@@ -12,24 +13,22 @@ defmodule Ipnworker.Application do
     make_folders()
     load_keys()
 
-    stats_path = Path.join(:persistent_term.get(:store_dir), "stats.dets")
-    balance_path = Path.join(:persistent_term.get(:store_dir), "balance.dets")
+    store_dir = :persistent_term.get(:store_dir)
+    wallet_path = Path.join(store_dir, "wallet.dets")
+    balance_path = Path.join(store_dir, "balance.dets")
+    stats_path = Path.join(store_dir, "stats.dets")
 
     children = [
       MemTables,
-      {DetsPlux, [name: :stats, file: stats_path]},
-      {DetsPlus, [name: :balance, file: balance_path, var: :dets_balance]},
+      {DetsPlux, [id: :wallet, file: wallet_path]},
+      {DetsPlux, [id: :balance, file: balance_path]},
+      {DetsPlux, [id: :stats, file: stats_path]},
       MainStore,
       NetStore,
       {PgStore, [:init]},
-      :poolboy.child_spec(:minerpool,
-        name: {:local, :minerpool},
-        worker_module: MinerWorker,
-        size: 5,
-        max_overflow: 2
-      ),
+      :poolboy.child_spec(:minerpool, miner_config()),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
-      ClusterNode,
+      ClusterNodes,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]
 
@@ -41,6 +40,7 @@ defmodule Ipnworker.Application do
     vid = System.get_env("VID")
     name = System.get_env("NAME")
     miner = System.get_env("MINER")
+    mow = System.get_env("MOW", "0")
 
     cond do
       is_nil(vid) ->
@@ -56,6 +56,7 @@ defmodule Ipnworker.Application do
         :persistent_term.put(:vid, String.to_integer(vid))
         :persistent_term.put(:name, name)
         :persistent_term.put(:miner, miner)
+        :persistent_term.put(:mow, Utils.cast_boolean(mow))
     end
   end
 
@@ -91,5 +92,9 @@ defmodule Ipnworker.Application do
     File.mkdir(block_dir)
     File.mkdir(decode_dir)
     File.mkdir(save_dir)
+  end
+
+  defp miner_config do
+    [name: {:local, :minerpool}, worker_module: MinerWorker, size: 5, max_overflow: 2]
   end
 end

@@ -11,19 +11,6 @@ SELECT name, value FROM main.env;
 DELETE FROM main.env WHERE name=?1;
 
 
---name: insert_wallet
-INSERT INTO account.wallet VALUES(?1,?2,?3,?4);
-
---name: get_wallet
-SELECT * FROM account.wallet WHERE id=? LIMIT 1;
-
---name: exists_wallet
-SELECT 1 FROM account.wallet WHERE id=?;
-
---name: delete_wallet
-DELETE FROM account.wallet WHERE id=?;
-
-
 --name: insert_token
 INSERT INTO assets.token VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10);
 
@@ -131,19 +118,17 @@ SELECT count(1) FROM blockchain.block WHERE round = ?;
 
 
 --name: insert_round
-INSERT INTO blockchain.round VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11);
+INSERT INTO blockchain.round VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12);
 
 --name: get_round
 SELECT * FROM blockchain.round WHERE id = ? LIMIT 1;
 
 --name: get_rounds
-SELECT * FROM blockchain.round LIMIT ?1 OFFSET ?2;
+SELECT * FROM blockchain.round WHERE id >= ?1 LIMIT ?2 OFFSET ?3;
 
 --name: last_round
 SELECT id, hash FROM blockchain.round ORDER BY id DESC LIMIT 1;
 
---name: exists_round
-SELECT 1 FROM blockchain.round WHERE id=? LIMIT 1;
 
 --name: insert_validator
 INSERT INTO blockchain.validator values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14);

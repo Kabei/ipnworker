@@ -10,6 +10,13 @@ defmodule Ippan.Utils do
   def to_atom(nil), do: nil
   def to_atom(text), do: String.to_atom(text)
 
+  def cast_boolean("true"), do: true
+  def cast_boolean("TRUE"), do: true
+  def cast_boolean("1"), do: true
+  def cast_boolean(1), do: true
+  def cast_boolean(true), do: true
+  def cast_boolean(_), do: false
+
   # def to_decimal(text_number, 0), do: text_number
   # def to_decimal(text_number, decimals) do
   #   {a, b} = String.split_at(text_number, -decimals)

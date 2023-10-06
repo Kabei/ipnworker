@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "count" BIGINT,
   "tx_count" BIGINT,
   "size" BIGINT,
+  "reason" INTEGER,
   "blocks" BYTEA,
   "extras" BYTEA
 );
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS history.events(
   "type" INTEGER NOT NULL,
   "from" BYTEA,
   "timestamp" BIGINT NOT NULL,
+  "nonce" BIGINT NOT NULL,
   "signature" BYTEA,
   "args" TEXT,
   PRIMARY KEY("block_id", "hash")
@@ -71,8 +73,8 @@ END IF;
 END$$;
 
 
-PREPARE insert_event(bigint, bytea, integer, bytea, bigint, bytea, text)
-AS INSERT INTO history.events VALUES($1,$2,$3,$4,$5,$6,$7);
+PREPARE insert_event(bigint, bytea, integer, bytea, bigint, bigint, bytea, text)
+AS INSERT INTO history.events VALUES($1,$2,$3,$4,$5,$6,$7,$8);
 
 PREPARE last_events(integer, integer)
 AS SELECT block_id, hash, timestamp, "type", "from" FROM history.events ORDER BY block_id DESC, timestamp DESC LIMIT $1 OFFSET $2;
@@ -88,8 +90,8 @@ PREPARE last_blocks(integer, integer)
 AS SELECT * FROM history.blocks ORDER BY id DESC LIMIT $1 OFFSET $2;
 
 
-PREPARE insert_round(bigint, bytea, bytea, bigint, bytea, bigint, bigint, bigint, bigint, bytea, bytea)
-AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);
+PREPARE insert_round(bigint, bytea, bytea, bigint, bytea, bigint, bigint, bigint, bigint, integer, bytea, bytea)
+AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12);
 
 PREPARE last_rounds(integer, integer)
 AS SELECT * FROM history.rounds ORDER BY "id" LIMIT $1 OFFSET $2;

@@ -1,6 +1,6 @@
 defmodule MemTables do
   # @set_opts [:set, :public, read_concurrency: true, write_concurrency: true]
-  @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: false]
+  # @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: false]
 
   @set_named_concurrent_opts [
     :set,
@@ -16,18 +16,16 @@ defmodule MemTables do
     # used after process round
     dtx: "dtx",
     # cache
-    wallet: "wallet",
-    token: "token",
     validator: "validator",
+    token: "token",
     env: "env"
   }
 
   @tables_opt %{
-    hash: @set_named_opts,
-    dhash: @set_named_opts,
+    hash: @set_named_concurrent_opts,
+    dhash: @set_named_concurrent_opts,
     dtx: @set_named_concurrent_opts,
     # cache
-    wallet: @set_named_concurrent_opts,
     validator: @set_named_concurrent_opts,
     token: @set_named_concurrent_opts,
     env: @set_named_concurrent_opts
@@ -85,6 +83,15 @@ defmodule MemTables do
     for table <- @tables do
       :ets.delete(table)
     end
+  end
+
+  def clear_cache do
+    :ets.delete_all_objects(:hash)
+    :ets.delete_all_objects(:dhash)
+    :ets.delete_all_objects(:dtx)
+    :ets.delete_all_objects(:validator)
+    :ets.delete_all_objects(:token)
+    :ets.delete_all_objects(:env)
   end
 
   @spec terminate :: :ok

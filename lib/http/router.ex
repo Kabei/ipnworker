@@ -2,7 +2,7 @@ defmodule Ipnworker.Router do
   use Plug.Router
   alias Ippan.Block
   alias Ippan.Validator
-  alias Ippan.ClusterNode
+  alias Ippan.ClusterNodes
   alias Ippan.TxHandler
   require SqliteStore
   require Logger
@@ -53,7 +53,7 @@ defmodule Ipnworker.Router do
               miner_id = :persistent_term.get(:miner)
               :ets.insert(:hash, {hash, height})
 
-              case ClusterNode.call(miner_id, "new_msg", handle_result) do
+              case ClusterNodes.call(miner_id, "new_msg", handle_result) do
                 {:ok, %{"height" => height}} ->
                   json(conn, %{
                     "hash" => Base.encode16(hash, case: :lower),
@@ -137,7 +137,7 @@ defmodule Ipnworker.Router do
     else
       if vid == :persistent_term.get(:vid) |> to_string do
         miner = :persistent_term.get(:miner)
-        node = ClusterNode.info(miner)
+        node = ClusterNodes.info(miner)
         url = Block.cluster_block_url(node.hostname, vid, height)
 
         case Download.await(url, block_path) do

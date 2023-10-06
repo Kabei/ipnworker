@@ -1,4 +1,4 @@
-defmodule Ippan.ClusterNode do
+defmodule Ippan.ClusterNodes do
   alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
 
@@ -8,7 +8,7 @@ defmodule Ippan.ClusterNode do
     app: :ipnworker,
     name: :cluster,
     table: :cnw,
-    server: Ippan.ClusterNode.Server,
+    server: Ippan.ClusterNodes.Server,
     pubsub: :cluster,
     topic: "cluster",
     conn_opts: [reconnect: true, retry: :infinity],
@@ -162,7 +162,7 @@ defmodule Ippan.ClusterNode do
             :poolboy.transaction(
               :minerpool,
               fn pid ->
-                MinerWorker.create(
+                MinerWorker.mine(
                   pid,
                   MapUtil.to_atoms(block),
                   state.hostname,
