@@ -40,7 +40,7 @@ defmodule Ipnworker.Application do
     vid = System.get_env("VID")
     name = System.get_env("NAME")
     miner = System.get_env("MINER")
-    mow = System.get_env("MOW", "0")
+    mow = System.get_env("MASTER", "0")
 
     cond do
       is_nil(vid) ->

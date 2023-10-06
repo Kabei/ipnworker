@@ -17,14 +17,14 @@ defmodule MinerWorker do
     {:ok, args}
   end
 
-  def mine(server, block, hostname, creator, round_id) do
-    GenServer.call(server, {:create, block, hostname, creator, round_id}, :infinity)
+  def mine(server, block, hostname, creator, round_id, mow) do
+    GenServer.call(server, {:mine, block, hostname, creator, round_id, mow}, :infinity)
   end
 
   @impl true
   def handle_call(
         {
-          :create,
+          :mine,
           %{
             id: block_id,
             creator: creator_id,
@@ -33,7 +33,8 @@ defmodule MinerWorker do
           } = block,
           hostname,
           creator,
-          _current_round_id
+          _current_round_id,
+          mow
         },
         _from,
         state
@@ -65,13 +66,22 @@ defmodule MinerWorker do
 
       if version != version_file, do: raise(IppanError, "Block file version failed")
 
-      mine_fun(version, messages, conn, stmts, dets, pg_conn, creator, block_id)
+      if mow do
+        mine_fun(version, messages, conn, stmts, dets, creator, block_id, pg_conn)
+      else
+        mine_fun(version, messages, conn, stmts, dets, creator, block_id)
+      end
+
       IO.inspect("Bstep 4")
       b = Block.to_list(block)
       x1 = SqliteStore.step(conn, stmts, "insert_block", b)
-      x2 = PgStore.insert_block(pg_conn, b)
+
+      if mow do
+        x2 = PgStore.insert_block(pg_conn, b)
+        IO.inspect(x2)
+      end
+
       IO.inspect(x1)
-      IO.inspect(x2)
 
       {:reply, :ok, state}
     rescue
@@ -81,8 +91,41 @@ defmodule MinerWorker do
     end
   end
 
+  defp mine_fun(@version, messages, conn, stmts, dets, validator, block_id) do
+    creator_id = validator.id
+
+    Enum.reduce(messages, 0, fn
+      [hash, type, from, args, timestamp, size], acc ->
+        case TxHandler.handle_regular(
+               conn,
+               stmts,
+               dets,
+               validator,
+               hash,
+               type,
+               from,
+               args,
+               size,
+               timestamp,
+               block_id
+             ) do
+          :error -> acc + 1
+          _ -> acc
+        end
+
+      msg, acc ->
+        case TxHandler.insert_deferred(msg, creator_id, block_id) do
+          true ->
+            acc
+
+          false ->
+            acc + 1
+        end
+    end)
+  end
+
   # Process the block
-  defp mine_fun(@version, messages, conn, stmts, dets, pg_conn, validator, block_id) do
+  defp mine_fun(@version, messages, conn, stmts, dets, validator, block_id, pg_conn) do
     creator_id = validator.id
 
     Enum.reduce(messages, 0, fn

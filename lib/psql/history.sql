@@ -4,7 +4,7 @@ CREATE SCHEMA IF NOT EXISTS history;
 
 CREATE TABLE IF NOT EXISTS history.rounds(
   "id" BIGINT PRIMARY KEY NOT NULL,
-  "hash" BYTEA NOT NULL,
+  "hash" BYTEA,
   "prev" BYTEA,
   "creator" BIGINT,
   "signature" BYTEA,

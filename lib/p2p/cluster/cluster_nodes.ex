@@ -123,74 +123,85 @@ defmodule Ippan.ClusterNodes do
   @doc """
   Create a new round. Received from a IPNCORE
   """
-  def handle_message("round.new", round = %{"id" => round_id, "blocks" => blocks}, state) do
-    spawn_link(fn ->
-      vid = :persistent_term.get(:vid)
-      conn = :persistent_term.get(:asset_conn)
-      stmts = :persistent_term.get(:asset_stmt)
-      dets = :persistent_term.get(:dets_balance)
-      pg_conn = PgStore.conn()
+  def handle_message(
+        "round.new",
+        round = %{"id" => round_id, "blocks" => blocks, "tx_count" => tx_count},
+        state
+      ) do
+    vid = :persistent_term.get(:vid)
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmt)
+    dets = :persistent_term.get(:dets_balance)
+    mow = :persistent_term.get(:mow)
+    pg_conn = PgStore.conn()
 
-      IO.inspect(round)
+    IO.inspect(round)
 
-      unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
-        {:ok, _} = PgStore.begin(pg_conn)
-        IO.inspect("step 1")
+    unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
+      {:ok, _} = PgStore.begin(pg_conn)
+      IO.inspect("step 1")
 
-        for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
-          if vid == creator_id do
-            if :persistent_term.get(:height, 0) < height do
-              :persistent_term.put(:height, height)
-            end
+      for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
+        if vid == creator_id do
+          if :persistent_term.get(:height, 0) < height do
+            :persistent_term.put(:height, height)
           end
-
-          if :persistent_term.get(:block_id, 0) < block_id do
-            :persistent_term.put(:block_id, block_id)
-          end
-
-          Task.async(fn ->
-            creator =
-              SqliteStore.lookup_map(
-                :validator,
-                conn,
-                stmts,
-                "get_validator",
-                creator_id,
-                Validator
-              )
-
-            :poolboy.transaction(
-              :minerpool,
-              fn pid ->
-                MinerWorker.mine(
-                  pid,
-                  MapUtil.to_atoms(block),
-                  state.hostname,
-                  creator,
-                  round_id
-                )
-              end,
-              :infinity
-            )
-          end)
         end
-        |> Enum.map(fn t -> Task.await(t, :infinity) end)
 
-        IO.inspect("step 2")
-        TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
-        IO.inspect("step 3")
-        r = Round.to_list(round)
-        # IO.inspect(r)
-        SqliteStore.step(conn, stmts, "insert_round", r)
-        SqliteStore.sync(conn)
-        {:ok, _} = PgStore.insert_round(pg_conn, r)
-        {:ok, _} = PgStore.commit(pg_conn)
+        if :persistent_term.get(:block_id, 0) < block_id do
+          :persistent_term.put(:block_id, block_id)
+        end
 
-        # IO.inspect(result)
+        Task.async(fn ->
+          creator =
+            SqliteStore.lookup_map(
+              :validator,
+              conn,
+              stmts,
+              "get_validator",
+              creator_id,
+              Validator
+            )
 
-        :persistent_term.put(:round, round_id)
+          :poolboy.transaction(
+            :minerpool,
+            fn pid ->
+              MinerWorker.mine(
+                pid,
+                MapUtil.to_atoms(block),
+                state.hostname,
+                creator,
+                round_id,
+                mow
+              )
+            end,
+            :infinity
+          )
+        end)
       end
-    end)
+      |> Task.await_many(:infinity)
+
+      IO.inspect("step 2")
+
+      if mow do
+        TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
+      else
+        TxHandler.run_deferred_txs(conn, stmts, dets)
+      end
+
+      IO.inspect("step 3")
+      round_encode = Round.to_list(round)
+      SqliteStore.step(conn, stmts, "insert_round", round_encode)
+
+      RoundCommit.sync(conn, tx_count)
+
+      if mow do
+        {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
+        {:ok, _} = PgStore.commit(pg_conn)
+      end
+
+      :persistent_term.put(:round, round_id)
+    end
   end
 
   def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
