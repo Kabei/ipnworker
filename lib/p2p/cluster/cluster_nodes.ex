@@ -133,7 +133,7 @@ defmodule Ippan.ClusterNodes do
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       vid = :persistent_term.get(:vid)
       round = MapUtil.to_atoms(msg_round)
-      balances = DetsPlux.whereis(:balances)
+      balances = DetsPlux.whereis(:balance)
       mow = :persistent_term.get(:mow)
       pg_conn = PgStore.conn()
 
