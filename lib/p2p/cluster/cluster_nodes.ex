@@ -140,6 +140,7 @@ defmodule Ippan.ClusterNodes do
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       {:ok, _} = PgStore.begin(pg_conn)
+      pool_pid = Process.whereis(:minerpool)
       IO.inspect("step 1")
 
       for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
@@ -165,7 +166,7 @@ defmodule Ippan.ClusterNodes do
             )
 
           :poolboy.transaction(
-            :minerpool,
+            pool_pid,
             fn pid ->
               MinerWorker.mine(
                 pid,
