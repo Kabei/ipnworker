@@ -209,6 +209,7 @@ defmodule Ippan.ClusterNodes do
   def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmts)
+    mow = :persistent_term.get(:mow)
 
     PubSub.broadcast(@pubsub, "jackpot", %{
       "round_id" => round_id,
@@ -217,6 +218,11 @@ defmodule Ippan.ClusterNodes do
     })
 
     SqliteStore.step(conn, stmts, "insert_jackpot", data)
+
+    if mow do
+      pg_conn = PgStore.conn()
+      PgStore.insert_jackpot(pg_conn, data)
+    end
   end
 
   def handle_message(_event, _data, _state), do: :ok
