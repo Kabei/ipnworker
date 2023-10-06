@@ -58,7 +58,6 @@ defmodule Ippan.ClusterNodes do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
     vid = :persistent_term.get(:vid)
-    :persistent_term.put(:dets_balance, Process.whereis(:balance))
     v = SqliteStore.lookup_map(:validator, conn, stmts, "get_validator", vid, Validator)
     :persistent_term.put(:validator, v)
 
@@ -128,17 +127,18 @@ defmodule Ippan.ClusterNodes do
         msg_round = %{"id" => round_id, "blocks" => blocks, "tx_count" => tx_count},
         state
       ) do
-    vid = :persistent_term.get(:vid)
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
-    dets = :persistent_term.get(:dets_balance)
-    mow = :persistent_term.get(:mow)
-    pg_conn = PgStore.conn()
-    round = MapUtil.to_atoms(msg_round)
-
-    IO.inspect(round)
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
+      vid = :persistent_term.get(:vid)
+      round = MapUtil.to_atoms(msg_round)
+      balances = DetsPlux.whereis(:balances)
+      mow = :persistent_term.get(:mow)
+      pg_conn = PgStore.conn()
+
+      IO.inspect(round)
+
       {:ok, _} = PgStore.begin(pg_conn)
       pool_pid = Process.whereis(:minerpool)
       IO.inspect("step 1")
@@ -186,9 +186,9 @@ defmodule Ippan.ClusterNodes do
       IO.inspect("step 2")
 
       if mow do
-        TxHandler.run_deferred_txs(conn, stmts, dets, pg_conn)
+        TxHandler.run_deferred_txs(conn, stmts, balances, pg_conn)
       else
-        TxHandler.run_deferred_txs(conn, stmts, dets)
+        TxHandler.run_deferred_txs(conn, stmts, balances)
       end
 
       IO.inspect("step 3")
