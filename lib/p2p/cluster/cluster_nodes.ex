@@ -134,7 +134,7 @@ defmodule Ippan.ClusterNodes do
     dets = :persistent_term.get(:dets_balance)
     mow = :persistent_term.get(:mow)
     pg_conn = PgStore.conn()
-    round = Round.from_remote(msg_round)
+    round = MapUtil.to_atoms(msg_round)
 
     IO.inspect(round)
 
