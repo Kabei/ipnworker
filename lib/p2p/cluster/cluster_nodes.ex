@@ -1,5 +1,4 @@
 defmodule Ippan.ClusterNodes do
-  alias Ippan.Block
   alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
 
