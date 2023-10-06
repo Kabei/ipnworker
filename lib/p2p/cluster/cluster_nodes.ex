@@ -1,4 +1,5 @@
 defmodule Ippan.ClusterNodes do
+  alias Ippan.Block
   alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
 
@@ -125,7 +126,7 @@ defmodule Ippan.ClusterNodes do
   """
   def handle_message(
         "round.new",
-        round = %{"id" => round_id, "blocks" => blocks, "tx_count" => tx_count},
+        msg_round = %{"id" => round_id, "blocks" => blocks, "tx_count" => tx_count},
         state
       ) do
     vid = :persistent_term.get(:vid)
@@ -134,6 +135,7 @@ defmodule Ippan.ClusterNodes do
     dets = :persistent_term.get(:dets_balance)
     mow = :persistent_term.get(:mow)
     pg_conn = PgStore.conn()
+    round = Round.from_remote(msg_round)
 
     IO.inspect(round)
 
