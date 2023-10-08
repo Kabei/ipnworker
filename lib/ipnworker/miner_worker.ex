@@ -39,10 +39,11 @@ defmodule MinerWorker do
         _from,
         state
       ) do
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmt)
+
     try do
       IO.inspect("Bstep 1")
-      conn = :persistent_term.get(:asset_conn)
-      stmts = :persistent_term.get(:asset_stmt)
       balances = DetsPlux.whereis(:balance)
       pg_conn = PgStore.conn()
 
@@ -86,6 +87,9 @@ defmodule MinerWorker do
       {:reply, :ok, state}
     rescue
       error ->
+        # delete player
+        SqliteStore.step(conn, stmts, "delete_validator", [creator_id])
+
         Logger.error(inspect(error))
         {:reply, :error, state}
     end
