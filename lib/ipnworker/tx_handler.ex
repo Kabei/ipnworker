@@ -69,8 +69,8 @@ defmodule Ippan.TxHandler do
     [sig_type, _] = String.split(from, "x", parts: 2)
     check_signature!(sig_type, signature, hash, wallet_pk)
 
-    cache_nonce_tx = DetsPlux.tx(:cahce_nonce)
-    Wallet.update_nonce!(wallet_dets, cache_nonce_tx, from, nonce)
+    cache_nonce_tx = DetsPlux.tx(:cache_nonce)
+    Wallet.gt_nonce!(wallet_dets, cache_nonce_tx, from, nonce)
 
     source = %{
       conn: conn,

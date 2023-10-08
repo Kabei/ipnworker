@@ -142,6 +142,7 @@ defmodule Ippan.ClusterNodes do
       {:ok, _} = PgStore.begin(pg_conn)
       pool_pid = Process.whereis(:minerpool)
       IO.inspect("step 1")
+      is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
       for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
         if vid == creator_id do
@@ -195,7 +196,7 @@ defmodule Ippan.ClusterNodes do
       round_encode = Round.to_list(round)
       SqliteStore.step(conn, stmts, "insert_round", round_encode)
 
-      RoundCommit.sync(conn, tx_count)
+      RoundCommit.sync(conn, tx_count, is_some_block_mine)
 
       if mow do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
