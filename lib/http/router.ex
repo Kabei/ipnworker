@@ -77,7 +77,7 @@ defmodule Ipnworker.Router do
               end
 
             true ->
-              send_resp(conn, 400, "Already exists")
+              send_resp(conn, 400, "Transaction already exists")
           end
 
         _ ->
