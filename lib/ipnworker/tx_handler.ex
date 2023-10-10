@@ -259,13 +259,15 @@ defmodule Ippan.TxHandler do
         block_id
       ) do
     key = {type, arg_key}
-    body = [hash, account_id, validator_id, args, timestamp, size]
+    body = [hash, account_id, validator_id, args, timestamp, size, block_id]
 
     case :ets.lookup(:dtx, key) do
       [] ->
         :ets.insert(:dtx, {key, body})
 
-      [{_msg_key, xhash, xblock_id, _rest}] ->
+      [{_msg_key, [xhash | _rest] = xbody}] ->
+        xblock_id = List.last(xbody)
+
         if hash < xhash or (hash == xhash and block_id < xblock_id) do
           :ets.insert(:dtx, {key, body})
         else
@@ -276,12 +278,13 @@ defmodule Ippan.TxHandler do
 
   # only deferred transactions
   def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets) do
-    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size]} <-
+    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size, block_id]} <-
           :ets.tab2list(:dtx) do
       %{modx: module, fun: fun} = Funcs.lookup(type)
 
       source = %{
         id: account_id,
+        block_id: block_id,
         conn: conn,
         stmts: stmts,
         balance: {balance_pid, balance_tx},
@@ -306,6 +309,7 @@ defmodule Ippan.TxHandler do
 
       source = %{
         id: account_id,
+        block_id: block_id,
         conn: conn,
         stmts: stmts,
         balance: {balance_pid, balance_tx},

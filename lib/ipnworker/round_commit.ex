@@ -19,7 +19,7 @@ defmodule RoundCommit do
         end),
         Task.async(fn ->
           stats_dets = DetsPlux.get(:stats)
-          supply_tx = DetsPlux.tx(:supply)
+          supply_tx = DetsPlux.tx(stats_dets, :supply)
           DetsPlux.sync(stats_dets, supply_tx)
         end)
       ]
