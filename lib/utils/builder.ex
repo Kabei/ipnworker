@@ -3,7 +3,6 @@ defmodule Builder do
   require Logger
 
   @compile {:inline, hash_fun: 1, encode_fun!: 1}
-  @type response :: {Client.t(), {binary, binary}}
 
   defmodule Client do
     @type t :: %Client{
@@ -57,6 +56,27 @@ defmodule Builder do
     IO.puts(body)
     IO.puts(sig)
     client
+  end
+
+  def post({client, body, sig64}, hostname) do
+    url = "https://#{hostname}/v1/call"
+
+    case HTTPoison.post(url, body, [{"auth", sig64}], hackney: [:insecure]) do
+      {:ok, %{status_code: code, body: msg, headers: headers}} ->
+        case code do
+          200 ->
+            {:ok, client}
+
+          302 ->
+            {:redirect, Map.new(headers) |> Map.get("location", "")}
+
+          code ->
+            {:error, code, msg}
+        end
+
+      error ->
+        error
+    end
   end
 
   # {pk, sk, address} = Builder.gen_ed25519(seed)
