@@ -66,6 +66,8 @@ defmodule PgStore do
     for sql <- @creations do
       {:ok, _result} = Postgrex.query(conn, sql, [])
     end
+
+    conn
   end
 
   def begin(conn) do
