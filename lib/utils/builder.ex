@@ -3,6 +3,7 @@ defmodule Builder do
   require Logger
 
   @compile {:inline, hash_fun: 1, encode_fun!: 1}
+  @type response :: {Client.t(), binary, binary}
 
   defmodule Client do
     @type t :: %Client{
@@ -51,13 +52,18 @@ defmodule Builder do
     {Client.new(sk), Client.new(sk2)}
   end
 
-  @spec print({Client.t(), binary, binary}) :: Client.t()
+  @spec print(response) :: Client.t()
   def print({client, body, sig}) do
     IO.puts(body)
     IO.puts(sig)
     client
   end
 
+  @spec post(response, String.t()) ::
+          {:ok, Client.t()}
+          | {:redirect, String.t()}
+          | {:error, integer, String.t()}
+          | {:error, HTTPoison.Error.t()}
   def post({client, body, sig64}, hostname) do
     url = "https://#{hostname}/v1/call"
 
