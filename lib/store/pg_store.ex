@@ -7,6 +7,7 @@ defmodule PgStore do
 
   @alter []
 
+  @app :ipnworker
   @key :pg_conn
 
   def child_spec(args) do
@@ -17,24 +18,20 @@ defmodule PgStore do
   end
 
   def init(args) do
-    opts = Application.get_env(:ipnworker, :repo)
-    {:ok, conn} = Postgrex.start_link(opts)
-    :persistent_term.put(@key, conn)
+    conn = conn()
 
-    case args do
-      [:init] ->
-        for sql <- @creations do
-          {:ok, _result} = Postgrex.query(conn, sql, [])
-        end
+    if args == [:init] do
+      for sql <- @creations do
+        {:ok, _result} = Postgrex.query(conn, sql, [])
+      end
 
-        # execute alter tables if exists new version
-        for sql <- @alter do
-          {:ok, _result} = Postgrex.query(conn, sql, [])
-        end
-
-      _ ->
-        nil
+      # execute alter tables if exists new version
+      for sql <- @alter do
+        {:ok, _result} = Postgrex.query(conn, sql, [])
+      end
     end
+
+    opts = Application.get_env(@app, :repo)
 
     ("Connection: " <>
        ANSI.yellow() <>
@@ -46,11 +43,25 @@ defmodule PgStore do
   end
 
   def conn do
-    :persistent_term.get(@key)
+    case :persistent_term.get(@key, nil) do
+      nil ->
+        opts = Application.get_env(@app, :repo)
+        {:ok, conn} = Postgrex.start_link(opts)
+        :persistent_term.put(@key, conn)
+        conn
+
+      conn ->
+        conn
+    end
   end
 
   def reset(conn) do
     {:ok, _result} = Postgrex.query(conn, "DROP SCHEMA history CASCADE;", [])
+
+    # stop connection
+    stop(conn)
+    # init connection
+    conn = conn()
 
     for sql <- @creations do
       {:ok, _result} = Postgrex.query(conn, sql, [])
