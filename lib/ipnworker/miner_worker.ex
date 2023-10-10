@@ -1,6 +1,7 @@
 defmodule MinerWorker do
   use GenServer
   alias Ippan.TxHandler
+  alias Ippan.Wallet
   alias Ippan.Block
   require SqliteStore
   require TxHandler
@@ -99,36 +100,59 @@ defmodule MinerWorker do
     end
   end
 
-  defp mine_fun(@version, messages, conn, stmts, balances, wallets, validator, block_id) do
+  defp mine_fun(
+         @version,
+         messages,
+         conn,
+         stmts,
+         balances,
+         {wallet_dets, _wallet_tx} = wallets,
+         validator,
+         block_id
+       ) do
     creator_id = validator.id
 
+    nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
+
     Enum.reduce(messages, 0, fn
-      [hash, type, from, args, timestamp, size], acc ->
-        case TxHandler.handle_regular(
-               conn,
-               stmts,
-               balances,
-               wallets,
-               validator,
-               hash,
-               type,
-               from,
-               args,
-               size,
-               timestamp,
-               block_id
-             ) do
-          :error -> acc + 1
-          _ -> acc
+      [hash, type, from, args, timestamp, nonce, size], acc ->
+        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
+          :error ->
+            acc + 1
+
+          _number ->
+            case TxHandler.handle_regular(
+                   conn,
+                   stmts,
+                   balances,
+                   wallets,
+                   validator,
+                   hash,
+                   type,
+                   from,
+                   args,
+                   size,
+                   timestamp,
+                   block_id
+                 ) do
+              :error -> acc + 1
+              _ -> acc
+            end
         end
 
-      msg, acc ->
-        case TxHandler.insert_deferred(msg, creator_id, block_id) do
-          true ->
-            acc
-
-          false ->
+      msg = [_hash, _type, _arg_key, from, _args, _timestamp, nonce, _size], acc ->
+        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
+          :error ->
             acc + 1
+
+          _number ->
+            case TxHandler.insert_deferred(msg, creator_id, block_id) do
+              true ->
+                acc
+
+              false ->
+                acc + 1
+            end
         end
     end)
   end
@@ -138,52 +162,89 @@ defmodule MinerWorker do
   end
 
   # Process the block
-  defp mine_fun(@version, messages, conn, stmts, balances, wallets, validator, block_id, pg_conn) do
+  defp mine_fun(
+         @version,
+         messages,
+         conn,
+         stmts,
+         balances,
+         {wallet_dets, _wallet_tx} = wallets,
+         validator,
+         block_id,
+         pg_conn
+       ) do
     creator_id = validator.id
+
+    nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
 
     Enum.reduce(messages, 0, fn
       [hash, type, from, args, timestamp, nonce, size], acc ->
-        case TxHandler.handle_regular(
-               conn,
-               stmts,
-               balances,
-               wallets,
-               validator,
-               hash,
-               type,
-               from,
-               args,
-               size,
-               timestamp,
-               block_id
-             ) do
+        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
-          _ ->
-            r =
-              PgStore.insert_event(pg_conn, [
-                block_id,
-                hash,
-                type,
-                from,
-                timestamp,
-                nonce,
-                nil,
-                Jason.encode!(args)
-              ])
+          _number ->
+            case TxHandler.handle_regular(
+                   conn,
+                   stmts,
+                   balances,
+                   wallets,
+                   validator,
+                   hash,
+                   type,
+                   from,
+                   args,
+                   size,
+                   timestamp,
+                   block_id
+                 ) do
+              :error ->
+                acc + 1
 
-            IO.inspect(r)
-            acc
+              _ ->
+                r =
+                  PgStore.insert_event(pg_conn, [
+                    block_id,
+                    hash,
+                    type,
+                    from,
+                    timestamp,
+                    nonce,
+                    nil,
+                    Jason.encode!(args)
+                  ])
+
+                IO.inspect(r)
+                acc
+            end
         end
 
-      msg, acc ->
-        case TxHandler.insert_deferred(msg, creator_id, block_id) do
-          true ->
-            acc
-
-          false ->
+      msg = [hash, type, _arg_key, from, args, timestamp, nonce, _size], acc ->
+        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
+          :error ->
             acc + 1
+
+          _number ->
+            case TxHandler.insert_deferred(msg, creator_id, block_id) do
+              true ->
+                r =
+                  PgStore.insert_event(pg_conn, [
+                    block_id,
+                    hash,
+                    type,
+                    from,
+                    timestamp,
+                    nonce,
+                    nil,
+                    Jason.encode!(args)
+                  ])
+
+                IO.inspect(r)
+                acc
+
+              false ->
+                acc + 1
+            end
         end
     end)
   end
