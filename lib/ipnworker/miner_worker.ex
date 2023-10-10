@@ -17,8 +17,12 @@ defmodule MinerWorker do
     {:ok, args}
   end
 
-  def mine(server, block, hostname, creator, mow) do
-    GenServer.call(server, {:mine, block, hostname, creator, mow}, :infinity)
+  def mine(server, round_id, block, hostname, creator, mow) do
+    GenServer.call(
+      server,
+      {:mine, Map.put(block, :round, round_id), hostname, creator, mow},
+      :infinity
+    )
   end
 
   @impl true

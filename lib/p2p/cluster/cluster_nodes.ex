@@ -172,6 +172,7 @@ defmodule Ippan.ClusterNodes do
             fn pid ->
               MinerWorker.mine(
                 pid,
+                round_id,
                 MapUtil.to_atoms(block),
                 state.hostname,
                 creator,
