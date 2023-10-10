@@ -254,7 +254,7 @@ defmodule Ippan.TxHandler do
 
   # Dispute resolution in deferred transaction
   def insert_deferred(
-        [hash, type, arg_key, account_id, args, timestamp, size],
+        [hash, type, arg_key, account_id, args, timestamp, _nonce, size],
         validator_id,
         block_id
       ) do
