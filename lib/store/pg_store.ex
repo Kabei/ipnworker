@@ -59,7 +59,8 @@ defmodule PgStore do
     end
   end
 
-  def reset(conn) do
+  def reset do
+    conn = conn()
     # Destroy all data
     case Postgrex.query(conn, "DROP SCHEMA history CASCADE;", []) do
       {:ok, _} ->
