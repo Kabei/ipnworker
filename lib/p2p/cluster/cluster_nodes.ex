@@ -221,7 +221,7 @@ defmodule Ippan.ClusterNodes do
 
   def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
     conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmts)
+    stmts = :persistent_term.get(:asset_stmt)
     mow = :persistent_term.get(:mow)
 
     PubSub.broadcast(@pubsub, "jackpot", %{
