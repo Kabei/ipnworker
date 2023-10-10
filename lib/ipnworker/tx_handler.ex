@@ -54,7 +54,7 @@ defmodule Ippan.TxHandler do
     %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} = Funcs.lookup(type)
 
     wallet_dets = DetsPlux.get(:wallet)
-    wallet_cache = DetsPlux.tx(:cache_wallet)
+    wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
     wallet_pk =
       get_and_check_wallet!(
@@ -69,12 +69,14 @@ defmodule Ippan.TxHandler do
     [sig_type, _] = String.split(from, "x", parts: 2)
     check_signature!(sig_type, signature, hash, wallet_pk)
 
-    cache_nonce_tx = DetsPlux.tx(:cache_nonce)
+    cache_nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
     Wallet.gte_nonce!(wallet_dets, cache_nonce_tx, from, nonce)
+
+    balance_dets = DetsPlux.get(:balance)
 
     source = %{
       conn: conn,
-      balance: {DetsPlux.get(:balance), DetsPlux.tx(:cache_balance)},
+      balance: {balance_dets, DetsPlux.tx(balance_dets, :cache_balance)},
       id: from,
       hash: hash,
       size: size,
@@ -153,12 +155,14 @@ defmodule Ippan.TxHandler do
     [sig_type, _] = String.split(from, "x", parts: 2)
     check_signature!(sig_type, signature, hash, wallet_pk)
 
-    nonce_tx = DetsPlux.tx(:nonce)
+    nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
     Wallet.update_nonce!(wallet_dets, nonce_tx, from, nonce)
+
+    balance_dets = DetsPlux.get(:balance)
 
     source = %{
       conn: conn,
-      balance: {DetsPlux.get(:balance), DetsPlux.tx(:cache_balance)},
+      balance: {balance_dets, DetsPlux.tx(balance_dets, :cache_balance)},
       id: from,
       hash: hash,
       size: size,
@@ -203,6 +207,7 @@ defmodule Ippan.TxHandler do
              conn,
              stmts,
              balance,
+             wallets,
              validator,
              hash,
              type,
@@ -223,6 +228,7 @@ defmodule Ippan.TxHandler do
             args: args,
             timestamp: timestamp,
             size: size,
+            wallets: wallets,
             block_id: block_id
           ],
           location: :keep do
@@ -238,7 +244,8 @@ defmodule Ippan.TxHandler do
         validator: validator,
         hash: hash,
         timestamp: timestamp,
-        size: size
+        size: size,
+        wallets: wallets
       }
 
       apply(module, fun, [source | args])
@@ -247,7 +254,7 @@ defmodule Ippan.TxHandler do
 
   # Dispute resolution in deferred transaction
   def insert_deferred(
-        [hash, type, arg_key, account_id, args, timestamp, _nonce, size],
+        [hash, type, arg_key, account_id, args, timestamp, size],
         validator_id,
         block_id
       ) do
@@ -268,8 +275,8 @@ defmodule Ippan.TxHandler do
   end
 
   # only deferred transactions
-  def run_deferred_txs(conn, stmts, balances) do
-    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, _nonce, size]} <-
+  def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets) do
+    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size]} <-
           :ets.tab2list(:dtx) do
       %{modx: module, fun: fun} = Funcs.lookup(type)
 
@@ -277,12 +284,13 @@ defmodule Ippan.TxHandler do
         id: account_id,
         conn: conn,
         stmts: stmts,
-        balance: balances,
+        balance: {balance_pid, balance_tx},
         type: type,
         validator: validator_id,
         hash: hash,
         timestamp: timestamp,
-        size: size
+        size: size,
+        wallets: wallets
       }
 
       apply(module, fun, [source | args])
@@ -291,7 +299,7 @@ defmodule Ippan.TxHandler do
     :ets.delete_all_objects(:dtx)
   end
 
-  def run_deferred_txs(conn, stmts, balances, pg_conn) do
+  def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn) do
     for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size, block_id]} <-
           :ets.tab2list(:dtx) do
       %{modx: module, fun: fun} = Funcs.lookup(type)
@@ -300,12 +308,13 @@ defmodule Ippan.TxHandler do
         id: account_id,
         conn: conn,
         stmts: stmts,
-        balance: balances,
+        balance: {balance_pid, balance_tx},
         type: type,
         validator: validator_id,
         hash: hash,
         timestamp: timestamp,
-        size: size
+        size: size,
+        wallets: wallets
       }
 
       case apply(module, fun, [source | args]) do

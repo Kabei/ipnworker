@@ -54,7 +54,14 @@ defmodule PgStore do
   end
 
   def commit(conn) do
-    Postgrex.query(conn, "COMMIT;", [])
+    case Postgrex.query(conn, "COMMIT;", []) do
+      {:ok, _} = r ->
+        r
+
+      error ->
+        Postgrex.query(conn, "ABORT;", [])
+        error
+    end
   end
 
   def rollback(conn) do

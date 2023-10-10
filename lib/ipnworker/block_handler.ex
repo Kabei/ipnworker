@@ -69,7 +69,7 @@ defmodule Ippan.BlockHandler do
 
           conn = :persistent_term.get(:asset_conn)
           stmts = :persistent_term.get(:asset_stmt)
-          wallets = DetsPlux.whereis(:wallet)
+          wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
 
           validator =
             SqliteStore.lookup_map(

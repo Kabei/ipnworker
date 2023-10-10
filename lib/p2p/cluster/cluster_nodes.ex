@@ -133,7 +133,8 @@ defmodule Ippan.ClusterNodes do
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       vid = :persistent_term.get(:vid)
       round = MapUtil.to_atoms(msg_round)
-      balances = DetsPlux.whereis(:balance)
+      balance_pid = DetsPlux.get(:balance)
+      balance_tx = DetsPlux.tx(:balance)
       mow = :persistent_term.get(:mow)
       pg_conn = PgStore.conn()
 
@@ -185,11 +186,13 @@ defmodule Ippan.ClusterNodes do
       |> Task.await_many(:infinity)
 
       IO.inspect("step 2")
+      wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
+
 
       if mow do
-        TxHandler.run_deferred_txs(conn, stmts, balances, pg_conn)
+        TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn)
       else
-        TxHandler.run_deferred_txs(conn, stmts, balances)
+        TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets)
       end
 
       IO.inspect("step 3")

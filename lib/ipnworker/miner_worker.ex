@@ -44,7 +44,8 @@ defmodule MinerWorker do
 
     try do
       IO.inspect("Bstep 1")
-      balances = DetsPlux.whereis(:balance)
+      balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
+      wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
       pg_conn = PgStore.conn()
 
       # Request verify a remote blockfile
@@ -68,9 +69,9 @@ defmodule MinerWorker do
       if version != version_file, do: raise(IppanError, "Block file version failed")
 
       if mow do
-        mine_fun(version, messages, conn, stmts, balances, creator, block_id, pg_conn)
+        mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id, pg_conn)
       else
-        mine_fun(version, messages, conn, stmts, balances, creator, block_id)
+        mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id)
       end
 
       IO.inspect("Bstep 4")
@@ -95,7 +96,7 @@ defmodule MinerWorker do
     end
   end
 
-  defp mine_fun(@version, messages, conn, stmts, dets, validator, block_id) do
+  defp mine_fun(@version, messages, conn, stmts, balances, wallets, validator, block_id) do
     creator_id = validator.id
 
     Enum.reduce(messages, 0, fn
@@ -103,7 +104,8 @@ defmodule MinerWorker do
         case TxHandler.handle_regular(
                conn,
                stmts,
-               dets,
+               balances,
+               wallets,
                validator,
                hash,
                type,
@@ -129,7 +131,7 @@ defmodule MinerWorker do
   end
 
   # Process the block
-  defp mine_fun(@version, messages, conn, stmts, balances, validator, block_id, pg_conn) do
+  defp mine_fun(@version, messages, conn, stmts, balances, wallets, validator, block_id, pg_conn) do
     creator_id = validator.id
 
     Enum.reduce(messages, 0, fn
@@ -138,6 +140,7 @@ defmodule MinerWorker do
                conn,
                stmts,
                balances,
+               wallets,
                validator,
                hash,
                type,
