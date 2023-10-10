@@ -40,7 +40,14 @@ defmodule Ippan.ClusterClient do
   end
 
   defp connect(
-         %{id: node_id, hostname: hostname, port: port, net_pubkey: net_pubkey, opts: opts} =
+         %{
+           id: node_id,
+           hostname: hostname,
+           port: port,
+           net_pubkey: net_pubkey,
+           opts: opts,
+           pid: pid
+         } =
            state
        ) do
     retry = Keyword.get(opts, :retry, 0)
@@ -63,11 +70,11 @@ defmodule Ippan.ClusterClient do
             }
 
           new_state = Map.merge(state, map)
-          @node.on_connect(node_id, map)
+          @node.on_connect(node_id, new_state)
           {:ok, tRef} = :timer.send_after(@ping_interval, :ping)
 
           # callback
-          callback(state[:pid], :ok)
+          callback(pid, :ok)
 
           {:noreply, Map.put(new_state, :tRef, tRef), :hibernate}
 
