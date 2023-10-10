@@ -77,7 +77,7 @@ PREPARE insert_event(bigint, bytea, integer, bytea, bigint, bigint, bytea, text)
 AS INSERT INTO history.events VALUES($1,$2,$3,$4,$5,$6,$7,$8);
 
 PREPARE last_events(integer, integer)
-AS SELECT block_id, hash, timestamp, "type", "from" FROM history.events ORDER BY block_id DESC, timestamp DESC LIMIT $1 OFFSET $2;
+AS SELECT block_id, hash, "type", "from", timestamp FROM history.events ORDER BY block_id DESC, timestamp DESC LIMIT $1 OFFSET $2;
 
 PREPARE get_details_event(bytea, bigint)
 AS SELECT "signature", "args" FROM history.events WHERE hash = $1 AND block_id = $2 LIMIT 1;

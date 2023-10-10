@@ -175,7 +175,6 @@ defmodule Ippan.ClusterNodes do
                 MapUtil.to_atoms(block),
                 state.hostname,
                 creator,
-                round_id,
                 mow
               )
             end,
@@ -187,7 +186,6 @@ defmodule Ippan.ClusterNodes do
 
       IO.inspect("step 2")
       wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
-
 
       if mow do
         TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn)

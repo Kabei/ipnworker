@@ -17,8 +17,8 @@ defmodule MinerWorker do
     {:ok, args}
   end
 
-  def mine(server, block, hostname, creator, round_id, mow) do
-    GenServer.call(server, {:mine, block, hostname, creator, round_id, mow}, :infinity)
+  def mine(server, block, hostname, creator, mow) do
+    GenServer.call(server, {:mine, block, hostname, creator, mow}, :infinity)
   end
 
   @impl true
@@ -33,7 +33,6 @@ defmodule MinerWorker do
           } = block,
           hostname,
           creator,
-          _current_round_id,
           mow
         },
         _from,
@@ -130,6 +129,10 @@ defmodule MinerWorker do
     end)
   end
 
+  defp mine_fun(version, _messages, _conn, _stmts, _balances, _wallets, _validator, _block_id) do
+    raise IppanError, "Error block version #{inspect(version)}"
+  end
+
   # Process the block
   defp mine_fun(@version, messages, conn, stmts, balances, wallets, validator, block_id, pg_conn) do
     creator_id = validator.id
@@ -163,7 +166,7 @@ defmodule MinerWorker do
                 timestamp,
                 nonce,
                 nil,
-                CBOR.encode(args)
+                Jason.encode!(args)
               ])
 
             IO.inspect(r)
@@ -181,7 +184,17 @@ defmodule MinerWorker do
     end)
   end
 
-  # defp mine_fun(version, _messages, _conn, _stmts, _dets, _creator_id, _block_id) do
-  #   raise IppanError, "Error block version #{inspect(version)}"
-  # end
+  defp mine_fun(
+         version,
+         _messages,
+         _conn,
+         _stmts,
+         _balances,
+         _wallets,
+         _validator,
+         _block_id,
+         _pg_conn
+       ) do
+    raise IppanError, "Error block version #{inspect(version)}"
+  end
 end
