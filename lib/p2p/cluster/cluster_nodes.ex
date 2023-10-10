@@ -230,7 +230,7 @@ defmodule Ippan.ClusterNodes do
       "amount" => amount
     })
 
-    SqliteStore.step(conn, stmts, "insert_jackpot", data)
+    :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
 
     if mow do
       pg_conn = PgStore.conn()

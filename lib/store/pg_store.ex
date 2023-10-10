@@ -49,6 +49,14 @@ defmodule PgStore do
     :persistent_term.get(@key)
   end
 
+  def reset(conn) do
+    {:ok, _result} = Postgrex.query(conn, "DROP SCHEMA history CASCADE;", [])
+
+    for sql <- @creations do
+      {:ok, _result} = Postgrex.query(conn, sql, [])
+    end
+  end
+
   def begin(conn) do
     Postgrex.query(conn, "BEGIN;", [])
   end
