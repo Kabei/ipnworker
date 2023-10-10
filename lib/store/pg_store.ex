@@ -13,22 +13,15 @@ defmodule PgStore do
   def child_spec(args) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :init, [args]}
+      start: {__MODULE__, :start, [args]}
     }
   end
 
-  def init(args) do
+  def start(args \\ nil) do
     conn = conn()
 
     if args == [:init] do
-      for sql <- @creations do
-        {:ok, _result} = Postgrex.query(conn, sql, [])
-      end
-
-      # execute alter tables if exists new version
-      for sql <- @alter do
-        {:ok, _result} = Postgrex.query(conn, sql, [])
-      end
+      init(conn)
     end
 
     opts = Application.get_env(@app, :repo)
@@ -55,19 +48,31 @@ defmodule PgStore do
     end
   end
 
-  def reset(conn) do
-    {:ok, _result} = Postgrex.query(conn, "DROP SCHEMA history CASCADE;", [])
-
-    # stop connection
-    stop(conn)
-    # init connection
-    conn = conn()
-
+  def init(conn) do
     for sql <- @creations do
       {:ok, _result} = Postgrex.query(conn, sql, [])
     end
 
-    conn
+    # execute alter tables if exists new version
+    for sql <- @alter do
+      {:ok, _result} = Postgrex.query(conn, sql, [])
+    end
+  end
+
+  def reset(conn) do
+    # Destroy all data
+    case Postgrex.query(conn, "DROP SCHEMA history CASCADE;", []) do
+      {:ok, _} ->
+        # Stop connection
+        stop(conn)
+        # Init connection
+        conn = conn()
+        init(conn)
+        conn
+
+      error ->
+        error
+    end
   end
 
   def begin(conn) do
