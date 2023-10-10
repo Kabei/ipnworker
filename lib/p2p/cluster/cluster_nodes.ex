@@ -124,7 +124,13 @@ defmodule Ippan.ClusterNodes do
   """
   def handle_message(
         "round.new",
-        msg_round = %{"id" => round_id, "blocks" => blocks, "tx_count" => tx_count},
+        msg_round = %{
+          "id" => round_id,
+          "blocks" => blocks,
+          "creator" => round_creator_id,
+          "reason" => reason,
+          "tx_count" => tx_count
+        },
         state
       ) do
     conn = :persistent_term.get(:asset_conn)
@@ -145,8 +151,8 @@ defmodule Ippan.ClusterNodes do
       IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
-      for block = %{"id" => block_id, "creator" => creator_id, "height" => height} <- blocks do
-        if vid == creator_id do
+      for block = %{"id" => block_id, "creator" => block_creator_id, "height" => height} <- blocks do
+        if vid == block_creator_id do
           if :persistent_term.get(:height, 0) < height do
             :persistent_term.put(:height, height)
           end
@@ -163,7 +169,7 @@ defmodule Ippan.ClusterNodes do
               conn,
               stmts,
               "get_validator",
-              creator_id,
+              block_creator_id,
               Validator
             )
 
@@ -192,6 +198,10 @@ defmodule Ippan.ClusterNodes do
         TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn)
       else
         TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets)
+      end
+
+      if reason > 0 do
+        :done = SqliteStore.step(conn, stmts, "delete_validator", [round_creator_id])
       end
 
       IO.inspect("step 3")
