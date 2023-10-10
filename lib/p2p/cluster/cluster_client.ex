@@ -60,16 +60,13 @@ defmodule Ippan.ClusterClient do
         {:ok, sharedkey} ->
           :ok = :inet.setopts(socket, active: true)
 
-          map =
-            %{
-              socket: socket,
-              sharedkey: sharedkey,
-              hostname: hostname,
-              port: port,
-              net_pubkey: net_pubkey
-            }
+          new_state =
+            state
+            |> Map.take([:id, :hostname, :port, :role, :net_pubkey, :opts, :pid])
+            |> Map.put(:socket, socket)
+            |> Map.put(:sharedkey, sharedkey)
 
-          new_state = Map.merge(state, map)
+          new_state = Map.merge(state, new_state)
           @node.on_connect(node_id, new_state)
           {:ok, tRef} = :timer.send_after(@ping_interval, :ping)
 
