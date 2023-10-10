@@ -66,7 +66,6 @@ defmodule Ippan.ClusterClient do
             |> Map.put(:socket, socket)
             |> Map.put(:sharedkey, sharedkey)
 
-          new_state = Map.merge(state, new_state)
           @node.on_connect(node_id, new_state)
           {:ok, tRef} = :timer.send_after(@ping_interval, :ping)
 
