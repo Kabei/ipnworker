@@ -122,31 +122,64 @@ defmodule Ippan.ClusterNodes do
   @doc """
   Create a new round. Received from a IPNCORE
   """
-  def handle_message(
-        "round.new",
-        msg_round = %{
-          "id" => round_id,
-          "blocks" => blocks,
-          "creator" => round_creator_id,
-          "reason" => reason,
-          "tx_count" => tx_count
+  def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
+    mow = :persistent_term.get(:mow)
+    round = MapUtil.to_atoms(msg_round)
+
+    if mow do
+      pgid = PgStore.conn()
+
+      Postgrex.transaction(pgid, fn conn ->
+        build_round(round, hostname, mow, conn)
+      end)
+    else
+      build_round(round, hostname, mow, nil)
+    end
+  end
+
+  def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
+    conn = :persistent_term.get(:asset_conn)
+    stmts = :persistent_term.get(:asset_stmt)
+    mow = :persistent_term.get(:mow)
+
+    PubSub.broadcast(@pubsub, "jackpot", %{
+      "round_id" => round_id,
+      "winner" => winner_id,
+      "amount" => amount
+    })
+
+    :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
+
+    if mow do
+      pg_conn = PgStore.conn()
+      PgStore.insert_jackpot(pg_conn, data)
+    end
+  end
+
+  def handle_message(_event, _data, _state), do: :ok
+
+  defp build_round(
+        round = %{
+          id: round_id,
+          blocks: blocks,
+          creator: round_creator_id,
+          reason: reason,
+          tx_count: tx_count
         },
-        state
+        hostname,
+        mow,
+        pg_conn
       ) do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       vid = :persistent_term.get(:vid)
-      round = MapUtil.to_atoms(msg_round)
       balance_pid = DetsPlux.get(:balance)
       balance_tx = DetsPlux.tx(:balance)
-      mow = :persistent_term.get(:mow)
-      pg_conn = PgStore.conn()
 
       IO.inspect(round)
 
-      {:ok, _} = PgStore.begin(pg_conn)
       pool_pid = Process.whereis(:minerpool)
       IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
@@ -183,7 +216,7 @@ defmodule Ippan.ClusterNodes do
                 pid,
                 round_id,
                 MapUtil.to_atoms(block),
-                state.hostname,
+                hostname,
                 creator,
                 mow
               )
@@ -215,31 +248,9 @@ defmodule Ippan.ClusterNodes do
 
       if mow do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
-        {:ok, _} = PgStore.commit(pg_conn)
       end
 
       :persistent_term.put(:round, round_id)
     end
   end
-
-  def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
-    mow = :persistent_term.get(:mow)
-
-    PubSub.broadcast(@pubsub, "jackpot", %{
-      "round_id" => round_id,
-      "winner" => winner_id,
-      "amount" => amount
-    })
-
-    :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
-
-    if mow do
-      pg_conn = PgStore.conn()
-      PgStore.insert_jackpot(pg_conn, data)
-    end
-  end
-
-  def handle_message(_event, _data, _state), do: :ok
 end
