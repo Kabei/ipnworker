@@ -17,10 +17,10 @@ defmodule PgStore do
     }
   end
 
-  def start(args \\ nil) do
+  def start(_args) do
     conn = conn()
 
-    if args == [:init] do
+    if :persistent_term.get(:mow) do
       init(conn)
     end
 

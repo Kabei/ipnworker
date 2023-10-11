@@ -25,7 +25,7 @@ defmodule Ipnworker.Application do
       {DetsPlux, [id: :stats, file: stats_path]},
       MainStore,
       NetStore,
-      {PgStore, [:init]},
+      PgStore,
       :poolboy.child_spec(:minerpool, miner_config()),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNodes,
