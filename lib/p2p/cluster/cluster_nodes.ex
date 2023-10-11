@@ -151,15 +151,18 @@ defmodule Ippan.ClusterNodes do
       IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
-      for block = %{"id" => block_id, "creator" => block_creator_id, "height" => height} <- blocks do
+      blocks_len = length(blocks)
+
+      if blocks_len != 0 do
+        next_block_id = :persistent_term.get(:block_id, 0) + blocks_len - 1
+        :persistent_term.put(:block_id, next_block_id)
+      end
+
+      for block = %{"creator" => block_creator_id, "height" => height} <- blocks do
         if vid == block_creator_id do
           if :persistent_term.get(:height, 0) < height do
             :persistent_term.put(:height, height)
           end
-        end
-
-        if :persistent_term.get(:block_id, 0) < block_id do
-          :persistent_term.put(:block_id, block_id)
         end
 
         Task.async(fn ->
@@ -201,7 +204,7 @@ defmodule Ippan.ClusterNodes do
       end
 
       if reason > 0 do
-        :done = SqliteStore.step(conn, stmts, "delete_validator", [round_creator_id])
+        SqliteStore.step(conn, stmts, "delete_validator", [round_creator_id])
       end
 
       IO.inspect("step 3")

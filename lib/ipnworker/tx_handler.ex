@@ -155,7 +155,7 @@ defmodule Ippan.TxHandler do
     [sig_type, _] = String.split(from, "x", parts: 2)
     check_signature!(sig_type, signature, hash, wallet_pk)
 
-    nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
+    nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
     Wallet.update_nonce!(wallet_dets, nonce_tx, from, nonce)
 
     balance_dets = DetsPlux.get(:balance)
