@@ -131,7 +131,7 @@ defmodule Ippan.ClusterNodes do
 
       Postgrex.transaction(pgid, fn conn ->
         build_round(round, hostname, mow, conn)
-      end)
+      end, timeout: :infinity)
     else
       build_round(round, hostname, mow, nil)
     end

@@ -8,7 +8,7 @@ defmodule PgStore do
   @alter []
 
   @app :ipnworker
-  @key :pg_conn
+  @key :pg_pid
 
   def child_spec(args) do
     %{
@@ -48,28 +48,35 @@ defmodule PgStore do
     end
   end
 
-  def init(conn) do
-    for sql <- @creations do
-      {:ok, _result} = Postgrex.query(conn, sql, [])
-    end
+  def init(pid) do
+    Postgrex.transaction(
+      pid,
+      fn conn ->
+        for sql <- @creations do
+          {:ok, _result} = Postgrex.query(conn, sql, [])
+        end
 
-    # execute alter tables if exists new version
-    for sql <- @alter do
-      {:ok, _result} = Postgrex.query(conn, sql, [])
-    end
+        # execute alter tables if exists new version
+        for sql <- @alter do
+          {:ok, _result} = Postgrex.query(conn, sql, [])
+        end
+      end,
+      timeout: :infinity
+    )
   end
 
   def reset do
-    conn = conn()
+    pid = conn()
+
     # Destroy all data
-    case Postgrex.query(conn, "DROP SCHEMA history CASCADE;", []) do
+    case Postgrex.query(pid, "DROP SCHEMA history CASCADE;", []) do
       {:ok, _} ->
         # Stop connection
-        stop(conn)
+        stop(pid)
         # Init connection
-        conn = conn()
-        init(conn)
-        conn
+        pid = conn()
+        init(pid)
+        pid
 
       error ->
         error
