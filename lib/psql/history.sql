@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE SCHEMA IF NOT EXISTS history;
 
 CREATE TABLE IF NOT EXISTS history.rounds(
@@ -109,5 +107,3 @@ AS INSERT INTO history.snapshot VALUES($1,$2,$3);
 
 PREPARE last_snapshots(integer, integer)
 AS SELECT * FROM history.snapshot ORDER BY round_id LIMIT $1 OFFSET $2;
-
-COMMIT;
