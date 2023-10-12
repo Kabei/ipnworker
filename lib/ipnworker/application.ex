@@ -26,6 +26,7 @@ defmodule Ipnworker.Application do
       MainStore,
       NetStore,
       PgStore,
+      Ipnworker.Repo,
       :poolboy.child_spec(:minerpool, miner_config()),
       Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
       ClusterNodes,

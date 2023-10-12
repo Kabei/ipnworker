@@ -5,49 +5,47 @@ defmodule PgStore do
 
   @creations SQL.readFile!("lib/psql/history.sql")
 
+  @prepares SQL.readFile!("lib/psql/prepare.sql")
+
   @alter []
 
   @app :ipnworker
   # DB Pool connexions
   @pool :pg_pool
+  @repo Ipnworker.Repo
 
-  def child_spec(args) do
+  def child_spec(_args) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start, [args]}
+      start: {__MODULE__, :start, []}
     }
   end
 
-  def start(_args) do
-    pool()
-    :ignore
+  def start do
+    case :persistent_term.get(:mow) do
+      true ->
+        opts =
+          Application.get_env(@app, @repo)
+          |> then(fn opts ->
+            writers = Keyword.get(opts, :wsize, 1)
+            Keyword.put(opts, :pool_size, writers)
+          end)
+
+        {:ok, pid} = Postgrex.start_link(opts)
+
+        init(pid, opts)
+        :persistent_term.put(@pool, pid)
+        print(opts)
+
+        {:ok, pid}
+
+      false ->
+        :ignore
+    end
   end
 
   def pool do
-    case :persistent_term.get(@pool, nil) do
-      nil ->
-        mow = :persistent_term.get(:mow)
-        opts = Application.get_env(@app, :repo)
-
-        {:ok, pid} =
-          case mow do
-            true ->
-              opts
-              |> Keyword.put(:pool_size, 1)
-              |> Keyword.put(:after_connect, &init(&1))
-              |> Postgrex.start_link()
-
-            _false ->
-              Postgrex.start_link(opts)
-          end
-
-        :persistent_term.put(@pool, pid)
-        print(opts)
-        pid
-
-      pid ->
-        pid
-    end
+    :persistent_term.get(@pool, nil)
   end
 
   def reset do
@@ -59,7 +57,7 @@ defmodule PgStore do
         # Stop connection
         stop(pid)
         # Init connection
-        pid = pool()
+        pid = start()
         pid
 
       error ->
@@ -110,22 +108,42 @@ defmodule PgStore do
     GenServer.stop(pid)
   end
 
-  # Create data if not exists and prepared statements
-  defp init(pid) do
+  defp init(pid, opts) do
+    pool_size =
+      Keyword.get(opts, :pool_size, 1)
+      |> tap(&IO.puts(&1))
+
     Postgrex.transaction(
       pid,
       fn conn ->
+        # Create initial data if not exists and prepared statements
         for sql <- @creations do
           {:ok, _result} = Postgrex.query(conn, sql, [])
         end
 
-        # execute alter tables if exists new version
+        # Execute alter tables if exists new version
         for sql <- @alter do
           {:ok, _result} = Postgrex.query(conn, sql, [])
         end
       end,
       timeout: :infinity
     )
+
+    # Prepare statements
+    Enum.map(1..pool_size, fn _ ->
+      Task.async(fn ->
+        Postgrex.transaction(
+          pid,
+          fn conn ->
+            for sql <- @prepares do
+              {:ok, _result} = Postgrex.query(conn, sql, [])
+            end
+          end,
+          timeout: :infinity
+        )
+      end)
+    end)
+    |> Task.await_many(:infinity)
   end
 
   defmacro text?(value) do

@@ -49,13 +49,7 @@ defmodule Ippan.Func.Token do
 
         balance_key = DetsPlux.tuple(account_id, @token)
 
-        case BalanceStore.has?(dets, tx, balance_key, price) do
-          false ->
-            raise IppanError, "Insufficient balance"
-
-          true ->
-            :ok
-        end
+        BalanceStore.requires!(dets, tx, balance_key, price)
     end
   end
 

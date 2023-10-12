@@ -48,16 +48,18 @@ config :ipnworker, :cluster,
   ]
 
 # remote database setup
-config :ipnworker, :repo,
+config :ipnworker, ecto_repos: [Ipnworker.Repo]
+
+config :ipnworker, Ipnworker.Repo,
   hostname: System.get_env("PGHOST", "localhost"),
   database: System.get_env("PGDATABASE", "ippan"),
   username: System.get_env("PGUSER", "kambei"),
   password: System.get_env("PGPASSWORD", "secret"),
   port: System.get_env("PGPORT", "5432") |> String.to_integer(),
   pool_size: System.get_env("PGPOOL", "4") |> String.to_integer(),
+  wsize: System.get_env("WPOOL", "2") |> String.to_integer(),
   prepare: :unnamed,
-  parameters: [plan_cache_mode: "force_custom_plan"],
-  timeout: 60_000
+  parameters: [plan_cache_mode: "force_custom_plan"]
 
 # NTP servers
 config :ipnworker, :ntp_servers, [

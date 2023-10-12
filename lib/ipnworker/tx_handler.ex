@@ -69,8 +69,9 @@ defmodule Ippan.TxHandler do
     [sig_type, _] = String.split(from, "x", parts: 2)
     check_signature!(sig_type, signature, hash, wallet_pk)
 
+    # Check nonce
     cache_nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
-    Wallet.gte_nonce!(wallet_dets, cache_nonce_tx, from, nonce)
+    nonce_key = Wallet.gte_nonce!(wallet_dets, cache_nonce_tx, from, nonce)
 
     balance_dets = DetsPlux.get(:balance)
 
@@ -88,6 +89,9 @@ defmodule Ippan.TxHandler do
     }
 
     apply(mod, fun, [source | args])
+
+    # Update nonce
+    DetsPlux.put(cache_nonce_tx, nonce_key, nonce)
 
     case deferred do
       false ->

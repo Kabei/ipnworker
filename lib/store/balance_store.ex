@@ -1,5 +1,5 @@
 defmodule BalanceStore do
-  defmacro requires(dets, tx, key, value) do
+  defmacro requires!(dets, tx, key, value) do
     quote bind_quoted: [dets: dets, tx: tx, key: key, value: value] do
       {balance, lock} = DetsPlux.get_tx(dets, tx, key, {0, 0})
 
@@ -18,8 +18,12 @@ defmodule BalanceStore do
       {balance, lock} = DetsPlux.get_tx(dets, tx, key, {0, 0})
 
       case balance >= value do
-        true -> DetsPlux.put(tx, key, {balance - value, lock})
-        false -> false
+        true ->
+          DetsPlux.put(tx, key, {balance - value, lock})
+          true
+
+        false ->
+          false
       end
     end
   end

@@ -3,7 +3,12 @@ defmodule Ippan.Func.Balance do
   require SqliteStore
   require BalanceStore
 
-  def lock(%{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}}, to_id, token_id, amount)
+  def lock(
+        %{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}},
+        to_id,
+        token_id,
+        amount
+      )
       when is_integer(amount) do
     token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
     balance_key = DetsPlux.tuple(to_id, token_id)
@@ -18,7 +23,8 @@ defmodule Ippan.Func.Balance do
       "lock" not in token.props ->
         raise IppanError, "Invalid property"
 
-        BalanceStore.requires(dets, tx, balance_key, amount)
+      true ->
+        BalanceStore.requires!(dets, tx, balance_key, amount)
     end
   end
 
@@ -43,7 +49,7 @@ defmodule Ippan.Func.Balance do
         raise IppanError, "Invalid property"
 
       true ->
-        BalanceStore.requires(dets, tx, balance_key, amount)
+        BalanceStore.requires!(dets, tx, balance_key, amount)
     end
   end
 end

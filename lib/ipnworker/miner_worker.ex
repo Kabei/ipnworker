@@ -1,5 +1,6 @@
 defmodule MinerWorker do
   use GenServer
+  alias Phoenix.PubSub
   alias Ippan.TxHandler
   alias Ippan.Wallet
   alias Ippan.Block
@@ -8,6 +9,7 @@ defmodule MinerWorker do
   require Logger
 
   @version Application.compile_env(:ipnworker, :version)
+  @pubsub :cluster
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)
@@ -48,13 +50,13 @@ defmodule MinerWorker do
     writer = pg_conn != nil
 
     try do
-      IO.inspect("Bstep 1")
+      # IO.inspect("Bstep 1")
       balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
       wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
-      IO.inspect("Bstep 2")
+      # IO.inspect("Bstep 2")
       # Download decode-file
       if File.exists?(decode_path) do
         :ok
@@ -64,7 +66,7 @@ defmodule MinerWorker do
         :ok = Download.await(url, decode_path)
       end
 
-      IO.inspect("Bstep 3")
+      # IO.inspect("Bstep 3")
       {:ok, content} = File.read(decode_path)
 
       %{"data" => messages, "vsn" => version_file} =
@@ -78,24 +80,27 @@ defmodule MinerWorker do
         mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id)
       end
 
-      IO.inspect("Bstep 4")
+      # IO.inspect("Bstep 4")
       b = Block.to_list(block)
-      x1 = SqliteStore.step(conn, stmts, "insert_block", b)
+      SqliteStore.step(conn, stmts, "insert_block", b)
+      # |> IO.inspect(x1)
 
       if writer do
-        x2 = PgStore.insert_block(pg_conn, b)
-        IO.inspect(x2)
+        PgStore.insert_block(pg_conn, b)
+        # |> IO.inspect()
       end
 
-      IO.inspect(x1)
+      # Push event
+      PubSub.broadcast(@pubsub, "block.new", block)
 
       {:reply, :ok, state}
     rescue
-      error ->
+      e ->
         # delete player
         SqliteStore.step(conn, stmts, "delete_validator", [creator_id])
 
-        Logger.error(inspect(error))
+        Logger.error(Exception.format(:error, e, __STACKTRACE__))
+        # IO.puts("Error occurred at #{__ENV__.file}:#{__ENV__.line}")
         {:reply, :error, state}
     end
   end
@@ -202,19 +207,18 @@ defmodule MinerWorker do
                 acc + 1
 
               _ ->
-                r =
-                  PgStore.insert_event(pg_conn, [
-                    block_id,
-                    hash,
-                    type,
-                    from,
-                    timestamp,
-                    nonce,
-                    nil,
-                    Jason.encode!(args)
-                  ])
+                PgStore.insert_event(pg_conn, [
+                  block_id,
+                  hash,
+                  type,
+                  from,
+                  timestamp,
+                  nonce,
+                  nil,
+                  Jason.encode!(args)
+                ])
 
-                IO.inspect(r)
+                # |> IO.inspect()
                 acc
             end
         end
@@ -227,19 +231,19 @@ defmodule MinerWorker do
           _number ->
             case TxHandler.insert_deferred(msg, creator_id, block_id) do
               true ->
-                r =
-                  PgStore.insert_event(pg_conn, [
-                    block_id,
-                    hash,
-                    type,
-                    from,
-                    timestamp,
-                    nonce,
-                    nil,
-                    Jason.encode!(args)
-                  ])
+                PgStore.insert_event(pg_conn, [
+                  block_id,
+                  hash,
+                  type,
+                  from,
+                  timestamp,
+                  nonce,
+                  nil,
+                  Jason.encode!(args)
+                ])
 
-                IO.inspect(r)
+                # |> IO.inspect()
+
                 acc
 
               false ->

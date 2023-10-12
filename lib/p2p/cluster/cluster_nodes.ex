@@ -165,10 +165,10 @@ defmodule Ippan.ClusterNodes do
       balance_pid = DetsPlux.get(:balance)
       balance_tx = DetsPlux.tx(:balance)
 
-      IO.inspect(round)
+      IO.inspect(round.id)
 
       pool_pid = Process.whereis(:minerpool)
-      IO.inspect("step 1")
+      # IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
       blocks_len = length(blocks)
@@ -214,7 +214,7 @@ defmodule Ippan.ClusterNodes do
       end
       |> Task.await_many(:infinity)
 
-      IO.inspect("step 2")
+      # IO.inspect("step 2")
       wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
 
       if writer do
@@ -240,7 +240,7 @@ defmodule Ippan.ClusterNodes do
       run_reward(round, round_creator, balance_pid, balance_tx)
       run_jackpot(round, conn, stmts, pg_conn)
 
-      IO.inspect("step 3")
+      # IO.inspect("step 3")
       round_encode = Round.to_list(round)
       SqliteStore.step(conn, stmts, "insert_round", round_encode)
 
@@ -249,6 +249,9 @@ defmodule Ippan.ClusterNodes do
       if writer do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
       end
+
+      # Push event
+      PubSub.broadcast(@pubsub, "round.new", round)
 
       :persistent_term.put(:round, round_id)
     end
@@ -263,18 +266,19 @@ defmodule Ippan.ClusterNodes do
 
   defp run_jackpot(%{id: round_id, jackpot: {amount, winner_id}}, conn, stmts, pgid)
        when amount > 0 do
-    PubSub.broadcast(@pubsub, "jackpot", %{
-      "round_id" => round_id,
-      "winner" => winner_id,
-      "amount" => amount
-    })
-
     data = [round_id, winner_id, amount]
     :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
 
     if pgid do
       PgStore.insert_jackpot(pgid, data)
     end
+
+    # Push event
+    PubSub.broadcast(@pubsub, "jackpot", %{
+      "round_id" => round_id,
+      "winner" => winner_id,
+      "amount" => amount
+    })
   end
 
   defp run_jackpot(_, _, _round, _pgid), do: :ok
