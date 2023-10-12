@@ -4,7 +4,10 @@ defmodule RoundCommit do
   def sync(conn, tx_count, is_some_block_mine) do
     if tx_count > 0 do
       [
-        Task.async(fn -> SqliteStore.commit(conn) end),
+        Task.async(fn ->
+          SqliteStore.commit(conn)
+          SqliteStore.begin(conn)
+        end),
         Task.async(fn ->
           wallet_dets = DetsPlux.get(:wallet)
           wallet_tx = DetsPlux.tx(:wallet)
@@ -29,7 +32,11 @@ defmodule RoundCommit do
         clear_cache()
       end
     else
+      balance_dets = DetsPlux.get(:balance)
+      balance_tx = DetsPlux.tx(balance_dets, :balance)
+      DetsPlux.sync(balance_dets, balance_tx)
       SqliteStore.commit(conn)
+      SqliteStore.begin(conn)
     end
   end
 
