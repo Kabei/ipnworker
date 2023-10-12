@@ -261,7 +261,8 @@ defmodule Ippan.ClusterNodes do
 
   defp run_reward(_, _, _, _), do: :ok
 
-  defp run_jackpot(%{id: round_id, jackpot: {amount, winner_id}}, conn, stmts, pgid) do
+  defp run_jackpot(%{id: round_id, jackpot: {amount, winner_id}}, conn, stmts, pgid)
+       when amount > 0 do
     PubSub.broadcast(@pubsub, "jackpot", %{
       "round_id" => round_id,
       "winner" => winner_id,
