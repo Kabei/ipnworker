@@ -18,10 +18,10 @@ defmodule MinerWorker do
     {:ok, args}
   end
 
-  def mine(server, round_id, block, hostname, creator, mow) do
+  def mine(server, round_id, block, hostname, creator, pg_conn) do
     GenServer.call(
       server,
-      {:mine, Map.put(block, :round, round_id), hostname, creator, mow},
+      {:mine, Map.put(block, :round, round_id), hostname, creator, pg_conn},
       :infinity
     )
   end
@@ -38,19 +38,19 @@ defmodule MinerWorker do
           } = block,
           hostname,
           creator,
-          mow
+          pg_conn
         },
         _from,
         state
       ) do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
+    writer = pg_conn != nil
 
     try do
       IO.inspect("Bstep 1")
       balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
       wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
-      pg_conn = PgStore.conn()
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
@@ -72,7 +72,7 @@ defmodule MinerWorker do
 
       if version != version_file, do: raise(IppanError, "Block file version failed")
 
-      if mow do
+      if writer do
         mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id, pg_conn)
       else
         mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id)
@@ -82,7 +82,7 @@ defmodule MinerWorker do
       b = Block.to_list(block)
       x1 = SqliteStore.step(conn, stmts, "insert_block", b)
 
-      if mow do
+      if writer do
         x2 = PgStore.insert_block(pg_conn, b)
         IO.inspect(x2)
       end

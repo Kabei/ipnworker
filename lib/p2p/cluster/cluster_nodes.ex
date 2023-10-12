@@ -127,13 +127,17 @@ defmodule Ippan.ClusterNodes do
     round = MapUtil.to_atoms(msg_round)
 
     if mow do
-      pgid = PgStore.conn()
+      pgid = PgStore.pool()
 
-      Postgrex.transaction(pgid, fn conn ->
-        build_round(round, hostname, mow, conn)
-      end, timeout: :infinity)
+      Postgrex.transaction(
+        pgid,
+        fn conn ->
+          build_round(round, hostname, conn)
+        end,
+        timeout: :infinity
+      )
     else
-      build_round(round, hostname, mow, nil)
+      build_round(round, hostname, nil)
     end
   end
 
@@ -151,27 +155,27 @@ defmodule Ippan.ClusterNodes do
     :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
 
     if mow do
-      pg_conn = PgStore.conn()
-      PgStore.insert_jackpot(pg_conn, data)
+      pgid = PgStore.pool()
+      PgStore.insert_jackpot(pgid, data)
     end
   end
 
   def handle_message(_event, _data, _state), do: :ok
 
   defp build_round(
-        round = %{
-          id: round_id,
-          blocks: blocks,
-          creator: round_creator_id,
-          reason: reason,
-          tx_count: tx_count
-        },
-        hostname,
-        mow,
-        pg_conn
-      ) do
+         round = %{
+           id: round_id,
+           blocks: blocks,
+           creator: round_creator_id,
+           reason: reason,
+           tx_count: tx_count
+         },
+         hostname,
+         pg_conn
+       ) do
     conn = :persistent_term.get(:asset_conn)
     stmts = :persistent_term.get(:asset_stmt)
+    writer = pg_conn != nil
 
     unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
       vid = :persistent_term.get(:vid)
@@ -218,7 +222,7 @@ defmodule Ippan.ClusterNodes do
                 MapUtil.to_atoms(block),
                 hostname,
                 creator,
-                mow
+                pg_conn
               )
             end,
             :infinity
@@ -230,7 +234,7 @@ defmodule Ippan.ClusterNodes do
       IO.inspect("step 2")
       wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
 
-      if mow do
+      if writer do
         TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn)
       else
         TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets)
@@ -246,7 +250,7 @@ defmodule Ippan.ClusterNodes do
 
       RoundCommit.sync(conn, tx_count, is_some_block_mine)
 
-      if mow do
+      if writer do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
       end
 

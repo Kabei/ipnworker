@@ -8,7 +8,8 @@ defmodule PgStore do
   @alter []
 
   @app :ipnworker
-  @key :pg_pid
+  # DB Pool connexions
+  @pool :pg_pool
 
   def child_spec(args) do
     %{
@@ -18,37 +19,42 @@ defmodule PgStore do
   end
 
   def start(_args) do
-    conn = conn()
-
-    if :persistent_term.get(:mow) do
-      init(conn)
-    end
-
-    opts = Application.get_env(@app, :repo)
-
-    ("Connection: " <>
-       ANSI.yellow() <>
-       "postgresql://#{opts[:username]}@#{opts[:hostname]}:#{opts[:port]}/#{opts[:database]}" <>
-       ANSI.reset())
-    |> IO.puts()
-
+    pool()
     :ignore
   end
 
-  def conn do
-    case :persistent_term.get(@key, nil) do
+  def pool do
+    case :persistent_term.get(@pool, nil) do
       nil ->
-        opts = Application.get_env(@app, :repo)
-        {:ok, conn} = Postgrex.start_link(opts)
-        :persistent_term.put(@key, conn)
-        conn
+        mow = :persistent_term.get(:mow)
 
-      conn ->
-        conn
+        opts =
+          case mow do
+            true ->
+              Application.get_env(@app, :repo)
+              |> Keyword.put(:pool_size, 1)
+              |> Keyword.put(:after_connect, &init(&1))
+
+            _false ->
+              Application.get_env(@app, :repo)
+          end
+
+        {:ok, pid} = Postgrex.start_link(opts)
+
+        :persistent_term.put(@pool, pid)
+        print(opts)
+        pid
+
+      pid ->
+        pid
     end
   end
 
-  def init(pid) do
+  # def conn do
+  #   :persistent_term.get(@conn, nil)
+  # end
+
+  defp init(pid) do
     Postgrex.transaction(
       pid,
       fn conn ->
@@ -66,7 +72,7 @@ defmodule PgStore do
   end
 
   def reset do
-    pid = conn()
+    pid = pool()
 
     # Destroy all data
     case Postgrex.query(pid, "DROP SCHEMA history CASCADE;", []) do
@@ -74,8 +80,7 @@ defmodule PgStore do
         # Stop connection
         stop(pid)
         # Init connection
-        pid = conn()
-        init(pid)
+        pid = pool()
         pid
 
       error ->
@@ -83,24 +88,24 @@ defmodule PgStore do
     end
   end
 
-  def begin(conn) do
-    Postgrex.query(conn, "BEGIN;", [])
-  end
+  # def begin(conn) do
+  #   Postgrex.query(conn, "BEGIN;", [])
+  # end
 
-  def commit(conn) do
-    case Postgrex.query(conn, "COMMIT;", []) do
-      {:ok, _} = r ->
-        r
+  # def commit(conn) do
+  #   case Postgrex.query(conn, "COMMIT;", []) do
+  #     {:ok, _} = r ->
+  #       r
 
-      error ->
-        Postgrex.query(conn, "ABORT;", [])
-        error
-    end
-  end
+  #     error ->
+  #       Postgrex.query(conn, "ABORT;", [])
+  #       error
+  #   end
+  # end
 
-  def rollback(conn) do
-    Postgrex.query(conn, "ROLLBACK;", [])
-  end
+  # def rollback(conn) do
+  #   Postgrex.query(conn, "ROLLBACK;", [])
+  # end
 
   def insert_event(conn, params) do
     Postgrex.query(conn, query_parse("EXECUTE insert_event($1,$2,$3,$4,$5,$6,$7,$8)", params), [])
@@ -140,9 +145,9 @@ defmodule PgStore do
     )
   end
 
-  def stop(conn) do
-    :persistent_term.erase(@key)
-    GenServer.stop(conn)
+  def stop(pid) do
+    :persistent_term.erase(@pool)
+    GenServer.stop(pid)
   end
 
   defmacro text?(value) do
@@ -183,5 +188,13 @@ defmodule PgStore do
       acc ->
         String.replace(acc, ~r/\$#{n + 1}\b/, type_parse(value))
     end
+  end
+
+  defp print(opts) do
+    ("Connection: " <>
+       ANSI.yellow() <>
+       "postgresql://#{opts[:username]}@#{opts[:hostname]}:#{opts[:port]}/#{opts[:database]}" <>
+       ANSI.reset())
+    |> IO.puts()
   end
 end
