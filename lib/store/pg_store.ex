@@ -27,19 +27,19 @@ defmodule PgStore do
     case :persistent_term.get(@pool, nil) do
       nil ->
         mow = :persistent_term.get(:mow)
+        opts = Application.get_env(@app, :repo)
 
-        opts =
+        {:ok, pid} =
           case mow do
             true ->
-              Application.get_env(@app, :repo)
+              opts
               |> Keyword.put(:pool_size, 1)
               |> Keyword.put(:after_connect, &init(&1))
+              |> Postgrex.start_link()
 
             _false ->
-              Application.get_env(@app, :repo)
+              Postgrex.start_link(opts)
           end
-
-        {:ok, pid} = Postgrex.start_link(opts)
 
         :persistent_term.put(@pool, pid)
         print(opts)
@@ -48,27 +48,6 @@ defmodule PgStore do
       pid ->
         pid
     end
-  end
-
-  # def conn do
-  #   :persistent_term.get(@conn, nil)
-  # end
-
-  defp init(pid) do
-    Postgrex.transaction(
-      pid,
-      fn conn ->
-        for sql <- @creations do
-          {:ok, _result} = Postgrex.query(conn, sql, [])
-        end
-
-        # execute alter tables if exists new version
-        for sql <- @alter do
-          {:ok, _result} = Postgrex.query(conn, sql, [])
-        end
-      end,
-      timeout: :infinity
-    )
   end
 
   def reset do
@@ -87,25 +66,6 @@ defmodule PgStore do
         error
     end
   end
-
-  # def begin(conn) do
-  #   Postgrex.query(conn, "BEGIN;", [])
-  # end
-
-  # def commit(conn) do
-  #   case Postgrex.query(conn, "COMMIT;", []) do
-  #     {:ok, _} = r ->
-  #       r
-
-  #     error ->
-  #       Postgrex.query(conn, "ABORT;", [])
-  #       error
-  #   end
-  # end
-
-  # def rollback(conn) do
-  #   Postgrex.query(conn, "ROLLBACK;", [])
-  # end
 
   def insert_event(conn, params) do
     Postgrex.query(conn, query_parse("EXECUTE insert_event($1,$2,$3,$4,$5,$6,$7,$8)", params), [])
@@ -148,6 +108,24 @@ defmodule PgStore do
   def stop(pid) do
     :persistent_term.erase(@pool)
     GenServer.stop(pid)
+  end
+
+  # Create data if not exists and prepared statements
+  defp init(pid) do
+    Postgrex.transaction(
+      pid,
+      fn conn ->
+        for sql <- @creations do
+          {:ok, _result} = Postgrex.query(conn, sql, [])
+        end
+
+        # execute alter tables if exists new version
+        for sql <- @alter do
+          {:ok, _result} = Postgrex.query(conn, sql, [])
+        end
+      end,
+      timeout: :infinity
+    )
   end
 
   defmacro text?(value) do
