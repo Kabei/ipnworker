@@ -109,9 +109,7 @@ defmodule PgStore do
   end
 
   defp init(pid, opts) do
-    pool_size =
-      Keyword.get(opts, :pool_size, 1)
-      |> tap(&IO.puts(&1))
+    pool_size = Keyword.get(opts, :pool_size, 1)
 
     Postgrex.transaction(
       pid,
