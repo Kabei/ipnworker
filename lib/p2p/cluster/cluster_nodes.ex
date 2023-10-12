@@ -1,8 +1,10 @@
 defmodule Ippan.ClusterNodes do
   alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
+  require BalanceStore
 
   @pubsub :cluster
+  @token Application.compile_env(:ipnworker, :token)
 
   use Network,
     app: :ipnworker,
@@ -141,25 +143,6 @@ defmodule Ippan.ClusterNodes do
     end
   end
 
-  def handle_message("jackpot", [round_id, winner_id, amount] = data, _state) do
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
-    mow = :persistent_term.get(:mow)
-
-    PubSub.broadcast(@pubsub, "jackpot", %{
-      "round_id" => round_id,
-      "winner" => winner_id,
-      "amount" => amount
-    })
-
-    :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
-
-    if mow do
-      pgid = PgStore.pool()
-      PgStore.insert_jackpot(pgid, data)
-    end
-  end
-
   def handle_message(_event, _data, _state), do: :ok
 
   defp build_round(
@@ -244,6 +227,19 @@ defmodule Ippan.ClusterNodes do
         SqliteStore.step(conn, stmts, "delete_validator", [round_creator_id])
       end
 
+      round_creator =
+        SqliteStore.lookup_map(
+          :validator,
+          conn,
+          stmts,
+          "get_validator",
+          round_creator_id,
+          Validator
+        )
+
+      run_reward(round, round_creator, balance_pid, balance_tx)
+      run_jackpot(round, conn, stmts, pg_conn)
+
       IO.inspect("step 3")
       round_encode = Round.to_list(round)
       SqliteStore.step(conn, stmts, "insert_round", round_encode)
@@ -257,4 +253,28 @@ defmodule Ippan.ClusterNodes do
       :persistent_term.put(:round, round_id)
     end
   end
+
+  defp run_reward(%{reward: reward}, creator, balance_pid, balance_tx) when reward > 0 do
+    balance_key = DetsPlux.tuple(creator.owner, @token)
+    BalanceStore.income(balance_pid, balance_tx, balance_key, reward)
+  end
+
+  defp run_reward(_, _, _, _), do: :ok
+
+  defp run_jackpot(%{id: round_id, jackpot: {amount, winner_id}}, conn, stmts, pgid) do
+    PubSub.broadcast(@pubsub, "jackpot", %{
+      "round_id" => round_id,
+      "winner" => winner_id,
+      "amount" => amount
+    })
+
+    data = [round_id, winner_id, amount]
+    :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
+
+    if pgid do
+      PgStore.insert_jackpot(pgid, data)
+    end
+  end
+
+  defp run_jackpot(_, _, _round, _pgid), do: :ok
 end
