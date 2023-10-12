@@ -20,7 +20,6 @@ defmodule BalanceStore do
       case balance >= value do
         true ->
           DetsPlux.put(tx, key, {balance - value, lock})
-          true
 
         false ->
           false
