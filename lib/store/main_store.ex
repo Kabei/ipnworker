@@ -43,7 +43,7 @@ defmodule MainStore do
     # execute alter tables if exists new version
     :ok = SqliteStore.check_version(conn, @alter, @version)
     # prepare statements
-    {:ok, stmts} = SqliteStore.prepare_statements(conn, @statements)
+    {:ok, stmts} = SqliteStore.prepare_statements(conn, @statements, :stmt)
     SqliteStore.begin(conn)
     # put in global conn and statements
     :persistent_term.put(@key_conn, conn)

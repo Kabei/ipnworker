@@ -9,7 +9,7 @@ defmodule Ippan.Func.Validator do
   @max_validators Application.compile_env(:ipnworker, :max_validators)
 
   def new(
-        %{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}},
+        %{id: account_id, conn: conn, stmts: stmts},
         hostname,
         port,
         owner_id,
@@ -60,15 +60,10 @@ defmodule Ippan.Func.Validator do
         |> MapUtil.validate_url(:avatar)
 
         price = Validator.calc_price(next_id)
-        balance_key = DetsPlux.tuple(account_id, @token)
 
-        case BalanceStore.has?(dets, tx, balance_key, price) do
-          false ->
-            raise IppanError, "Insufficient balance"
-
-          true ->
-            :ok
-        end
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, price)
+        |> BalanceTrace.output()
     end
   end
 

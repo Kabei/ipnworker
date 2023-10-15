@@ -10,6 +10,7 @@ defmodule MinerWorker do
 
   @version Application.compile_env(:ipnworker, :version)
   @pubsub :cluster
+  @json Application.compile_env(:ipnworker, :json)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)
@@ -51,8 +52,9 @@ defmodule MinerWorker do
 
     try do
       # IO.inspect("Bstep 1")
-      balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
-      wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
+      # balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
+      # wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
+      wallet_dets = DetsPlux.get(:wallet)
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
@@ -69,16 +71,13 @@ defmodule MinerWorker do
       # IO.inspect("Bstep 3")
       {:ok, content} = File.read(decode_path)
 
-      %{"data" => messages, "vsn" => version_file} =
+      %{"data" => txs, "vsn" => version_file} =
         Block.decode_file!(content)
 
-      if version != version_file, do: raise(IppanError, "Block file version failed")
+      if version != version_file or version != @version,
+        do: raise(IppanError, "Block file version failed")
 
-      if writer do
-        mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id, pg_conn)
-      else
-        mine_fun(version, messages, conn, stmts, balances, wallets, creator, block_id)
-      end
+      run_miner(block_id, creator, txs, wallet_dets, pg_conn, writer)
 
       # IO.inspect("Bstep 4")
       b = Block.to_list(block)
@@ -105,144 +104,58 @@ defmodule MinerWorker do
     end
   end
 
-  defp mine_fun(
-         @version,
-         messages,
-         conn,
-         stmts,
-         balances,
-         {wallet_dets, _wallet_tx} = wallets,
-         validator,
-         block_id
-       ) do
-    creator_id = validator.id
-
+  defp run_miner(block_id, validator, transactions, wallet_dets, pg_conn, writer) do
     nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
 
-    Enum.reduce(messages, 0, fn
+    Enum.reduce(transactions, 0, fn
       [hash, type, from, args, timestamp, nonce, size], acc ->
         case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
           _number ->
-            case TxHandler.handle_regular(
-                   conn,
-                   stmts,
-                   balances,
-                   wallets,
-                   validator,
-                   hash,
-                   type,
-                   from,
-                   args,
-                   size,
-                   timestamp,
-                   block_id
-                 ) do
-              :error -> acc + 1
-              _ -> acc
-            end
-        end
-
-      msg = [_hash, _type, _arg_key, from, _args, _timestamp, nonce, _size], acc ->
-        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
-          :error ->
-            acc + 1
-
-          _number ->
-            case TxHandler.insert_deferred(msg, creator_id, block_id) do
-              true ->
-                acc
-
-              false ->
-                acc + 1
-            end
-        end
-    end)
-  end
-
-  defp mine_fun(version, _messages, _conn, _stmts, _balances, _wallets, _validator, _block_id) do
-    raise IppanError, "Error block version #{inspect(version)}"
-  end
-
-  # Process the block
-  defp mine_fun(
-         @version,
-         messages,
-         conn,
-         stmts,
-         balances,
-         {wallet_dets, _wallet_tx} = wallets,
-         validator,
-         block_id,
-         pg_conn
-       ) do
-    creator_id = validator.id
-
-    nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
-
-    Enum.reduce(messages, 0, fn
-      [hash, type, from, args, timestamp, nonce, size], acc ->
-        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
-          :error ->
-            acc + 1
-
-          _number ->
-            case TxHandler.handle_regular(
-                   conn,
-                   stmts,
-                   balances,
-                   wallets,
-                   validator,
-                   hash,
-                   type,
-                   from,
-                   args,
-                   size,
-                   timestamp,
-                   block_id
-                 ) do
+            case TxHandler.regular() do
               :error ->
                 acc + 1
 
               _ ->
-                PgStore.insert_event(pg_conn, [
-                  block_id,
-                  hash,
-                  type,
-                  from,
-                  timestamp,
-                  nonce,
-                  nil,
-                  Jason.encode!(args)
-                ])
+                if writer do
+                  PgStore.insert_event(pg_conn, [
+                    block_id,
+                    hash,
+                    type,
+                    from,
+                    timestamp,
+                    nonce,
+                    nil,
+                    @json.encode!(args)
+                  ])
+                end
 
-                # |> IO.inspect()
                 acc
             end
         end
 
-      msg = [hash, type, _arg_key, from, args, timestamp, nonce, _size], acc ->
+      body = [hash, type, arg_key, from, args, timestamp, nonce, _size], acc ->
         case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
           _number ->
-            case TxHandler.insert_deferred(msg, creator_id, block_id) do
+            case TxHandler.insert_deferred() do
               true ->
-                PgStore.insert_event(pg_conn, [
-                  block_id,
-                  hash,
-                  type,
-                  from,
-                  timestamp,
-                  nonce,
-                  nil,
-                  Jason.encode!(args)
-                ])
-
-                # |> IO.inspect()
+                if writer do
+                  PgStore.insert_event(pg_conn, [
+                    block_id,
+                    hash,
+                    type,
+                    from,
+                    timestamp,
+                    nonce,
+                    nil,
+                    @json.encode!(args)
+                  ])
+                end
 
                 acc
 
@@ -251,19 +164,5 @@ defmodule MinerWorker do
             end
         end
     end)
-  end
-
-  defp mine_fun(
-         version,
-         _messages,
-         _conn,
-         _stmts,
-         _balances,
-         _wallets,
-         _validator,
-         _block_id,
-         _pg_conn
-       ) do
-    raise IppanError, "Error block version #{inspect(version)}"
   end
 end

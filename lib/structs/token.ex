@@ -91,4 +91,25 @@ defmodule Ippan.Token do
       updated_at: updated_at
     }
   end
+
+  def has_prop?(%{props: props}, prop) do
+    prop in props
+  end
+
+  def has_prop?(_, _), do: false
+
+  defmacro get(id) do
+    quote do
+      SqliteStore.get(:token, "get_token", unquote(id), Ippan.Token)
+    end
+  end
+
+  defmacro get!(id) do
+    quote do
+      case SqliteStore.get(:token, "get_token", unquote(id), Ippan.Token) do
+        nil -> raise IppanError, "Token not exists"
+        token -> token
+      end
+    end
+  end
 end

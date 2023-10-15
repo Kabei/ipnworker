@@ -1,45 +1,34 @@
 defmodule Ippan.TxHandler do
   alias Ippan.{Funcs, Wallet}
+  alias Ippan.TxHandler
 
-  @compile {:inline, check_signature!: 4}
-
-  @json Application.compile_env(:ipnworker, :json)
-
-  defmacrop get_and_check_wallet!(dets, cache, type, from, validator_id, args) do
-    quote bind_quoted: [
-            dets: dets,
-            cache: cache,
-            type: type,
-            from: from,
-            validator_id: validator_id,
-            args: args
-          ],
-          location: :keep do
+  defmacro get_public_key!(dets, tx, type, vid) do
+    quote location: :keep, bind_quoted: [dets: dets, tx: tx, type: type, vid: vid] do
       case type do
         # check from variable
         0 ->
-          {pk, vid} =
-            DetsPlux.get_cache(dets, cache, from)
+          {pk, v} =
+            DetsPlux.get_cache(dets, tx, var!(from))
 
-          if vid != validator_id do
-            raise IppanRedirectError, "#{validator_id}"
+          if vid != v do
+            raise IppanRedirectError, "#{v}"
           end
 
           pk
 
         # get first argument and not check (wallet subscribe)
         1 ->
-          Fast64.decode64(hd(args))
+          Fast64.decode64(hd(var!(args)))
 
         # check first argument
         2 ->
-          key = hd(args)
+          key = hd(var!(args))
 
-          {pk, vid} =
-            DetsPlux.get_tx(dets, cache, key)
+          {pk, v} =
+            DetsPlux.get_tx(dets, tx, key)
 
-          if vid != validator_id do
-            raise IppanRedirectError, "#{vid}"
+          if v != vid do
+            raise IppanRedirectError, "#{v}"
           end
 
           pk
@@ -47,263 +36,247 @@ defmodule Ippan.TxHandler do
     end
   end
 
-  @spec valid!(reference, map, binary, binary, binary, integer, integer, map) :: list()
-  def valid!(conn, stmts, hash, msg, signature, size, validator_id, validator) do
-    [type, timestamp, nonce, from | args] = @json.decode!(msg)
+  # check signature by type
+  defmacro check_signature!(sig_type, pk) do
+    quote location: :keep,
+          bind_quoted: [pk: pk, sig_type: sig_type] do
+      case sig_type do
+        "0" ->
+          # verify ed25519 signature
+          if Cafezinho.Impl.verify(var!(signature), var!(hash), pk) != :ok,
+            do: raise(IppanError, "Invalid signature verify")
 
-    %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} = Funcs.lookup(type)
+        "1" ->
+          # verify falcon-512 signature
+          if Falcon.verify(var!(hash), var!(signature), pk) != :ok,
+            do: raise(IppanError, "Invalid signature verify")
 
-    wallet_dets = DetsPlux.get(:wallet)
-    wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
-
-    wallet_pk =
-      get_and_check_wallet!(
-        wallet_dets,
-        wallet_cache,
-        type_of_verification,
-        from,
-        validator_id,
-        args
-      )
-
-    [sig_type, _] = String.split(from, "x", parts: 2)
-    check_signature!(sig_type, signature, hash, wallet_pk)
-
-    # Check nonce
-    cache_nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
-    nonce_key = Wallet.gte_nonce!(wallet_dets, cache_nonce_tx, from, nonce)
-
-    balance_dets = DetsPlux.get(:balance)
-
-    source = %{
-      conn: conn,
-      balance: {balance_dets, DetsPlux.tx(balance_dets, :cache_balance)},
-      id: from,
-      hash: hash,
-      size: size,
-      stmts: stmts,
-      timestamp: timestamp,
-      type: type,
-      validator: validator,
-      wallets: {wallet_dets, wallet_cache}
-    }
-
-    apply(mod, fun, [source | args])
-
-    # Update nonce
-    DetsPlux.put(cache_nonce_tx, nonce_key, nonce)
-
-    case deferred do
-      false ->
-        [
-          deferred,
-          [
-            hash,
-            type,
-            from,
-            args,
-            timestamp,
-            nonce,
-            [msg, signature],
-            size
-          ]
-        ]
-
-      _true ->
-        key = hd(args) |> to_string()
-
-        [
-          deferred,
-          [
-            hash,
-            type,
-            key,
-            from,
-            args,
-            timestamp,
-            nonce,
-            [msg, signature],
-            size
-          ]
-        ]
+        _ ->
+          raise(IppanError, "Signature type not supported")
+      end
     end
   end
 
-  @spec valid_from_file!(reference, map, tuple(), binary, binary, binary, integer, integer, map) ::
-          list()
-  def valid_from_file!(
-        conn,
-        stmts,
-        {wallet_dets, wallet_cache} = wallets,
-        hash,
-        msg,
-        signature,
-        size,
-        validator_id,
-        validator
-      ) do
-    [type, timestamp, nonce, from | args] = @json.decode!(msg)
+  # @spec valid!(reference, map, binary, binary, binary, integer, integer, map) :: list()
+  # (conn, stmts, hash, msg, signature, size, validator_id, validator)
+  defmacro decode! do
+    quote location: :keep do
+      %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} =
+        Funcs.lookup(var!(type))
 
-    %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} = Funcs.lookup(type)
+      wallet_dets = DetsPlux.get(:wallet)
+      wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
-    wallet_pk =
-      get_and_check_wallet!(
-        wallet_dets,
-        wallet_cache,
-        type_of_verification,
-        from,
-        validator_id,
-        args
-      )
+      wallet_pk =
+        TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
 
-    [sig_type, _] = String.split(from, "x", parts: 2)
-    check_signature!(sig_type, signature, hash, wallet_pk)
+      [sig_type, _] = String.split(var!(from), "x", parts: 2)
+      TxHandler.check_signature!(sig_type, wallet_pk)
 
-    nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
-    Wallet.update_nonce!(wallet_dets, nonce_tx, from, nonce)
-
-    balance_dets = DetsPlux.get(:balance)
-
-    source = %{
-      conn: conn,
-      balance: {balance_dets, DetsPlux.tx(balance_dets, :cache_balance)},
-      id: from,
-      hash: hash,
-      size: size,
-      stmts: stmts,
-      timestamp: timestamp,
-      type: type,
-      validator: validator,
-      wallets: wallets
-    }
-
-    apply(mod, fun, [source | args])
-
-    case deferred do
-      false ->
-        [
-          hash,
-          type,
-          from,
-          args,
-          timestamp,
-          nonce,
-          size
-        ]
-
-      _true ->
-        key = hd(args) |> to_string()
-
-        [
-          hash,
-          type,
-          key,
-          from,
-          args,
-          timestamp,
-          nonce,
-          size
-        ]
-    end
-  end
-
-  defmacro handle_regular(
-             conn,
-             stmts,
-             balance,
-             wallets,
-             validator,
-             hash,
-             type,
-             from,
-             args,
-             size,
-             timestamp,
-             block_id
-           ) do
-    quote bind_quoted: [
-            conn: conn,
-            stmts: stmts,
-            balance: balance,
-            validator: validator,
-            hash: hash,
-            type: type,
-            from: from,
-            args: args,
-            timestamp: timestamp,
-            size: size,
-            wallets: wallets,
-            block_id: block_id
-          ],
-          location: :keep do
-      %{fun: fun, modx: module} = Funcs.lookup(type)
+      # Check nonce
+      cache_nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
+      nonce_key = Wallet.gte_nonce!(wallet_dets, cache_nonce_tx, var!(from), var!(nonce))
+      balance_dets = DetsPlux.get(:balance)
 
       source = %{
-        balance: balance,
-        conn: conn,
-        block_id: block_id,
-        stmts: stmts,
-        id: from,
-        type: type,
-        validator: validator,
-        hash: hash,
-        timestamp: timestamp,
-        size: size,
-        wallets: wallets
+        id: var!(from),
+        hash: var!(hash),
+        size: var!(size),
+        timestamp: var!(timestamp),
+        type: var!(type),
+        validator: var!(validator)
       }
 
-      apply(module, fun, [source | args])
+      return = apply(mod, fun, [source | var!(args)])
+
+      # Update nonce
+      DetsPlux.put(cache_nonce_tx, nonce_key, var!(nonce))
+
+      case deferred do
+        false ->
+          [
+            deferred,
+            [
+              var!(hash),
+              var!(type),
+              var!(from),
+              var!(args),
+              var!(timestamp),
+              var!(nonce),
+              [var!(body), var!(signature)],
+              var!(size)
+            ],
+            return
+          ]
+
+        _true ->
+          key = hd(var!(args)) |> to_string()
+
+          [
+            deferred,
+            [
+              var!(hash),
+              var!(type),
+              key,
+              var!(from),
+              var!(args),
+              var!(timestamp),
+              var!(nonce),
+              [var!(body), var!(signature)],
+              var!(size)
+            ],
+            return
+          ]
+      end
+    end
+  end
+
+  defmacro decode_from_file! do
+    quote location: :keep do
+      %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} =
+        Funcs.lookup(var!(type))
+
+      wallet_pk =
+        TxHandler.get_public_key!(
+          var!(wallet_dets),
+          var!(wallet_tx),
+          type_of_verification,
+          var!(creator_id)
+        )
+
+      [sig_type, _] = String.split(var!(from), "x", parts: 2)
+      TxHandler.check_signature!(sig_type, wallet_pk)
+
+      Wallet.update_nonce!(var!(wallet_dets), var!(nonce_tx), var!(from), var!(nonce))
+
+      source = %{
+        id: var!(from),
+        hash: var!(hash),
+        size: var!(size),
+        timestamp: var!(timestamp),
+        type: var!(type),
+        validator: var!(validator)
+      }
+
+      apply(mod, fun, [source | var!(args)])
+
+      case deferred do
+        false ->
+          [
+            var!(hash),
+            var!(type),
+            var!(from),
+            var!(args),
+            var!(timestamp),
+            var!(nonce),
+            var!(size)
+          ]
+
+        _true ->
+          key = hd(var!(args)) |> to_string()
+
+          [
+            var!(hash),
+            var!(type),
+            key,
+            var!(from),
+            var!(args),
+            var!(timestamp),
+            var!(nonce),
+            var!(size)
+          ]
+      end
+    end
+  end
+
+  @spec regular() :: term | :error
+  defmacro regular do
+    quote location: :keep do
+      %{fun: fun, modx: module} = Funcs.lookup(var!(type))
+
+      source = %{
+        block_id: var!(block_id),
+        id: var!(from),
+        type: var!(type),
+        hash: var!(hash),
+        timestamp: var!(timestamp),
+        size: var!(size),
+        validator: var!(validator)
+      }
+
+      apply(module, fun, [source | var!(args)])
     end
   end
 
   # Dispute resolution in deferred transaction
-  def insert_deferred(
-        [hash, type, arg_key, account_id, args, timestamp, _nonce, size],
-        validator_id,
-        block_id
-      ) do
-    key = {type, arg_key}
-    body = [hash, account_id, validator_id, args, timestamp, size, block_id]
+  # [hash, type, arg_key, account_id, args, timestamp, _nonce, size],
+  # validator_id,
+  # block_id
+  defmacro insert_deferred do
+    quote location: :keep do
+      key = {var!(type), var!(arg_key)}
+      # body = [hash, account_id, validator_id, args, timestamp, size, block_id]
 
-    case :ets.lookup(:dtx, key) do
-      [] ->
-        :ets.insert(:dtx, {key, body})
+      case :ets.lookup(:dtx, key) do
+        [] ->
+          :ets.insert(:dtx, {key, var!(body)})
 
-      [{_msg_key, [xhash | _rest] = xbody}] ->
-        xblock_id = List.last(xbody)
+        [{_msg_key, [xhash | _rest] = xbody}] ->
+          xblock_id = List.last(xbody)
 
-        if hash < xhash or (hash == xhash and block_id < xblock_id) do
-          :ets.insert(:dtx, {key, body})
-        else
-          false
-        end
+          if var!(hash) < xhash or (var!(hash) == xhash and var!(block_id) < xblock_id) do
+            :ets.insert(:dtx, {key, var!(body)})
+          else
+            false
+          end
+      end
     end
   end
 
   # only deferred transactions
-  def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets) do
-    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size, block_id]} <-
-          :ets.tab2list(:dtx) do
-      %{modx: module, fun: fun} = Funcs.lookup(type)
+  # def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets) do
+  defmacro run_deferred_txs do
+    quote location: :keep do
+      :ets.tab2list(:dtx)
+      |> Enum.each(fn {{type, _key},
+                       [
+                         hash,
+                         account_id,
+                         validator_id,
+                         args,
+                         timestamp,
+                         size,
+                         block_id
+                       ]} ->
+        %{modx: module, fun: fun} = Funcs.lookup(type)
 
-      source = %{
-        id: account_id,
-        block_id: block_id,
-        conn: conn,
-        stmts: stmts,
-        balance: {balance_pid, balance_tx},
-        type: type,
-        validator: validator_id,
-        hash: hash,
-        timestamp: timestamp,
-        size: size,
-        wallets: wallets
-      }
+        source = %{
+          id: account_id,
+          block_id: block_id,
+          type: type,
+          validator: validator_id,
+          hash: hash,
+          timestamp: timestamp,
+          size: size
+        }
 
-      apply(module, fun, [source | args])
+        result = apply(module, fun, [source | args])
+
+        if var!(writer) and result == :ok do
+          PgStore.insert_event(var!(pg_conn), [
+            block_id,
+            hash,
+            type,
+            account_id,
+            timestamp,
+            nil,
+            CBOR.encode(args)
+          ])
+        end
+      end)
+
+      :ets.delete_all_objects(:dtx)
     end
-
-    :ets.delete_all_objects(:dtx)
   end
 
   def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn) do
@@ -343,26 +316,5 @@ defmodule Ippan.TxHandler do
     end
 
     :ets.delete_all_objects(:dtx)
-  end
-
-  # check signature by type
-  # verify ed25519 signature
-  defp check_signature!("0", signature, hash, wallet_pubkey) do
-    if Cafezinho.Impl.verify(
-         signature,
-         hash,
-         wallet_pubkey
-       ) != :ok,
-       do: raise(IppanError, "Invalid signature verify")
-  end
-
-  # verify falcon-512 signature
-  defp check_signature!("1", signature, hash, wallet_pubkey) do
-    if Falcon.verify(hash, signature, wallet_pubkey) != :ok,
-      do: raise(IppanError, "Invalid signature verify")
-  end
-
-  defp check_signature!(_, _signature, _hash, _wallet_pubkey) do
-    raise(IppanError, "Signature type not supported")
   end
 end

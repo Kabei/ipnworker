@@ -5,10 +5,12 @@ defmodule Ippan.BlockHandler do
   import Ippan.Block,
     only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
 
+  require TxHandler
   require SqliteStore
 
   @version Application.compile_env(:ipnworker, :version)
   @max_block_size Application.compile_env(:ipnworker, :block_max_size)
+  @json Application.compile_env(:ipnworker, :json)
 
   @spec verify_file!(map) :: :ok | :error
   def verify_file!(%{
@@ -69,7 +71,9 @@ defmodule Ippan.BlockHandler do
 
           conn = :persistent_term.get(:asset_conn)
           stmts = :persistent_term.get(:asset_stmt)
-          wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
+          wallet_dets = DetsPlux.get(:wallet)
+          wallet_tx = DetsPlux.tx(:wallet)
+          nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
 
           validator =
             SqliteStore.lookup_map(
@@ -81,32 +85,23 @@ defmodule Ippan.BlockHandler do
               Validator
             )
 
-          decode_umap =
-            Enum.reduce(messages, UMap.new(), fn [msg, sig], acc ->
-              hash = Blake3.hash(msg)
-              size = byte_size(msg) + byte_size(sig)
+          umap =
+            Enum.reduce(messages, UMap.new(), fn [body, signature], acc ->
+              hash = Blake3.hash(body)
+              size = byte_size(body) + byte_size(signature)
+              [type, timestamp, nonce, from | args] = @json.decode!(body)
 
               try do
-                msg =
-                  TxHandler.valid_from_file!(
-                    conn,
-                    stmts,
-                    wallets,
-                    hash,
-                    msg,
-                    sig,
-                    size,
-                    creator_id,
-                    validator
-                  )
+                result =
+                  TxHandler.decode_from_file!()
 
-                UMap.put_new(acc, hash, msg)
+                UMap.put_new(acc, hash, result)
               catch
                 _ -> acc
               end
             end)
 
-          if count != UMap.size(decode_umap) do
+          if count != UMap.size(umap) do
             raise IppanError, "Invalid block messages count"
           end
 
@@ -115,7 +110,7 @@ defmodule Ippan.BlockHandler do
           :ok =
             File.write(
               export_path,
-              encode_file!(%{"data" => UMap.values(decode_umap), "vsn" => version})
+              encode_file!(%{"data" => UMap.values(umap), "vsn" => version})
             )
       end
     rescue

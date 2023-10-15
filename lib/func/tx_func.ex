@@ -1,8 +1,8 @@
 defmodule Ippan.Func.Tx do
-  alias Ippan.Utils
   alias Ippan.Token
   require SqliteStore
   require BalanceStore
+  require Token
   require Logger
 
   @max_tx_amount Application.compile_env(:ipnworker, :max_tx_amount)
@@ -15,12 +15,7 @@ defmodule Ippan.Func.Tx do
   end
 
   def send(
-        %{
-          id: account_id,
-          balance: {dets, tx},
-          validator: validator,
-          size: size
-        },
+        source = %{id: account_id},
         to,
         token_id,
         amount,
@@ -29,24 +24,19 @@ defmodule Ippan.Func.Tx do
       when is_integer(amount) and amount <= @max_tx_amount and
              account_id != to and
              byte_size(note) <= @note_max_size do
-    fee_amount = Utils.calc_fees!(validator.fee_type, validator.fee, amount, size)
-    balance_key = DetsPlux.tuple(account_id, token_id)
+    bt = BalanceTrace.new(source)
+    fees = Tools.fees!(source, amount)
 
-    if @token == token_id do
-      BalanceStore.has?(dets, tx, balance_key, amount + fee_amount)
-    else
-      native_balance_key = DetsPlux.tuple(account_id, @token)
-
-      BalanceStore.has?(dets, tx, balance_key, amount) and
-        BalanceStore.has?(dets, tx, native_balance_key, fee_amount)
-    end
-    |> case do
+    case token_id == @token do
       true ->
-        :ok
+        BalanceTrace.requires!(bt, token_id, amount + fees)
 
       false ->
-        raise IppanError, "Insufficient balance"
+        bt
+        |> BalanceTrace.requires!(token_id, amount)
+        |> BalanceTrace.requires!(@token, fees)
     end
+    |> BalanceTrace.output()
   end
 
   # with refund enabled
@@ -56,13 +46,14 @@ defmodule Ippan.Func.Tx do
 
   def coinbase(%{id: account_id, conn: conn, stmts: stmts}, token_id, outputs)
       when length(outputs) > 0 do
-    token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
+    %{max_supply: max_supply} =
+      token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
 
     cond do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      "coinbase" not in token.props ->
+      Token.has_prop?(token, "coinbase") ->
         raise IppanError, "Token property invalid"
 
       true ->
@@ -83,31 +74,26 @@ defmodule Ippan.Func.Tx do
             end
           end)
 
-        tx = DetsPlux.tx(:suplly)
-        supply = TokenSupply.get(tx, token_id)
+        current_supply = TokenSupply.cache(token_id) |> TokenSupply.get()
 
-        if token.max_supply < total + supply do
-          raise ArgumentError, "Max supply exceeded"
+        if current_supply + total > max_supply do
+          raise IppanError, "max supply exceeded"
         end
-
-        :ok
     end
   end
 
-  def burn(%{id: account_id, conn: conn, balance: {dets, tx}, stmts: stmts}, token_id, amount)
-      when is_integer(amount) and amount > 0 do
-    token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
-    balance_key = DetsPlux.tuple(account_id, token_id)
+  def burn(source, token_id, amount) when is_integer(amount) and amount > 0 do
+    conn = :persistent_term.get(:asset_conn)
+    token = Token.get(token_id)
 
     cond do
-      "burn" not in token.props ->
+      Token.has_prop?(token, "burn") ->
         raise IppanError, "Token property invalid"
 
-      not BalanceStore.has?(dets, tx, balance_key, amount) ->
-        raise IppanError, "Insufficient balance"
-
       true ->
-        :ok
+        source
+        |> BalanceTrace.new()
+        |> BalanceTrace.requires!(token_id, amount)
     end
   end
 

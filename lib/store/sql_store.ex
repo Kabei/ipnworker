@@ -137,6 +137,32 @@ defmodule SqliteStore do
     end
   end
 
+  defmacro get(table, name, id, mod) do
+    quote bind_quoted: [table: table, name: name, id: id, mod: mod],
+          location: :keep do
+      case :ets.lookup(table, id) do
+        [{_, map}] ->
+          map
+
+        [] ->
+          stmt = :persistent_term.get({:stmt, name})
+          case Sqlite3NIF.bind_step(var!(conn), stmt, [id]) do
+            {:row, []} ->
+              nil
+
+            {:row, data} ->
+              {_, map} = result = mod.list_to_tuple(data)
+              :ets.insert(table, result)
+
+              map
+
+            _ ->
+              nil
+          end
+      end
+    end
+  end
+
   defmacro fetch_all(conn, stmts, name, args \\ []) do
     quote bind_quoted: [conn: conn, stmts: stmts, name: name, args: args],
           location: :keep do
@@ -270,6 +296,22 @@ defmodule SqliteStore do
 
     {:ok, map}
   end
+
+  def prepare_statements(conn, statements, prefix) do
+    map =
+      for {name, sql} <- statements, into: %{} do
+        {:ok, statement} = Sqlite3NIF.prepare(conn, sql)
+        :persistent_term.put({prefix, name}, statement)
+        {name, statement}
+      end
+
+    {:ok, map}
+  end
+
+  # Enum.each(statements, fn {name, sql} ->
+  #   {:ok, statement} = Sqlite3NIF.prepare(conn, sql)
+  #   :persistent_term.put({prefix, name}, statement)
+  # end)
 
   def release_statements(conn, statements) do
     Enum.each(statements, fn stmt ->

@@ -1,4 +1,6 @@
 defmodule BalanceStore do
+  @type output :: map()
+
   defmacro requires!(dets, tx, key, value) do
     quote bind_quoted: [dets: dets, tx: tx, key: key, value: value], location: :keep do
       {balance, lock} = DetsPlux.get_tx(dets, tx, key, {0, 0})

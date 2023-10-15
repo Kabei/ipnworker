@@ -5,6 +5,7 @@ defmodule Ipnworker.Router do
   alias Ippan.ClusterNodes
   alias Ippan.TxHandler
   require SqliteStore
+  require TxHandler
   require Logger
 
   @json Application.compile_env(:ipnworker, :json)
@@ -19,23 +20,20 @@ defmodule Ipnworker.Router do
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
       case get_req_header(conn, "auth") do
-        [sig] ->
+        [sig64] ->
           hash = Blake3.hash(body)
 
           case :ets.member(:hash, hash) do
             false ->
-              vid = :persistent_term.get(:vid)
-              height = :persistent_term.get(:height)
-              sig = Fast64.decode64(sig)
-              size = byte_size(body) + byte_size(sig)
-
-              db_conn = :persistent_term.get(:asset_conn)
-              stmts = :persistent_term.get(:asset_stmt)
-              validator = :persistent_term.get(:validator)
+              # vid = :persistent_term.get(:vid)
+              # height = :persistent_term.get(:height)
+              signature = Fast64.decode64(sig64)
+              size = byte_size(body) + byte_size(signature)
+              %{id: vid} = validator = :persistent_term.get(:validator)
+              [type, timestamp, nonce, from | args] = @json.decode!(body)
 
               handle_result =
-                [deferred, msg] =
-                TxHandler.valid!(db_conn, stmts, hash, body, sig, size, vid, validator)
+                [deferred, msg, _return] = TxHandler.decode!()
 
               dtx_key =
                 if deferred do
@@ -51,10 +49,11 @@ defmodule Ipnworker.Router do
                 end
 
               miner_id = :persistent_term.get(:miner)
-              :ets.insert(:hash, {hash, height})
 
               case ClusterNodes.call(miner_id, "new_msg", handle_result) do
                 {:ok, %{"height" => height}} ->
+                  :ets.insert(:hash, {hash, height})
+
                   json(conn, %{
                     "hash" => Base.encode16(hash, case: :lower),
                     "height" => height
@@ -106,6 +105,9 @@ defmodule Ipnworker.Router do
         conn
         |> put_resp_header("location", url)
         |> send_resp(302, "")
+
+      [FunctionClauseError, ArgumentError] ->
+        send_resp(conn, 400, "Invalid arguments")
 
       e ->
         Logger.debug(Exception.format(:error, e, __STACKTRACE__))

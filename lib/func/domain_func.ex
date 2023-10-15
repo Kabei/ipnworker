@@ -12,7 +12,6 @@ defmodule Ippan.Func.Domain do
           id: account_id,
           conn: conn,
           stmts: stmts,
-          balance: {dets, tx},
           size: size,
           validator: validator
         },
@@ -39,32 +38,25 @@ defmodule Ippan.Func.Domain do
         raise IppanError, "domain already exists"
 
       true ->
-        amount = Domain.price(domain_name, days)
-
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_email(:email)
 
+        amount = Domain.price(domain_name, days)
         fee_amount = Utils.calc_fees!(validator.fee_type, validator.fee, amount, size)
-        balance_key = DetsPlux.tuple(account_id, @token)
 
-        case BalanceStore.has?(dets, tx, balance_key, amount + fee_amount) do
-          true ->
-            :ok
-
-          _ ->
-            raise IppanError, "Insufficient balance"
-        end
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, amount + fee_amount)
+        |> BalanceTrace.output()
     end
   end
 
   def update(
-        %{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}, size: size},
+        %{id: account_id, conn: conn, stmts: stmts},
         name,
         opts \\ %{}
       ) do
     map_filter = Map.take(opts, Domain.editable())
-    balance_key = DetsPlux.tuple(account_id, @token)
 
     cond do
       opts == %{} ->
@@ -76,16 +68,15 @@ defmodule Ippan.Func.Domain do
       not SqliteStore.exists?(conn, stmts, "owner_domain", [name, account_id]) ->
         raise IppanError, "Invalid owner"
 
-      not BalanceStore.has?(dets, tx, balance_key, size) ->
-        raise IppanError, "Insufficient balance"
-
       true ->
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_account(:owner)
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_email(:email)
 
-        :ok
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, EnvStore.network_fee())
+        |> BalanceTrace.output()
     end
   end
 
@@ -99,20 +90,18 @@ defmodule Ippan.Func.Domain do
     end
   end
 
-  def renew(%{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}}, name, days)
+  def renew(%{id: account_id, conn: conn, stmts: stmts}, name, days)
       when is_integer(days) and days > 0 do
-    amount = Domain.price(name, days)
-    balance_key = DetsPlux.tuple(account_id, @token)
-
     cond do
       not SqliteStore.exists?(conn, stmts, "owner_domain", [name, account_id]) ->
         raise IppanError, "Invalid owner"
 
-      not BalanceStore.has?(dets, tx, balance_key, amount) ->
-        raise IppanError, "Insufficient balance"
-
       true ->
-        :ok
+        amount = Domain.price(name, days)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, amount)
+        |> BalanceTrace.output()
     end
   end
 end

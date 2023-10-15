@@ -2,6 +2,7 @@ defmodule Ippan.ClusterNodes do
   alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
   require BalanceStore
+  require TxHandler
 
   @pubsub :cluster
   @token Application.compile_env(:ipnworker, :token)
@@ -215,13 +216,9 @@ defmodule Ippan.ClusterNodes do
       |> Task.await_many(:infinity)
 
       # IO.inspect("step 2")
-      wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
+      # wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
 
-      if writer do
-        TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn)
-      else
-        TxHandler.run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets)
-      end
+      TxHandler.run_deferred_txs()
 
       if reason > 0 do
         SqliteStore.step(conn, stmts, "delete_validator", [round_creator_id])
