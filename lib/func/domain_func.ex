@@ -1,6 +1,7 @@
 defmodule Ippan.Func.Domain do
   alias Ippan.Domain
   alias Ippan.Utils
+  require Domain
   require SqliteStore
   require BalanceStore
 
@@ -10,22 +11,21 @@ defmodule Ippan.Func.Domain do
   def new(
         %{
           id: account_id,
-          conn: conn,
-          stmts: stmts,
           size: size,
           validator: validator
         },
-        domain_name,
+        name,
         owner,
         days,
         opts \\ %{}
       )
-      when byte_size(domain_name) <= @max_fullname_size and
+      when byte_size(name) <= @max_fullname_size and
              days > 0 do
     map_filter = Map.take(opts, Domain.optionals())
+    db_ref = :persistent_term.get(:asset_conn)
 
     cond do
-      not Match.ippan_domain?(domain_name) ->
+      not Match.ippan_domain?(name) ->
         raise IppanError, "Invalid domain name"
 
       map_filter != opts ->
@@ -34,7 +34,7 @@ defmodule Ippan.Func.Domain do
       not Match.account?(owner) ->
         raise IppanError, "Invalid owner argument"
 
-      SqliteStore.exists?(conn, stmts, "exists_domain", domain_name) ->
+      Domain.exists?(name) ->
         raise IppanError, "domain already exists"
 
       true ->
@@ -42,7 +42,7 @@ defmodule Ippan.Func.Domain do
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_email(:email)
 
-        amount = Domain.price(domain_name, days)
+        amount = Domain.price(name, days)
         fee_amount = Utils.calc_fees!(validator.fee_type, validator.fee, amount, size)
 
         BalanceTrace.new(account_id)
@@ -51,12 +51,9 @@ defmodule Ippan.Func.Domain do
     end
   end
 
-  def update(
-        %{id: account_id, conn: conn, stmts: stmts},
-        name,
-        opts \\ %{}
-      ) do
+  def update(%{id: account_id}, name, opts \\ %{}) do
     map_filter = Map.take(opts, Domain.editable())
+    db_ref = :persistent_term.get(:asset_conn)
 
     cond do
       opts == %{} ->
@@ -65,7 +62,7 @@ defmodule Ippan.Func.Domain do
       map_filter != opts ->
         raise IppanError, "Invalid option field"
 
-      not SqliteStore.exists?(conn, stmts, "owner_domain", [name, account_id]) ->
+      not Domain.owner?(name, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
@@ -80,20 +77,20 @@ defmodule Ippan.Func.Domain do
     end
   end
 
-  def delete(%{id: account_id, conn: conn, stmts: stmts}, name) do
-    cond do
-      not SqliteStore.exists?(conn, stmts, "owner_domain", [name, account_id]) ->
-        raise IppanError, "Invalid owner"
+  def delete(%{id: account_id}, name) do
+    db_ref = :persistent_term.get(:asset_conn)
 
-      true ->
-        :ok
+    unless Domain.owner?(name, account_id) do
+      raise IppanError, "Invalid owner"
     end
   end
 
-  def renew(%{id: account_id, conn: conn, stmts: stmts}, name, days)
+  def renew(%{id: account_id}, name, days)
       when is_integer(days) and days > 0 do
+    db_ref = :persistent_term.get(:asset_conn)
+
     cond do
-      not SqliteStore.exists?(conn, stmts, "owner_domain", [name, account_id]) ->
+      not Domain.owner?(name, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->

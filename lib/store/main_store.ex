@@ -27,7 +27,6 @@ defmodule MainStore do
   @name "main"
   @filename "main.db"
   @key_conn :asset_conn
-  @key_stmt :asset_stmt
 
   def child_spec(args) do
     %{
@@ -39,29 +38,24 @@ defmodule MainStore do
   def init(_) do
     filename = Path.join(:persistent_term.get(:store_dir), @filename)
 
-    {:ok, conn} = SqliteStore.open_setup(@name, filename, @creations, @attaches)
+    {:ok, db_ref} = SqliteStore.open_setup(@name, filename, @creations, @attaches)
     # execute alter tables if exists new version
-    :ok = SqliteStore.check_version(conn, @alter, @version)
+    :ok = SqliteStore.check_version(db_ref, @alter, @version)
     # prepare statements
-    {:ok, stmts} = SqliteStore.prepare_statements(conn, @statements, :stmt)
-    SqliteStore.begin(conn)
+    SqliteStore.prepare_statements(db_ref, @statements, :stmt)
+    SqliteStore.begin(db_ref)
     # put in global conn and statements
-    :persistent_term.put(@key_conn, conn)
-    :persistent_term.put(@key_stmt, stmts)
+    :persistent_term.put(@key_conn, db_ref)
 
     Platform.start()
 
     :ignore
   end
 
-  @spec terminate :: :ok
   def terminate do
-    conn = :persistent_term.get(@key_conn)
-    stmts = :persistent_term.get(@key_stmt)
-    SqliteStore.release_statements(conn, stmts)
-    Sqlite3NIF.close(conn)
+    db_ref = :persistent_term.get(@key_conn)
+    SqliteStore.release_statements(db_ref, @statements, :stmt)
+    Sqlite3NIF.close(db_ref)
     :persistent_term.erase(@key_conn)
-    :persistent_term.erase(@key_stmt)
-    :ok
   end
 end

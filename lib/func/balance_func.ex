@@ -1,16 +1,15 @@
 defmodule Ippan.Func.Balance do
   alias Ippan.Token
-  require SqliteStore
   require BalanceStore
+  require SqliteStore
+  require Token
 
-  def lock(
-        %{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}},
-        to_id,
-        token_id,
-        amount
-      )
+  def lock(%{id: account_id}, to_id, token_id, amount)
       when is_integer(amount) do
-    token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
+    db_ref = :persistent_term.get(:asset_conn)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(:balance)
+    token = Token.get(token_id)
     balance_key = DetsPlux.tuple(to_id, token_id)
 
     cond do
@@ -28,14 +27,12 @@ defmodule Ippan.Func.Balance do
     end
   end
 
-  def unlock(
-        %{id: account_id, conn: conn, stmts: stmts, balance: {dets, tx}},
-        to_id,
-        token_id,
-        amount
-      )
+  def unlock(%{id: account_id}, to_id, token_id, amount)
       when is_integer(amount) do
-    token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
+    db_ref = :persistent_term.get(:asset_conn)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(:balance)
+    token = Token.get(token_id)
     balance_key = DetsPlux.tuple(to_id, token_id)
 
     cond do

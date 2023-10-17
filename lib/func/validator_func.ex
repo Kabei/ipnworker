@@ -1,15 +1,15 @@
 defmodule Ippan.Func.Validator do
   import Guards
   alias Ippan.Validator
+  require Validator
   require SqliteStore
   require BalanceStore
 
-  @type result :: Ippan.Request.result()
   @token Application.compile_env(:ipnworker, :token)
   @max_validators Application.compile_env(:ipnworker, :max_validators)
 
   def new(
-        %{id: account_id, conn: conn, stmts: stmts},
+        %{id: account_id},
         hostname,
         port,
         owner_id,
@@ -25,7 +25,8 @@ defmodule Ippan.Func.Validator do
     map_filter = Map.take(opts, Validator.optionals())
     pubkey = Fast64.decode64(pubkey)
     net_pubkey = Fast64.decode64(net_pubkey)
-    next_id = SqliteStore.one(conn, stmts, "next_id_validator")
+    db_ref = :persistent_term.get(:asset_conn)
+    next_id = Validator.next_id()
 
     cond do
       fee_type == 0 and fee < 1 ->
@@ -49,7 +50,7 @@ defmodule Ippan.Func.Validator do
       not Match.hostname?(hostname) ->
         raise IppanError, "Invalid hostname"
 
-      SqliteStore.exists?(conn, stmts, "exists_host_validator", hostname) ->
+      Validator.exists_host?(hostname) ->
         raise IppanError, "Validator already exists"
 
       @max_validators <= next_id ->
@@ -67,8 +68,10 @@ defmodule Ippan.Func.Validator do
     end
   end
 
-  def update(%{id: account_id, conn: conn, stmts: stmts}, id, opts \\ %{}) do
+  def update(%{id: account_id}, id, opts \\ %{}) do
     map_filter = Map.take(opts, Validator.editable())
+    db_ref = :persistent_term.get(:asset_conn)
+    fees = EnvStore.network_fee()
 
     cond do
       opts == %{} ->
@@ -77,10 +80,14 @@ defmodule Ippan.Func.Validator do
       map_filter != opts ->
         raise IppanError, "Invalid option field"
 
-      not SqliteStore.exists?(conn, stmts, "owner_validator", [id, account_id]) ->
+      not Validator.owner?(id, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
+        bt =
+          BalanceTrace.new(account_id)
+          |> BalanceTrace.requires!(@token, fees)
+
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_hostname(:hostname)
         |> MapUtil.validate_length_range(:name, 1..20)
@@ -105,13 +112,15 @@ defmodule Ippan.Func.Validator do
               j
           end
         end)
+
+        BalanceTrace.output(bt)
     end
   end
 
-  def delete(%{id: account_id, conn: conn, stmts: stmts}, id) do
-    if SqliteStore.exists?(conn, stmts, "owner_validator", [id, account_id]) do
-      :ok
-    else
+  def delete(%{id: account_id}, id) do
+    db_ref = :persistent_term.get(:asset_conn)
+
+    unless Validator.owner?(id, account_id) do
       raise IppanError, "Invalid owner"
     end
   end

@@ -1,19 +1,19 @@
 defmodule Ipnworker.Router do
   use Plug.Router
-  alias Ippan.Block
-  alias Ippan.Validator
-  alias Ippan.ClusterNodes
-  alias Ippan.TxHandler
+
+  plug(:match)
+  plug(:dispatch)
+
+  alias Ippan.{ClusterNodes, TxHandler, Validator}
   require SqliteStore
+  require Validator
   require TxHandler
   require Logger
 
   @json Application.compile_env(:ipnworker, :json)
   @max_size Application.compile_env(:ipnworker, :message_max_size)
-  @block_extension Application.compile_env(:ipnworker, :block_extension)
 
-  plug(:match)
-  plug(:dispatch)
+  import Ippan.Utils, only: [json: 1]
 
   post "/v1/call" do
     try do
@@ -30,7 +30,7 @@ defmodule Ipnworker.Router do
               signature = Fast64.decode64(sig64)
               size = byte_size(body) + byte_size(signature)
               %{id: vid} = validator = :persistent_term.get(:validator)
-              [type, timestamp, nonce, from | args] = @json.decode!(body)
+              [type, nonce, from | args] = @json.decode!(body)
 
               handle_result =
                 [deferred, msg, _return] = TxHandler.decode!()
@@ -54,7 +54,7 @@ defmodule Ipnworker.Router do
                 {:ok, %{"height" => height}} ->
                   :ets.insert(:hash, {hash, height})
 
-                  json(conn, %{
+                  json(%{
                     "hash" => Base.encode16(hash, case: :lower),
                     "height" => height
                   })
@@ -87,18 +87,10 @@ defmodule Ipnworker.Router do
         send_resp(conn, 400, e.message)
 
       e in IppanRedirectError ->
-        conn = :persistent_term.get(:asset_conn)
-        stmts = :persistent_term.get(:asset_stmt)
+        db_ref = :persistent_term.get(:asset_conn)
 
         %{hostname: hostname} =
-          SqliteStore.lookup_map(
-            :validator,
-            conn,
-            stmts,
-            "get_validator",
-            String.to_integer(e.message),
-            Validator
-          )
+          Validator.get(String.to_integer(e.message))
 
         url = "https://#{hostname}#{conn.request_path}"
 
@@ -115,47 +107,17 @@ defmodule Ipnworker.Router do
     end
   end
 
-  get "/v1/download/block/decoded/:vid/:height" do
-    base_dir = :persistent_term.get(:decode_dir)
-    block_path = Path.join([base_dir, "#{vid}.#{height}.#{@block_extension}"])
-
-    if File.exists?(block_path) do
-      conn
-      |> put_resp_content_type("application/octet-stream")
-      |> send_file(200, block_path)
-    else
-      send_resp(conn, 404, "")
-    end
-  end
-
-  get "/v1/download/block/:vid/:height" do
-    base_dir = :persistent_term.get(:block_dir)
-    block_path = Path.join([base_dir, "#{vid}.#{height}.#{@block_extension}"])
-
-    if File.exists?(block_path) do
-      conn
-      |> put_resp_content_type("application/octet-stream")
-      |> send_file(200, block_path)
-    else
-      if vid == :persistent_term.get(:vid) |> to_string do
-        miner = :persistent_term.get(:miner)
-        node = ClusterNodes.info(miner)
-        url = Block.cluster_block_url(node.hostname, vid, height)
-
-        case Download.await(url, block_path) do
-          :ok ->
-            conn
-            |> put_resp_content_type("application/octet-stream")
-            |> send_file(200, block_path)
-
-          _e ->
-            send_resp(conn, 404, "")
-        end
-      else
-        send_resp(conn, 404, "")
-      end
-    end
-  end
+  forward "/v1/dl", to: Ipnworker.FileRoutes
+  forward "/v1/round", to: Ipnworker.RoundRoutes
+  forward "/v1/block", to: Ipnworker.BlockRoutes
+  forward "/v1/jackpot", to: Ipnworker.JackpotRoutes
+  forward "/v1/txs", to: Ipnworker.TxRoutes
+  # forward "/v1/account", to: Ipnworker.AccountRoutes
+  # forward "/v1/network", to: Ipnworker.NetRoutes
+  # forward "/v1/event", to: Ipnworker.EventRoutes
+  # forward "/v1/token", to: Ipnworker.TokenRoutes
+  # forward "/v1/domain", to: Ipnworker.DomainRoutes
+  # forward "/v1/snap", to: Ipnworker.SnapRoutes
 
   match _ do
     send_resp(conn, 404, "")
@@ -164,10 +126,4 @@ defmodule Ipnworker.Router do
   # defp handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
   #   send_resp(conn, conn.status, "Something went wrong")
   # end
-
-  defp json(conn, data) do
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(200, @json.encode!(data))
-  end
 end

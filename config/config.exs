@@ -45,7 +45,8 @@ config :ipnworker, :version, 0
 config :ipnworker, :block_max_size, 10_485_760
 config :ipnworker, :block_data_max_size, 10_000_000
 config :ipnworker, :block_interval, :timer.seconds(5)
-config :ipnworker, :block_extension, "block"
+config :ipnworker, :block_extension, "blo"
+config :ipnworker, :decode_extension, "dec"
 config :ipnworker, :note_max_size, 255
 config :ipnworker, :max_tx_amount, 1_000_000_000_000_000
 config :ipnworker, :timeout_refund, :timer.hours(72)

@@ -1,8 +1,9 @@
-defmodule Schema.Round do
-  alias Schema.Round
-  alias Ipnworker.Repo
+defmodule Ippan.Ecto.Round do
   use Ecto.Schema
   import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3]
+  alias Ippan.Utils
+  alias Ipnworker.Repo
+  alias __MODULE__
 
   @primary_key false
   @schema_prefix "history"
@@ -14,6 +15,7 @@ defmodule Schema.Round do
     field(:creator, :integer)
     field(:signature, :binary)
     field(:coinbase, :integer)
+    field(:reward, :integer)
     field(:count, :integer)
     field(:tx_count, :integer)
     field(:size, :integer)
@@ -22,17 +24,27 @@ defmodule Schema.Round do
     field(:extras, :binary)
   end
 
-  @select ~w(id hash prev creator coinbase count tx_count size reason)a
+  @select ~w(id hash prev creator coinbase reward count tx_count size reason)a
 
-  import Schema.Filters, only: [filter_limit: 2, filter_offset: 2]
+  import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
   def one(id) do
-    from(x in Round, where: x == ^id, limit: 1)
+    from(r in Round, where: r.id == ^id, limit: 1)
     |> filter_select()
     |> Repo.one()
     |> case do
-      nil -> ""
-      x -> map(x)
+      nil -> nil
+      x -> fun(x)
+    end
+  end
+
+  def last do
+    from(r in Round, limit: 1, order_by: [desc: r.id])
+    |> filter_select()
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      x -> fun(x)
     end
   end
 
@@ -43,18 +55,17 @@ defmodule Schema.Round do
     |> filter_select()
     |> sort(params)
     |> Repo.all()
-    |> map()
+    |> Enum.map(&fun(&1))
   end
 
   defp filter_select(query) do
-    select(query, [x], map(x, @select))
+    select(query, [r], map(r, @select))
   end
 
-  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [x], asc: x.id)
-  defp sort(query, _), do: order_by(query, [x], desc: x.id)
+  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [r], asc: r.id)
+  defp sort(query, _), do: order_by(query, [r], desc: r.id)
 
-  defp map(map) do
-    map
-    |> Map.merge(%{hash: Base.encode16(map.hash), prev: Base.encode16(map.prev)})
+  defp fun(x = %{hash: hash, prev: prev}) do
+    %{x | hash: Utils.encode16(hash), prev: Utils.encode16(prev)}
   end
 end

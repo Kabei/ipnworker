@@ -44,10 +44,10 @@ defmodule Ippan.Func.Tx do
     send(source, to, token, amount)
   end
 
-  def coinbase(%{id: account_id, conn: conn, stmts: stmts}, token_id, outputs)
+  def coinbase(%{id: account_id}, token_id, outputs)
       when length(outputs) > 0 do
-    %{max_supply: max_supply} =
-      token = SqliteStore.lookup_map(:token, conn, stmts, "get_token", [token_id], Token)
+    db_ref = :persistent_term.get(:asset_conn)
+    %{max_supply: max_supply} = token = Token.get(token_id)
 
     cond do
       token.owner != account_id ->
@@ -83,7 +83,7 @@ defmodule Ippan.Func.Tx do
   end
 
   def burn(source, token_id, amount) when is_integer(amount) and amount > 0 do
-    conn = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:asset_conn)
     token = Token.get(token_id)
 
     cond do
@@ -97,11 +97,12 @@ defmodule Ippan.Func.Tx do
     end
   end
 
-  def refund(%{id: account_id, conn: conn, stmts: stmts, timestamp: timestamp}, hash16)
+  def refund(%{id: account_id}, hash16)
       when byte_size(hash16) == 64 do
+    db_ref = :persistent_term.get(:asset_conn)
     hash = Base.decode16!(hash16, case: :mixed)
 
-    case SqliteStore.exists?(conn, stmts, "exists_refund", [hash, account_id, timestamp]) do
+    case SqliteStore.exists?("exists_refund", [hash, account_id]) do
       false ->
         raise IppanError, "Hash refund not exists"
 

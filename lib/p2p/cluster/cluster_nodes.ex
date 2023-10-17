@@ -1,10 +1,10 @@
 defmodule Ippan.ClusterNodes do
-  alias Ippan.{LocalNode, Network, BlockHandler, TxHandler, Round, Validator}
+  alias Ippan.{Node, Network, BlockHandler, TxHandler, Round, Validator}
   require SqliteStore
   require BalanceStore
-  require TxHandler
+  require Ippan.{Node, Validator, Round, TxHandler}
 
-  @pubsub :cluster
+  @pubsub :pubsub
   @token Application.compile_env(:ipnworker, :token)
 
   use Network,
@@ -12,7 +12,7 @@ defmodule Ippan.ClusterNodes do
     name: :cluster,
     table: :cnw,
     server: Ippan.ClusterNodes.Server,
-    pubsub: :cluster,
+    pubsub: :pubsub,
     topic: "cluster",
     conn_opts: [reconnect: true, retry: :infinity],
     sup: Ippan.ClusterSup
@@ -27,11 +27,10 @@ defmodule Ippan.ClusterNodes do
 
     pk = :persistent_term.get(:pubkey)
     net_pk = :persistent_term.get(:net_pubkey)
-    net_conn = :persistent_term.get(:net_conn)
-    net_stmts = :persistent_term.get(:net_stmt)
+    db_ref = :persistent_term.get(:net_conn)
     default_port = Application.get_env(:ipnworker, :cluster)[:port]
 
-    SqliteStore.step(net_conn, net_stmts, "delete_nodes", [])
+    Node.delete_all()
 
     # register nodes from env_file Nodes argument
     String.split(nodes, ",", trim: true)
@@ -39,32 +38,30 @@ defmodule Ippan.ClusterNodes do
       acc ++ [x |> String.trim() |> String.split("@", parts: 2)]
     end)
     |> Enum.each(fn [name_id, hostname] ->
-      data =
-        %LocalNode{
+      node =
+        %Node{
           id: name_id,
           hostname: hostname,
           port: default_port,
           pubkey: pk,
           net_pubkey: net_pk
         }
-        |> LocalNode.to_list()
+        |> Node.to_list()
 
-      SqliteStore.step(net_conn, net_stmts, "insert_node", data)
+      Node.insert(node)
     end)
 
-    SqliteStore.sync(net_conn)
-    init()
-    connect_to_miner()
+    SqliteStore.sync(db_ref)
+    next_init(db_ref)
+    connect_to_miner(db_ref)
   end
 
-  defp init do
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
+  defp next_init(db_ref) do
     vid = :persistent_term.get(:vid)
-    v = SqliteStore.lookup_map(:validator, conn, stmts, "get_validator", vid, Validator)
+    v = Validator.get(vid)
     :persistent_term.put(:validator, v)
 
-    case SqliteStore.fetch(conn, stmts, "last_block_created", []) do
+    case SqliteStore.fetch("last_block_created", []) do
       nil ->
         :persistent_term.put(:height, 0)
 
@@ -73,30 +70,22 @@ defmodule Ippan.ClusterNodes do
     end
   end
 
-  defp connect_to_miner do
+  defp connect_to_miner(db_ref) do
     miner = :persistent_term.get(:miner)
-    conn = :persistent_term.get(:net_conn)
-    stmts = :persistent_term.get(:net_stmt)
 
-    case SqliteStore.fetch(conn, stmts, "get_node", [miner]) do
+    case Node.fetch(miner) do
       nil ->
         :ok
 
       node ->
-        connect_async(LocalNode.list_to_map(node))
+        connect_async(Node.list_to_map(node))
     end
   end
 
   @impl Network
   def fetch(id) do
-    SqliteStore.lookup_map(
-      :cluster,
-      :persistent_term.get(:net_conn),
-      :persistent_term.get(:net_stmt),
-      "get_node",
-      id,
-      LocalNode
-    )
+    db_ref = :persistent_term.get(:net_conn)
+    Node.get(id)
   end
 
   @impl Network
@@ -157,11 +146,10 @@ defmodule Ippan.ClusterNodes do
          hostname,
          pg_conn
        ) do
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
+    db_ref = :persistent_term.get(:asset_conn)
     writer = pg_conn != nil
 
-    unless SqliteStore.exists?(conn, stmts, "exists_round", [round_id]) do
+    unless Round.exists?(round_id) do
       vid = :persistent_term.get(:vid)
       balance_pid = DetsPlux.get(:balance)
       balance_tx = DetsPlux.tx(:balance)
@@ -187,15 +175,7 @@ defmodule Ippan.ClusterNodes do
         end
 
         Task.async(fn ->
-          creator =
-            SqliteStore.lookup_map(
-              :validator,
-              conn,
-              stmts,
-              "get_validator",
-              block_creator_id,
-              Validator
-            )
+          creator = Validator.get(block_creator_id)
 
           :poolboy.transaction(
             pool_pid,
@@ -220,28 +200,21 @@ defmodule Ippan.ClusterNodes do
 
       TxHandler.run_deferred_txs()
 
-      if reason > 0 do
-        SqliteStore.step(conn, stmts, "delete_validator", [round_creator_id])
-      end
-
       round_creator =
-        SqliteStore.lookup_map(
-          :validator,
-          conn,
-          stmts,
-          "get_validator",
-          round_creator_id,
-          Validator
-        )
+        Validator.get(round_creator_id)
 
       run_reward(round, round_creator, balance_pid, balance_tx)
-      run_jackpot(round, conn, stmts, pg_conn)
+      run_jackpot(round, db_ref, pg_conn)
+
+      if reason > 0 do
+        Validator.delete(round_creator_id)
+      end
 
       # IO.inspect("step 3")
       round_encode = Round.to_list(round)
-      SqliteStore.step(conn, stmts, "insert_round", round_encode)
+      Round.insert(round_encode)
 
-      RoundCommit.sync(conn, tx_count, is_some_block_mine)
+      RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
 
       if writer do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
@@ -261,10 +234,10 @@ defmodule Ippan.ClusterNodes do
 
   defp run_reward(_, _, _, _), do: :ok
 
-  defp run_jackpot(%{id: round_id, jackpot: {amount, winner_id}}, conn, stmts, pgid)
+  defp run_jackpot(%{id: round_id, jackpot: {amount, winner}}, db_ref, pgid)
        when amount > 0 do
-    data = [round_id, winner_id, amount]
-    :done = SqliteStore.step(conn, stmts, "insert_jackpot", data)
+    data = [round_id, winner, amount]
+    :done = SqliteStore.step("insert_jackpot", data)
 
     if pgid do
       PgStore.insert_jackpot(pgid, data)
@@ -273,10 +246,10 @@ defmodule Ippan.ClusterNodes do
     # Push event
     PubSub.broadcast(@pubsub, "jackpot", %{
       "round_id" => round_id,
-      "winner" => winner_id,
+      "winner" => winner,
       "amount" => amount
     })
   end
 
-  defp run_jackpot(_, _, _round, _pgid), do: :ok
+  defp run_jackpot(_, _, _), do: :ok
 end

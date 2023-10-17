@@ -124,4 +124,47 @@ defmodule Ippan.Domain do
   def list_to_tuple([name | _] = x) do
     {name, list_to_map(x)}
   end
+
+  defmacro insert(args) do
+    quote location: :keep do
+      SqliteStore.step("insert_domain", unquote(args))
+    end
+  end
+
+  defmacro get(id) do
+    quote location: :keep do
+      SqliteStore.get(:token, "get_domain", unquote(id), Ippan.Token)
+    end
+  end
+
+  defmacro exists?(name) do
+    quote bind_quoted: [name: name], location: :keep do
+      SqliteStore.exists?("exists_domain", [name])
+    end
+  end
+
+  defmacro owner?(name, owner) do
+    quote bind_quoted: [name: name, owner: owner], location: :keep do
+      SqliteStore.exists?("owner_domain", [name, owner])
+    end
+  end
+
+  defmacro renew(name, owner, renewed_at, updated_at) do
+    quote bind_quoted: [name: name, owner: owner, renewed_at: renewed_at, updated_at: updated_at],
+          location: :keep do
+      SqliteStore.step("renew_domain", [name, owner, renewed_at, updated_at])
+    end
+  end
+
+  defmacro delete(name, owner) do
+    quote bind_quoted: [name: name, owner: owner], location: :keep do
+      SqliteStore.step("delete_domain", [name, owner])
+    end
+  end
+
+  defmacro update(map, name) do
+    quote location: :keep do
+      SqliteStore.update("assets.domain", unquote(map), name: unquote(name))
+    end
+  end
 end

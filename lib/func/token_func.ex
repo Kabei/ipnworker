@@ -1,15 +1,15 @@
 defmodule Ippan.Func.Token do
   alias Ippan.Token
-  require SqliteStore
   require BalanceStore
+  require SqliteStore
+  require Token
 
-  @type result :: Ippan.Request.result()
   @max_number 1_000_000_000_000_000_000_000_000_000
   @token Application.compile_env(:ipnworker, :token)
   @max_tokens Application.compile_env(:ipnworker, :max_tokens)
 
   def new(
-        %{id: account_id, conn: conn, balance: {dets, tx}, stmts: stmts},
+        %{id: account_id},
         id,
         owner_id,
         name,
@@ -24,6 +24,8 @@ defmodule Ippan.Func.Token do
       opts
       |> Map.take(Token.optionals())
 
+    db_ref = :persistent_term.get(:asset_conn)
+
     cond do
       not Match.token?(id) ->
         raise IppanError, "Invalid token ID"
@@ -34,10 +36,10 @@ defmodule Ippan.Func.Token do
       map_filter != opts ->
         raise IppanError, "Invalid option arguments"
 
-      SqliteStore.exists?(conn, stmts, "exists_token", id) ->
+      Token.exists?(id) ->
         raise IppanError, "Token already exists"
 
-      @max_tokens < SqliteStore.one(conn, stmts, "total_tokens") ->
+      @max_tokens < Token.total() ->
         raise IppanError, "Maximum tokens exceeded"
 
       true ->
@@ -47,15 +49,19 @@ defmodule Ippan.Func.Token do
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_any(:opts, Token.props())
 
+        dets = DetsPlux.get(:balance)
+        tx = DetsPlux.tx(:balance)
         balance_key = DetsPlux.tuple(account_id, @token)
 
         BalanceStore.requires!(dets, tx, balance_key, price)
     end
   end
 
-  def update(%{id: account_id, conn: conn, stmts: stmts}, id, opts \\ %{})
+  def update(%{id: account_id}, id, opts \\ %{})
       when byte_size(id) <= 10 do
     map_filter = Map.take(opts, Token.editable())
+    db_ref = :persistent_term.get(:asset_conn)
+    fees = EnvStore.network_fee()
 
     cond do
       opts == %{} ->
@@ -64,25 +70,32 @@ defmodule Ippan.Func.Token do
       map_filter != opts ->
         raise IppanError, "Invalid option field"
 
-      not SqliteStore.exists?(conn, stmts, "owner_token", [id, account_id]) ->
+      not Token.owner?(id, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
+        bt =
+          BalanceTrace.new(account_id)
+          |> BalanceTrace.requires!(@token, fees)
+
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_length_range(:name, 1..100)
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_account(:owner)
+
+        BalanceTrace.output(bt)
     end
   end
 
-  def delete(%{id: account_id, conn: conn, stmts: stmts}, id) when byte_size(id) <= 10 do
+  def delete(%{id: account_id}, id) when byte_size(id) <= 10 do
+    db_ref = :persistent_term.get(:asset_conn)
     supply = TokenSupply.cache(id)
 
     cond do
       TokenSupply.get(supply) != 0 ->
         raise IppanError, "Invalid operation"
 
-      not SqliteStore.exists?(conn, stmts, "owner_token", [id, account_id]) ->
+      not Token.owner?(id, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->

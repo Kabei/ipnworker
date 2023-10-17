@@ -7,6 +7,7 @@ defmodule Ippan.BlockHandler do
 
   require TxHandler
   require SqliteStore
+  require Validator
 
   @version Application.compile_env(:ipnworker, :version)
   @max_block_size Application.compile_env(:ipnworker, :block_max_size)
@@ -69,27 +70,17 @@ defmodule Ippan.BlockHandler do
             raise(IppanError, "Invalid blockfile version")
           end
 
-          conn = :persistent_term.get(:asset_conn)
-          stmts = :persistent_term.get(:asset_stmt)
+          db_ref = :persistent_term.get(:asset_conn)
           wallet_dets = DetsPlux.get(:wallet)
           wallet_tx = DetsPlux.tx(:wallet)
           nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
-
-          validator =
-            SqliteStore.lookup_map(
-              :validator,
-              conn,
-              stmts,
-              "get_validator",
-              creator_id,
-              Validator
-            )
+          validator = Validator.get(creator_id)
 
           umap =
             Enum.reduce(messages, UMap.new(), fn [body, signature], acc ->
               hash = Blake3.hash(body)
               size = byte_size(body) + byte_size(signature)
-              [type, timestamp, nonce, from | args] = @json.decode!(body)
+              [type, nonce, from | args] = @json.decode!(body)
 
               try do
                 result =

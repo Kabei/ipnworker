@@ -1,15 +1,15 @@
 defmodule MinerWorker do
   use GenServer
+  alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
-  alias Ippan.TxHandler
-  alias Ippan.Wallet
-  alias Ippan.Block
   require SqliteStore
   require TxHandler
+  require Block
   require Logger
+  require Validator
 
+  @pubsub :pubsub
   @version Application.compile_env(:ipnworker, :version)
-  @pubsub :cluster
   @json Application.compile_env(:ipnworker, :json)
 
   def start_link(_) do
@@ -37,6 +37,7 @@ defmodule MinerWorker do
             id: block_id,
             creator: creator_id,
             height: height,
+            round: round_id,
             vsn: version
           } = block,
           hostname,
@@ -46,8 +47,7 @@ defmodule MinerWorker do
         _from,
         state
       ) do
-    conn = :persistent_term.get(:asset_conn)
-    stmts = :persistent_term.get(:asset_stmt)
+    db_ref = :persistent_term.get(:asset_conn)
     writer = pg_conn != nil
 
     try do
@@ -77,11 +77,11 @@ defmodule MinerWorker do
       if version != version_file or version != @version,
         do: raise(IppanError, "Block file version failed")
 
-      run_miner(block_id, creator, txs, wallet_dets, pg_conn, writer)
+      run_miner(round_id, block_id, creator, txs, wallet_dets, pg_conn, writer)
 
       # IO.inspect("Bstep 4")
       b = Block.to_list(block)
-      SqliteStore.step(conn, stmts, "insert_block", b)
+      Block.insert(b)
       # |> IO.inspect(x1)
 
       if writer do
@@ -96,7 +96,7 @@ defmodule MinerWorker do
     rescue
       e ->
         # delete player
-        SqliteStore.step(conn, stmts, "delete_validator", [creator_id])
+        Validator.delete(creator_id)
 
         Logger.error(Exception.format(:error, e, __STACKTRACE__))
         # IO.puts("Error occurred at #{__ENV__.file}:#{__ENV__.line}")
@@ -104,63 +104,49 @@ defmodule MinerWorker do
     end
   end
 
-  defp run_miner(block_id, validator, transactions, wallet_dets, pg_conn, writer) do
+  defp run_miner(round_id, block_id, validator, transactions, wallet_dets, pg_conn, writer) do
     nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
 
-    Enum.reduce(transactions, 0, fn
-      [hash, type, from, args, timestamp, nonce, size], acc ->
+    Enum.each(transactions, fn
+      [hash, type, from, nonce, args, size], acc ->
         case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
           _number ->
-            case TxHandler.regular() do
-              :error ->
-                acc + 1
+            TxHandler.regular()
 
-              _ ->
-                if writer do
-                  PgStore.insert_event(pg_conn, [
-                    block_id,
-                    hash,
-                    type,
-                    from,
-                    timestamp,
-                    nonce,
-                    nil,
-                    @json.encode!(args)
-                  ])
-                end
-
-                acc
+            if writer do
+              PgStore.insert_event(pg_conn, [
+                block_id,
+                hash,
+                type,
+                from,
+                nonce,
+                size,
+                @json.encode!(args)
+              ])
             end
         end
 
-      body = [hash, type, arg_key, from, args, timestamp, nonce, _size], acc ->
+      body = [hash, type, arg_key, from, nonce, args, size], acc ->
         case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
           _number ->
-            case TxHandler.insert_deferred() do
-              true ->
-                if writer do
-                  PgStore.insert_event(pg_conn, [
-                    block_id,
-                    hash,
-                    type,
-                    from,
-                    timestamp,
-                    nonce,
-                    nil,
-                    @json.encode!(args)
-                  ])
-                end
+            TxHandler.insert_deferred()
 
-                acc
-
-              false ->
-                acc + 1
+            if writer do
+              PgStore.insert_event(pg_conn, [
+                block_id,
+                hash,
+                type,
+                from,
+                nonce,
+                size,
+                @json.encode!(args)
+              ])
             end
         end
     end)

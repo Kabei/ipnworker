@@ -1,24 +1,26 @@
 defmodule EnvStore do
   require SqliteStore
 
-  def load(conn, stmts) do
-    data = SqliteStore.all(conn, stmts, "all_env")
+  def load(db_ref) do
+    data = SqliteStore.all("all_env")
 
     for [name, value] <- data do
       :persistent_term.put(name, :erlang.binary_to_term(value))
     end
   end
 
-  def put(conn, stmts, name, value, timestamp) do
+  def put(db_ref, name, value) do
     value = transform(name, value)
     :persistent_term.put({:env, name}, value)
-    SqliteStore.step(conn, stmts, "insert_env", [name, :erlang.term_to_binary(value), timestamp])
+    SqliteStore.step("insert_env", [name, :erlang.term_to_binary(value)])
   end
 
-  def delete(conn, stmts, name) do
+  def delete(db_ref, name) do
     :persistent_term.erase({:env, name})
-    SqliteStore.step(conn, stmts, "delete_env", [name])
+    SqliteStore.step("delete_env", [name])
   end
+
+  def owner, do: :persistent_term.get({:env, "OWNER"}, nil)
 
   def token_price do
     :persistent_term.get({:env, "TOKEN.PRICE"}, 50_000)

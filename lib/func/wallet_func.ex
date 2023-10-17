@@ -1,15 +1,18 @@
 defmodule Ippan.Func.Wallet do
-  alias Ippan.Address
+  alias Ippan.{Address, Validator}
+  require Validator
   require SqliteStore
 
   def subscribe(
-        %{id: account_id, validator: validator, wallets: {wallet_dets, wallet_tx}},
+        %{id: account_id, validator: validator},
         pubkey,
         validator_id,
         sig_type
       ) do
     pubkey = Fast64.decode64(pubkey)
     id = Address.hash(sig_type, pubkey)
+    dets = DetsPlux.get(:wallet)
+    tx = DetsPlux.tx(:cache_wallet)
 
     cond do
       id != account_id ->
@@ -24,7 +27,7 @@ defmodule Ippan.Func.Wallet do
       byte_size(pubkey) > 897 ->
         raise IppanError, "Invalid pubkey size"
 
-      DetsPlux.member_tx?(wallet_dets, wallet_tx, id) ->
+      DetsPlux.member_tx?(dets, tx, id) ->
         raise IppanError, "Wallet already exists"
 
       true ->
@@ -32,19 +35,14 @@ defmodule Ippan.Func.Wallet do
     end
   end
 
-  def unsubscribe(
-        %{
-          validator: validator,
-          conn: conn,
-          stmts: stmts
-        },
-        new_validator_id
-      ) do
+  def unsubscribe(%{validator: validator}, new_validator_id) do
+    db_ref = :persistent_term.get(:asset_conn)
+
     cond do
       validator.id == new_validator_id ->
         raise IppanError, "Already subscribe"
 
-      not SqliteStore.exists?(conn, stmts, "exists_validator", new_validator_id) ->
+      not Validator.exists?(new_validator_id) ->
         raise IppanError, "Validator not exists"
 
       true ->

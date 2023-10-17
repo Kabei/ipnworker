@@ -11,7 +11,7 @@ defmodule Ippan.Network do
   @callback info(node_id :: term()) :: map() | nil
   @callback list() :: [term()]
   @callback alive?(node :: term()) :: boolean()
-  @callback count() :: pos_integer()
+  @callback count() :: non_neg_integer()
   @callback cast(node_id :: term(), message :: term) :: :ok | :disconnect
   @callback cast(node_id :: term(), event :: binary, data :: term) :: :ok | :disconnect
   @callback call(

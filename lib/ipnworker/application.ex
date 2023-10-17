@@ -28,7 +28,7 @@ defmodule Ipnworker.Application do
       PgStore,
       Ipnworker.Repo,
       :poolboy.child_spec(:minerpool, miner_config()),
-      Supervisor.child_spec({Phoenix.PubSub, [name: :cluster]}, id: :cluster),
+      {Phoenix.PubSub, [name: :pubsub]},
       ClusterNodes,
       {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
     ]

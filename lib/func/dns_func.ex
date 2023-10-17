@@ -1,6 +1,8 @@
 defmodule Ippan.Func.Dns do
   alias Ippan.{Domain, DNS}
   require SqliteStore
+  require DNS
+  require Domain
   require BalanceStore
 
   @token Application.compile_env(:ipnworker, :token)
@@ -9,25 +11,14 @@ defmodule Ippan.Func.Dns do
   @data_range 1..255
   @ttl_range 0..2_147_483_648
 
-  def new(
-        %{
-          id: account_id,
-          conn: conn,
-          stmts: stmts,
-          size: size
-        },
-        fullname,
-        type,
-        data,
-        ttl
-      )
+  def new(%{id: account_id, size: size}, fullname, type, data, ttl)
       when byte_size(fullname) <= @fullname_max_size and
              type in @type_range and
              byte_size(data) in @data_range and
              ttl in @ttl_range do
     {_subdomain, domain} = Domain.split(fullname)
-
     dns_type = DNS.type_to_alpha(type)
+    db_ref = :persistent_term.get(:asset_conn)
 
     cond do
       not Match.hostname?(fullname) ->
@@ -39,7 +30,7 @@ defmodule Ippan.Func.Dns do
       ) ->
         raise IppanError, "DNS resource format error"
 
-      not SqliteStore.exists?(conn, stmts, "exists_domain", [domain, account_id]) ->
+      not Domain.owner?(domain, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
@@ -49,12 +40,7 @@ defmodule Ippan.Func.Dns do
     end
   end
 
-  def update(
-        %{id: account_id, conn: conn, stmts: stmts},
-        fullname,
-        dns_hash16,
-        params
-      ) do
+  def update(%{id: account_id}, fullname, dns_hash16, params) do
     map_filter = Map.take(params, DNS.editable())
 
     {_subdomain, domain} = Domain.split(fullname)
@@ -63,8 +49,10 @@ defmodule Ippan.Func.Dns do
 
     fees = EnvStore.network_fee()
 
+    db_ref = :persistent_term.get(:asset_conn)
+
     dns =
-      SqliteStore.lookup_map(:dns, conn, stmts, "get_dns", {domain, dns_hash}, DNS)
+      DNS.get(domain, dns_hash)
 
     cond do
       map_filter == %{} ->
@@ -73,7 +61,7 @@ defmodule Ippan.Func.Dns do
       map_filter != params ->
         raise IppanError, "Invalid optional arguments"
 
-      not SqliteStore.exists?(conn, stmts, "owner_domain", [domain, account_id]) ->
+      not Domain.owner?(domain, account_id) ->
         raise IppanError, "Invalid owner"
 
       not match?(
@@ -95,41 +83,40 @@ defmodule Ippan.Func.Dns do
     end
   end
 
-  def delete(%{id: account_id, conn: conn, stmts: stmts}, fullname)
+  def delete(%{id: account_id}, fullname)
       when byte_size(fullname) <= @fullname_max_size do
     {_subdomain, domain} = Domain.split(fullname)
+    db_ref = :persistent_term.get(:asset_conn)
 
-    if SqliteStore.exists?(conn, stmts, "owner_domain", [domain, account_id]) do
-      :ok
-    else
+    unless Domain.owner?(domain, account_id) do
       raise IppanError, "Invalid Owner"
     end
   end
 
-  def delete(%{id: account_id, conn: conn, stmts: stmts}, fullname, type)
+  def delete(%{id: account_id}, fullname, type)
       when type in @type_range do
     {_subdomain, domain} = Domain.split(fullname)
+    db_ref = :persistent_term.get(:asset_conn)
 
-    if SqliteStore.exists?(conn, stmts, "owner_domain", [domain, account_id]) do
-      :ok
-    else
+    unless Domain.owner?(domain, account_id) do
       raise IppanError, "Invalid Owner"
     end
   end
 
-  def delete(%{id: account_id, conn: conn, stmts: stmts}, fullname, hash16)
+  def delete(%{id: account_id}, fullname, hash16)
       when byte_size(hash16) == 32 do
     {_subdomain, domain} = Domain.split(fullname)
+    db_ref = :persistent_term.get(:asset_conn)
 
     cond do
       not Match.base16(hash16) ->
         raise IppanError, "Invalid hash"
 
-      not SqliteStore.exists?(conn, stmts, "owner_domain", [domain, account_id]) ->
+      not Domain.owner?(domain, account_id) ->
         raise IppanError, "Invalid Owner"
 
       true ->
-        :ok
+        nil
     end
   end
 end

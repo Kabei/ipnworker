@@ -22,5 +22,7 @@ defmodule Ipnworker.Endpoint do
 
     # plug(Plug.Cors)
 
+    # plug(Ipnworker.GetRouter)
+    # plug(Ipnworker.DownloadRouter)
     plug(Ipnworker.Router)
   end

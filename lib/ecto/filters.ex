@@ -1,5 +1,7 @@
-defmodule Schema.Filters do
+defmodule Ippan.Ecto.Filters do
   import Ecto.Query, only: [limit: 2, offset: 2]
+
+  @compile :inline_list_funcs
   @compile {:inline, [filter_limit: 2, filter_limit: 4, filter_offset: 2]}
 
   @default_limit 30

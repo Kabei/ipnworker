@@ -32,9 +32,9 @@ defmodule PgStore do
           end)
 
         {:ok, pid} = Postgrex.start_link(opts)
+        :persistent_term.put(@pool, pid)
 
         init(pid, opts)
-        :persistent_term.put(@pool, pid)
         print(opts)
 
         {:ok, pid}

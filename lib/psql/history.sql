@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "creator" BIGINT,
   "signature" BYTEA,
   "coinbase" BIGINT,
+  "reward" BIGINT,
   "count" BIGINT,
   "tx_count" BIGINT,
   "size" BIGINT,
@@ -17,11 +18,11 @@ CREATE TABLE IF NOT EXISTS history.rounds(
 
 CREATE TABLE IF NOT EXISTS history.jackpot(
   "round_id" BIGINT NOT NULL,
-  "winner_id" BYTEA NOT NULL,
+  "winner" BYTEA NOT NULL,
   "amount" BIGINT,
-  PRIMARY KEY("round_id", "winner_id")
+  PRIMARY KEY("round_id", "winner")
 );
-    
+
 CREATE TABLE IF NOT EXISTS history.snapshot(
   "round_id" BIGINT PRIMARY KEY NOT NULL,
   "hash" BYTEA NOT NULL,
@@ -49,15 +50,13 @@ CREATE TABLE IF NOT EXISTS history.events(
   "hash" BYTEA NOT NULL,
   "type" INTEGER NOT NULL,
   "from" BYTEA,
-  "timestamp" BIGINT NOT NULL,
-  "nonce" BIGINT NOT NULL,
-  "signature" BYTEA,
+  "nonce" BIGINT,
+  "size" INTEGER,
   "args" TEXT,
   PRIMARY KEY("block_id", "hash")
 );
 
 CREATE INDEX IF NOT EXISTS events_block_id_idx ON history.events("block_id");
-
 
 DO $$
 BEGIN

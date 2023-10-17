@@ -92,24 +92,49 @@ defmodule Ippan.Token do
     }
   end
 
-  def has_prop?(%{props: props}, prop) do
-    prop in props
-  end
+  def has_prop?(%{props: props}, prop), do: prop in props
 
   def has_prop?(_, _), do: false
 
+  defmacro insert(args) do
+    quote location: :keep do
+      SqliteStore.step("insert_token", unquote(args))
+    end
+  end
+
   defmacro get(id) do
-    quote do
+    quote location: :keep do
       SqliteStore.get(:token, "get_token", unquote(id), Ippan.Token)
     end
   end
 
-  defmacro get!(id) do
-    quote do
-      case SqliteStore.get(:token, "get_token", unquote(id), Ippan.Token) do
-        nil -> raise IppanError, "Token not exists"
-        token -> token
-      end
+  defmacro exists?(id) do
+    quote location: :keep do
+      SqliteStore.exists?("exists_token", [unquote(id)])
+    end
+  end
+
+  defmacro owner?(id, owner) do
+    quote bind_quoted: [id: id, owner: owner], location: :keep do
+      SqliteStore.exists?("owner_token", [id, owner])
+    end
+  end
+
+  defmacro total do
+    quote location: :keep do
+      SqliteStore.one("total_tokens", 0)
+    end
+  end
+
+  defmacro delete(id, owner) do
+    quote bind_quoted: [id: id, owner: owner], location: :keep do
+      SqliteStore.step("delete_token", [id, owner])
+    end
+  end
+
+  defmacro update(map, id) do
+    quote location: :keep do
+      SqliteStore.update("assets.token", unquote(map), id: unquote(id))
     end
   end
 end

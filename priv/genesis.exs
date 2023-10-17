@@ -76,6 +76,12 @@ timestamp = DateTime.to_unix(~U[2023-08-25 00:00:00.00Z], 1000)
 address = "0x2Qyubpv2bgy8bDZ7UpkuwabHjJdc"
 
 %{
+  "env" => [
+    %{
+      name: "OWNER",
+      value: address
+    }
+  ],
   "tokens" => [
     %{
       avatar: nil,

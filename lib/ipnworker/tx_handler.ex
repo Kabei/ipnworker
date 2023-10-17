@@ -82,7 +82,6 @@ defmodule Ippan.TxHandler do
         id: var!(from),
         hash: var!(hash),
         size: var!(size),
-        timestamp: var!(timestamp),
         type: var!(type),
         validator: var!(validator)
       }
@@ -101,7 +100,6 @@ defmodule Ippan.TxHandler do
               var!(type),
               var!(from),
               var!(args),
-              var!(timestamp),
               var!(nonce),
               [var!(body), var!(signature)],
               var!(size)
@@ -120,7 +118,6 @@ defmodule Ippan.TxHandler do
               key,
               var!(from),
               var!(args),
-              var!(timestamp),
               var!(nonce),
               [var!(body), var!(signature)],
               var!(size)
@@ -153,7 +150,6 @@ defmodule Ippan.TxHandler do
         id: var!(from),
         hash: var!(hash),
         size: var!(size),
-        timestamp: var!(timestamp),
         type: var!(type),
         validator: var!(validator)
       }
@@ -167,7 +163,6 @@ defmodule Ippan.TxHandler do
             var!(type),
             var!(from),
             var!(args),
-            var!(timestamp),
             var!(nonce),
             var!(size)
           ]
@@ -181,7 +176,6 @@ defmodule Ippan.TxHandler do
             key,
             var!(from),
             var!(args),
-            var!(timestamp),
             var!(nonce),
             var!(size)
           ]
@@ -189,18 +183,18 @@ defmodule Ippan.TxHandler do
     end
   end
 
-  @spec regular() :: term | :error
+  @spec regular() :: any | :error
   defmacro regular do
     quote location: :keep do
       %{fun: fun, modx: module} = Funcs.lookup(var!(type))
 
       source = %{
-        block_id: var!(block_id),
-        id: var!(from),
-        type: var!(type),
+        block: var!(block_id),
         hash: var!(hash),
-        timestamp: var!(timestamp),
+        id: var!(from),
+        round: var!(round_id),
         size: var!(size),
+        type: var!(type),
         validator: var!(validator)
       }
 
@@ -209,13 +203,14 @@ defmodule Ippan.TxHandler do
   end
 
   # Dispute resolution in deferred transaction
-  # [hash, type, arg_key, account_id, args, timestamp, _nonce, size],
+  # [hash, type, arg_key, account_id, args, _nonce, size],
   # validator_id,
   # block_id
+  @spec insert_deferred() :: boolean()
   defmacro insert_deferred do
     quote location: :keep do
       key = {var!(type), var!(arg_key)}
-      # body = [hash, account_id, validator_id, args, timestamp, size, block_id]
+      # body = [hash, account_id, validator_id, args, size, block_id]
 
       case :ets.lookup(:dtx, key) do
         [] ->
@@ -244,77 +239,25 @@ defmodule Ippan.TxHandler do
                          account_id,
                          validator_id,
                          args,
-                         timestamp,
                          size,
                          block_id
                        ]} ->
         %{modx: module, fun: fun} = Funcs.lookup(type)
 
         source = %{
-          id: account_id,
-          block_id: block_id,
-          type: type,
-          validator: validator_id,
+          block: block_id,
           hash: hash,
-          timestamp: timestamp,
-          size: size
+          id: account_id,
+          round: var!(round_id),
+          size: size,
+          type: type,
+          validator: validator_id
         }
 
-        result = apply(module, fun, [source | args])
-
-        if var!(writer) and result == :ok do
-          PgStore.insert_event(var!(pg_conn), [
-            block_id,
-            hash,
-            type,
-            account_id,
-            timestamp,
-            nil,
-            CBOR.encode(args)
-          ])
-        end
+        apply(module, fun, [source | args])
       end)
 
       :ets.delete_all_objects(:dtx)
     end
-  end
-
-  def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets, pg_conn) do
-    for {{type, _key}, [hash, account_id, validator_id, args, timestamp, size, block_id]} <-
-          :ets.tab2list(:dtx) do
-      %{modx: module, fun: fun} = Funcs.lookup(type)
-
-      source = %{
-        id: account_id,
-        block_id: block_id,
-        conn: conn,
-        stmts: stmts,
-        balance: {balance_pid, balance_tx},
-        type: type,
-        validator: validator_id,
-        hash: hash,
-        timestamp: timestamp,
-        size: size,
-        wallets: wallets
-      }
-
-      case apply(module, fun, [source | args]) do
-        :ok ->
-          PgStore.insert_event(pg_conn, [
-            block_id,
-            hash,
-            type,
-            account_id,
-            timestamp,
-            nil,
-            CBOR.encode(args)
-          ])
-
-        _ ->
-          :error
-      end
-    end
-
-    :ets.delete_all_objects(:dtx)
   end
 end
