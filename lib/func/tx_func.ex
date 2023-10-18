@@ -32,9 +32,7 @@ defmodule Ippan.Func.Tx do
         BalanceTrace.requires!(bt, token_id, amount + fees)
 
       false ->
-        bt
-        |> BalanceTrace.requires!(token_id, amount)
-        |> BalanceTrace.requires!(@token, fees)
+        BalanceTrace.multi_requires!(bt, [{token_id, amount}, {@token, fees}])
     end
     |> BalanceTrace.output()
   end

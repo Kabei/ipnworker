@@ -1,4 +1,6 @@
 defmodule BalanceTrace do
+  import BalanceStore, only: [multi_requires!: 3]
+
   defstruct db: nil, from: nil, output: %{}, tx: nil
 
   def new(%{id: from}) do
@@ -24,6 +26,17 @@ defmodule BalanceTrace do
         DetsPlux.put(tx, key, result)
         put_out(bt, key, value)
     end
+  end
+
+  def multi_requires!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token_value_list) do
+    {bt, key_value_list} =
+      Enum.reduce(token_value_list, {bt, []}, fn {token, value}, {bt, key_values} ->
+        key = DetsPlux.tuple(from, token)
+        {put_out(bt, key, value), [{key, value} | key_values]}
+      end)
+
+    multi_requires!(db, tx, key_value_list)
+    bt
   end
 
   def output(%BalanceTrace{output: output}) do
