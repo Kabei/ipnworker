@@ -9,6 +9,7 @@ defmodule Ipnworker.NetworkRoutes do
   @token Application.compile_env(@app, :token)
 
   @options %{
+    "name" => Application.compile_env(@app, :name),
     "token" => @token,
     "message_max_size" => Application.compile_env(@app, :message_max_size),
     "version" => Application.compile_env(@app, :version),

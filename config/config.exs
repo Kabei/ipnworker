@@ -39,6 +39,7 @@ config :ipnworker, :http,
   ]
 
 # Blockchain setup
+config :ipnworker, :name, "IPPAN"
 config :ipnworker, :token, System.get_env("NATIVE_TOKEN", "IPN")
 config :ipnworker, :message_max_size, 8192
 config :ipnworker, :version, 0
