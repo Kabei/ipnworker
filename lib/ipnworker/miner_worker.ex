@@ -47,7 +47,7 @@ defmodule MinerWorker do
         _from,
         state
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     writer = pg_conn != nil
 
     try do

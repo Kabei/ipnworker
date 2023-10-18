@@ -22,7 +22,7 @@ defmodule Ippan.Funx.Validator do
         fee,
         opts \\ %{}
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     next_id = Validator.next_id()
 
     cond do
@@ -83,7 +83,7 @@ defmodule Ippan.Funx.Validator do
       ) do
     map_filter = Map.take(opts, Validator.editable())
     fee = EnvStore.network_fee()
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     balance_key = DetsPlux.tuple(account_id, @token)
@@ -106,7 +106,7 @@ defmodule Ippan.Funx.Validator do
   end
 
   def delete(%{id: account_id}, id) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     validator = Validator.get(id)

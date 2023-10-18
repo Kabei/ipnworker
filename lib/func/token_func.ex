@@ -24,7 +24,7 @@ defmodule Ippan.Func.Token do
       opts
       |> Map.take(Token.optionals())
 
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       not Match.token?(id) ->
@@ -60,7 +60,7 @@ defmodule Ippan.Func.Token do
   def update(%{id: account_id}, id, opts \\ %{})
       when byte_size(id) <= 10 do
     map_filter = Map.take(opts, Token.editable())
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     fees = EnvStore.network_fee()
 
     cond do
@@ -88,7 +88,7 @@ defmodule Ippan.Func.Token do
   end
 
   def delete(%{id: account_id}, id) when byte_size(id) <= 10 do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     supply = TokenSupply.cache(id)
 
     cond do

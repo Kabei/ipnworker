@@ -18,7 +18,7 @@ defmodule Ippan.Func.Dns do
              ttl in @ttl_range do
     {_subdomain, domain} = Domain.split(fullname)
     dns_type = DNS.type_to_alpha(type)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       not Match.hostname?(fullname) ->
@@ -49,7 +49,7 @@ defmodule Ippan.Func.Dns do
 
     fees = EnvStore.network_fee()
 
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     dns =
       DNS.get(domain, dns_hash)
@@ -86,7 +86,7 @@ defmodule Ippan.Func.Dns do
   def delete(%{id: account_id}, fullname)
       when byte_size(fullname) <= @fullname_max_size do
     {_subdomain, domain} = Domain.split(fullname)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     unless Domain.owner?(domain, account_id) do
       raise IppanError, "Invalid Owner"
@@ -96,7 +96,7 @@ defmodule Ippan.Func.Dns do
   def delete(%{id: account_id}, fullname, type)
       when type in @type_range do
     {_subdomain, domain} = Domain.split(fullname)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     unless Domain.owner?(domain, account_id) do
       raise IppanError, "Invalid Owner"
@@ -106,7 +106,7 @@ defmodule Ippan.Func.Dns do
   def delete(%{id: account_id}, fullname, hash16)
       when byte_size(hash16) == 32 do
     {_subdomain, domain} = Domain.split(fullname)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       not Match.base16(hash16) ->

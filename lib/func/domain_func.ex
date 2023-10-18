@@ -22,7 +22,7 @@ defmodule Ippan.Func.Domain do
       when byte_size(name) <= @max_fullname_size and
              days > 0 do
     map_filter = Map.take(opts, Domain.optionals())
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       not Match.ippan_domain?(name) ->
@@ -53,7 +53,7 @@ defmodule Ippan.Func.Domain do
 
   def update(%{id: account_id}, name, opts \\ %{}) do
     map_filter = Map.take(opts, Domain.editable())
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       opts == %{} ->
@@ -78,7 +78,7 @@ defmodule Ippan.Func.Domain do
   end
 
   def delete(%{id: account_id}, name) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     unless Domain.owner?(name, account_id) do
       raise IppanError, "Invalid owner"
@@ -87,7 +87,7 @@ defmodule Ippan.Func.Domain do
 
   def renew(%{id: account_id}, name, days)
       when is_integer(days) and days > 0 do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       not Domain.owner?(name, account_id) ->

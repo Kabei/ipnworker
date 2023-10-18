@@ -36,7 +36,7 @@ defmodule Ippan.Func.Wallet do
   end
 
   def unsubscribe(%{validator: validator}, new_validator_id) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       validator.id == new_validator_id ->

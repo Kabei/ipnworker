@@ -70,7 +70,7 @@ defmodule Ippan.BlockHandler do
             raise(IppanError, "Invalid blockfile version")
           end
 
-          db_ref = :persistent_term.get(:asset_conn)
+          db_ref = :persistent_term.get(:main_conn)
           wallet_dets = DetsPlux.get(:wallet)
           wallet_tx = DetsPlux.tx(:wallet)
           nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)

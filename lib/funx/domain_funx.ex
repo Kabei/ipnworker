@@ -15,7 +15,7 @@ defmodule Ippan.Funx.Domain do
         days,
         opts \\ %{}
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     price = Domain.price(name, days)
 
     cond do
@@ -55,7 +55,7 @@ defmodule Ippan.Funx.Domain do
         name,
         opts \\ %{}
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     map_filter = Map.take(opts, Domain.editable())
     fee = EnvStore.network_fee()
     dets = DetsPlux.get(:balance)
@@ -77,7 +77,7 @@ defmodule Ippan.Funx.Domain do
   end
 
   def delete(%{id: account_id}, name) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     case Domain.delete(name, account_id) do
       1 ->
@@ -93,7 +93,7 @@ defmodule Ippan.Funx.Domain do
         name,
         days
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     price = Domain.price(name, days)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)

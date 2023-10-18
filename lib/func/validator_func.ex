@@ -25,7 +25,7 @@ defmodule Ippan.Func.Validator do
     map_filter = Map.take(opts, Validator.optionals())
     pubkey = Fast64.decode64(pubkey)
     net_pubkey = Fast64.decode64(net_pubkey)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     next_id = Validator.next_id()
 
     cond do
@@ -70,7 +70,7 @@ defmodule Ippan.Func.Validator do
 
   def update(%{id: account_id}, id, opts \\ %{}) do
     map_filter = Map.take(opts, Validator.editable())
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     fees = EnvStore.network_fee()
 
     cond do
@@ -118,7 +118,7 @@ defmodule Ippan.Func.Validator do
   end
 
   def delete(%{id: account_id}, id) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     unless Validator.owner?(id, account_id) do
       raise IppanError, "Invalid owner"

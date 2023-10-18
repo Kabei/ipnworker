@@ -26,7 +26,7 @@ defmodule MainStore do
 
   @name "main"
   @filename "main.db"
-  @key_conn :asset_conn
+  @key_conn :main_conn
 
   def child_spec(args) do
     %{

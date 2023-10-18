@@ -146,7 +146,7 @@ defmodule Ippan.ClusterNodes do
          hostname,
          pg_conn
        ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     writer = pg_conn != nil
 
     unless Round.exists?(round_id) do

@@ -46,7 +46,7 @@ defmodule Ippan.Func.Tx do
 
   def coinbase(%{id: account_id}, token_id, outputs)
       when length(outputs) > 0 do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     %{max_supply: max_supply} = token = Token.get(token_id)
 
     cond do
@@ -83,7 +83,7 @@ defmodule Ippan.Func.Tx do
   end
 
   def burn(source, token_id, amount) when is_integer(amount) and amount > 0 do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
     cond do
@@ -99,7 +99,7 @@ defmodule Ippan.Func.Tx do
 
   def refund(%{id: account_id}, hash16)
       when byte_size(hash16) == 64 do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     hash = Base.decode16!(hash16, case: :mixed)
 
     case Sqlite.exists?("exists_refund", [hash, account_id]) do

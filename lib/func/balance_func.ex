@@ -6,7 +6,7 @@ defmodule Ippan.Func.Balance do
 
   def lock(%{id: account_id}, to_id, token_id, amount)
       when is_integer(amount) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     token = Token.get(token_id)
@@ -29,7 +29,7 @@ defmodule Ippan.Func.Balance do
 
   def unlock(%{id: account_id}, to_id, token_id, amount)
       when is_integer(amount) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     token = Token.get(token_id)

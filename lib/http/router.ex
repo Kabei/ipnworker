@@ -86,7 +86,7 @@ defmodule Ipnworker.Router do
         send_resp(conn, 400, e.message)
 
       e in IppanRedirectError ->
-        db_ref = :persistent_term.get(:asset_conn)
+        db_ref = :persistent_term.get(:main_conn)
 
         %{hostname: hostname} =
           Validator.get(String.to_integer(e.message))

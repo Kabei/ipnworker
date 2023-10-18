@@ -13,7 +13,7 @@ defmodule Ippan.Funx.Dns do
         data,
         ttl
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
 
@@ -49,7 +49,7 @@ defmodule Ippan.Funx.Dns do
         dns_hash16,
         params
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
 
@@ -74,7 +74,7 @@ defmodule Ippan.Funx.Dns do
   end
 
   def delete(_, fullname) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     {subdomain, domain} = Domain.split(fullname)
 
     case subdomain do
@@ -88,14 +88,14 @@ defmodule Ippan.Funx.Dns do
 
   def delete(_, fullname, type) when is_integer(type) do
     {subdomain, domain} = Domain.split(fullname)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     DNS.delete_type(domain, subdomain, type)
   end
 
   def delete(_, fullname, hash16) do
     {subdomain, domain} = Domain.split(fullname)
     hash = Base.decode16!(hash16, case: :mixed)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     DNS.delete_hash(domain, subdomain, hash)
   end
 end

@@ -17,7 +17,7 @@ defmodule Ippan.Funx.Token do
         max_supply \\ 0,
         opts \\ %{}
       ) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
 
@@ -65,7 +65,7 @@ defmodule Ippan.Funx.Token do
         opts \\ %{}
       )
       when byte_size(id) <= 10 do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
 
@@ -88,7 +88,7 @@ defmodule Ippan.Funx.Token do
   end
 
   def delete(%{id: account_id}, id) do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     supply = TokenSupply.new(id)
 
     if TokenSupply.get(supply) == 0 do

@@ -7,7 +7,7 @@ defmodule Platform do
   @token Application.compile_env(:ipnworker, :token)
 
   def start do
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     vid = :persistent_term.get(:vid)
     EnvStore.load(db_ref)
 

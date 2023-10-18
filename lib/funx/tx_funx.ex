@@ -81,7 +81,7 @@ defmodule Ippan.Funx.Tx do
       ) do
     send(source, to, token, amount, note)
 
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
 
     Sqlite.step("insert_refund", [
       hash,
@@ -120,7 +120,7 @@ defmodule Ippan.Funx.Tx do
         hash16
       ) do
     hash = Base.decode16!(hash16, case: :mixed)
-    db_ref = :persistent_term.get(:asset_conn)
+    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
 
