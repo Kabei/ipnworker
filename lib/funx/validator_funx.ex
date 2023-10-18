@@ -65,6 +65,10 @@ defmodule Ippan.Funx.Validator do
 
             Validator.insert(Validator.to_list(validator))
 
+            if next_id == :persistent_term.get(:validator) do
+              :persistent_term.put(:validator, validator)
+            end
+
             event = %{"event" => "validator.new", "data" => validator}
             PubSub.broadcast(@pubsub, @topic, event)
             ClusterNodes.broadcast(event)

@@ -1,4 +1,4 @@
-defmodule SqliteStore do
+defmodule Ippan.Sqlite do
   alias Exqlite.{Sqlite3, Sqlite3NIF}
 
   defmacro one(name, args \\ [], default \\ nil) do
