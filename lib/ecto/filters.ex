@@ -4,7 +4,7 @@ defmodule Ippan.Ecto.Filters do
   @compile :inline_list_funcs
   @compile {:inline, [filter_limit: 2, filter_limit: 4, filter_offset: 2]}
 
-  @default_limit 30
+  @default_limit 50
   @max_limit 100
 
   def filter_limit(query, params) do

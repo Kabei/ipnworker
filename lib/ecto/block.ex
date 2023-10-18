@@ -1,6 +1,6 @@
 defmodule Ippan.Ecto.Block do
   use Ecto.Schema
-  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3]
+  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
   alias Ippan.Utils
   alias Ipnworker.Repo
   alias __MODULE__
@@ -52,6 +52,7 @@ defmodule Ippan.Ecto.Block do
     from(Block)
     |> filter_offset(params)
     |> filter_limit(params)
+    |> filter_block(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -61,6 +62,12 @@ defmodule Ippan.Ecto.Block do
   defp filter_select(query) do
     select(query, [b], map(b, @select))
   end
+
+  defp filter_block(query, %{"id" => id}) do
+    where(query, [b], b.id <= ^id)
+  end
+
+  defp filter_block(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [b], asc: b.id)
   defp sort(query, _), do: order_by(query, [b], desc: b.id)
