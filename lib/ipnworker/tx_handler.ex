@@ -74,8 +74,9 @@ defmodule Ippan.TxHandler do
       TxHandler.check_signature!(sig_type, wallet_pk)
 
       # Check nonce
-      cache_nonce_tx = DetsPlux.tx(wallet_dets, :cache_nonce)
-      nonce_key = Wallet.gte_nonce!(wallet_dets, cache_nonce_tx, var!(from), var!(nonce))
+      nonce_dets = DetsPlux.get(:nonce)
+      cache_nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
+      nonce_key = Wallet.gte_nonce!(nonce_dets, cache_nonce_tx, var!(from), var!(nonce))
       balance_dets = DetsPlux.get(:balance)
 
       source = %{

@@ -11,9 +11,10 @@ defmodule RoundCommit do
         Task.async(fn ->
           wallet_dets = DetsPlux.get(:wallet)
           wallet_tx = DetsPlux.tx(:wallet)
-          nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
+          nonce_dets = DetsPlux.get(:nonce)
+          nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
           DetsPlux.sync(wallet_dets, wallet_tx)
-          DetsPlux.sync(wallet_dets, nonce_tx)
+          DetsPlux.sync(nonce_dets, nonce_tx)
         end),
         Task.async(fn ->
           balance_dets = DetsPlux.get(:balance)
@@ -55,7 +56,7 @@ defmodule RoundCommit do
   defp clear_cache do
     cache_wallet_tx = DetsPlux.tx(:wallet, :cache_wallet)
     cache_balance_tx = DetsPlux.tx(:balance, :cache_balance)
-    cache_nonce_tx = DetsPlux.tx(:wallet, :cache_nonce)
+    cache_nonce_tx = DetsPlux.tx(:nonce, :cache_nonce)
     DetsPlux.clear_tx(cache_wallet_tx)
     DetsPlux.clear_tx(cache_balance_tx)
     DetsPlux.clear_tx(cache_nonce_tx)

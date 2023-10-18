@@ -54,7 +54,7 @@ defmodule MinerWorker do
       # IO.inspect("Bstep 1")
       # balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
       # wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
-      wallet_dets = DetsPlux.get(:wallet)
+      nonce_dets = DetsPlux.get(:nonce)
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
@@ -77,7 +77,7 @@ defmodule MinerWorker do
       if version != version_file or version != @version,
         do: raise(IppanError, "Block file version failed")
 
-      run_miner(round_id, block_id, creator, txs, wallet_dets, pg_conn, writer)
+      run_miner(round_id, block_id, creator, txs, nonce_dets, pg_conn, writer)
 
       # IO.inspect("Bstep 4")
       b = Block.to_list(block)
@@ -104,12 +104,12 @@ defmodule MinerWorker do
     end
   end
 
-  defp run_miner(round_id, block_id, validator, transactions, wallet_dets, pg_conn, writer) do
-    nonce_tx = DetsPlux.tx(wallet_dets, :nonce)
+  defp run_miner(round_id, block_id, validator, transactions, nonce_dets, pg_conn, writer) do
+    nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
 
     Enum.each(transactions, fn
       [hash, type, from, nonce, args, size], acc ->
-        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
+        case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
@@ -130,7 +130,7 @@ defmodule MinerWorker do
         end
 
       body = [hash, type, arg_key, from, nonce, args, size], acc ->
-        case Wallet.update_nonce(wallet_dets, nonce_tx, from, nonce) do
+        case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
 
