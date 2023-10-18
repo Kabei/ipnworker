@@ -1,18 +1,31 @@
 defmodule EnvStore do
   require Sqlite
 
+  def all(db_ref) do
+    data = Sqlite.all("all_env")
+
+    Enum.map(data, fn [name, value] ->
+      {name, :erlang.binary_to_term(value)}
+    end)
+    |> Map.new()
+  end
+
   def load(db_ref) do
     data = Sqlite.all("all_env")
 
-    for [name, value] <- data do
+    Enum.each(data, fn [name, value] ->
       :persistent_term.put(name, :erlang.binary_to_term(value))
-    end
+    end)
   end
 
   def put(db_ref, name, value) do
     value = transform(name, value)
     :persistent_term.put({:env, name}, value)
     Sqlite.step("insert_env", [name, :erlang.term_to_binary(value)])
+  end
+
+  def get(name, default \\ nil) do
+    :persistent_term.put({:env, name}, default)
   end
 
   def delete(db_ref, name) do

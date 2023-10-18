@@ -14,7 +14,6 @@ defmodule Ippan.Ecto.DNS do
     hash = Base.decode16(hash16, case: :mixed)
 
     DNS.get(domain, hash)
-    |> tap(&IO.inspect(&1))
     |> fun()
   end
 

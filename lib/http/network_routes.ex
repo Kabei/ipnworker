@@ -51,8 +51,10 @@ defmodule Ipnworker.NetworkRoutes do
       "supply" => supply,
       "validators" => validators,
       "tokens" => tokens,
-      "accounts" => accounts
+      "accounts" => accounts,
+      "env" => EnvStore.all(db_ref)
     }
+    |> tap(&IO.inspect(&1))
     |> json()
   end
 
