@@ -1,6 +1,8 @@
 defmodule Ippan.P2P do
   require Logger
-  require BigNumber
+
+  @compile :inline_list_funcs
+  @compile {:inline, [decode!: 2, encode: 2]}
 
   @version <<0::16>>
   @seconds <<0>>
@@ -11,7 +13,7 @@ defmodule Ippan.P2P do
   @server_ping_timeout 60_000
 
   @spec client_handshake(
-          socket :: term,
+          socket :: port(),
           from_id :: integer() | binary(),
           kem_pubkey :: binary(),
           privkey :: binary()
@@ -44,10 +46,10 @@ defmodule Ippan.P2P do
           {:ok, term, map, integer()} | :error
   def server_handshake(socket, kem_privkey, fun) do
     case @adapter.recv(socket, 0, @handshake_timeout) do
-      {:ok, "HI" <> @version <> <<ciphertext::bytes-size(1278), encodeText::binary>>} ->
+      {:ok, "HI" <> @version <> <<ciphertext::bytes-size(1278), authtext::binary>>} ->
         case NtruKem.dec(kem_privkey, ciphertext) do
           {:ok, sharedkey} ->
-            %{"id" => id, "sig" => signature} = decode!(encodeText, sharedkey)
+            %{"id" => id, "sig" => signature} = decode!(authtext, sharedkey)
 
             case fun.(id) do
               data = %{pubkey: clientPubkey} ->
