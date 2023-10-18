@@ -44,17 +44,16 @@ defmodule Ipnworker.NetworkRoutes do
     supply = DetsPlux.get(dets2, DetsPlux.tuple(@token, "supply"), 0)
 
     %{
+      "accounts" => accounts,
+      "block_id" => block_id,
+      "env" => EnvStore.all(db_ref),
       "hash" => Utils.encode16(hash),
       "id" => id,
-      "block_id" => block_id,
-      "token" => @token,
       "supply" => supply,
-      "validators" => validators,
+      "token" => @token,
       "tokens" => tokens,
-      "accounts" => accounts,
-      "env" => EnvStore.all(db_ref)
+      "validators" => validators
     }
-    |> tap(&IO.inspect(&1))
     |> json()
   end
 
