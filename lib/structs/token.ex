@@ -122,7 +122,7 @@ defmodule Ippan.Token do
 
   defmacro total do
     quote location: :keep do
-      Sqlite.one("total_tokens", 0)
+      Sqlite.one("total_tokens", [], 0)
     end
   end
 

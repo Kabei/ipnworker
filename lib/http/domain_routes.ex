@@ -1,5 +1,5 @@
-defmodule Ipnworker.BlockRoutes do
-  alias Ippan.Ecto.Block
+defmodule Ipnworker.DomainRoutes do
+  alias Ippan.Ecto.Domain
   use Plug.Router
   import Ippan.Utils, only: [send_json: 1, fetch_query: 1]
 
@@ -12,18 +12,12 @@ defmodule Ipnworker.BlockRoutes do
 
   get "/all" do
     fetch_query(conn)
-    |> Block.all()
+    |> Domain.all()
     |> send_json()
   end
 
-  get "/last" do
-    Block.last()
-    |> send_json()
-  end
-
-  get "/:id" do
-    id
-    |> Block.one()
+  get "/:name" do
+    Domain.one(name)
     |> send_json()
   end
 

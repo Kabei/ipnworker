@@ -1,18 +1,19 @@
-defmodule Ippan.Ecto.Token do
-  alias Ippan.Token
+defmodule Ippan.Ecto.Validator do
+  alias Ippan.{Validator, Utils}
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
-  require Token
+  require Validator
 
-  @table "token"
-  @select ~w(id name owner avatar decimal symbol max_supply props created_at updated_at)a
+  @table "validator"
+  @select ~w(id hostname port name owner pubkey net_pubkey fee_type fee stake failures created_at updated_at)a
 
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
 
-    Token.get(id)
+    Validator.get(id)
+    |> fun()
   end
 
   def all(params) do
@@ -31,7 +32,7 @@ defmodule Ippan.Ecto.Token do
 
     case Sqlite.query(db_ro, sql, args) do
       {:ok, results} ->
-        Enum.map(results, &Token.list_to_map(&1))
+        Enum.map(results, &(Validator.list_to_map(&1) |> fun()))
 
       _ ->
         []
@@ -51,4 +52,10 @@ defmodule Ippan.Ecto.Token do
 
   defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
   defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
+
+  defp fun(nil), do: nil
+
+  defp fun(x = %{pubkey: pk, net_pubkey: npk}) do
+    %{x | pubkey: Utils.encode64(pk), net_pubkey: Utils.encode64(npk)}
+  end
 end

@@ -55,6 +55,6 @@ defmodule Ipnworker.FileRoutes do
   end
 
   match _ do
-    send_resp(conn, 404, "oops")
+    send_resp(conn, 404, "Not found")
   end
 end

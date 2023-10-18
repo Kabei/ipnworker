@@ -60,7 +60,6 @@ defmodule Ippan.DNS do
   end
 
   def fun_hash(data) do
-    # :crypto.hash(:md5, data)
     data |> IO.iodata_to_binary() |> Blake3.hash() |> :binary.part(16, 16)
   end
 
@@ -72,7 +71,7 @@ defmodule Ippan.DNS do
 
   defmacro get(domain, hash) do
     quote location: :keep do
-      Sqlite.get(:dns, "get_dns", [unquote(domain), unquote(hash)], Ippan.DNS)
+      Sqlite.fetch("get_dns", [unquote(domain), unquote(hash)])
     end
   end
 

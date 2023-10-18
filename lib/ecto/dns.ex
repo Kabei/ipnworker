@@ -1,18 +1,21 @@
-defmodule Ippan.Ecto.Token do
-  alias Ippan.Token
+defmodule Ippan.Ecto.DNS do
+  alias Ippan.{DNS, Utils}
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
-  require Token
+  require DNS
 
-  @table "token"
-  @select ~w(id name owner avatar decimal symbol max_supply props created_at updated_at)a
+  @table "dns"
+  @select ~w(domain hash name type data ttl)a
 
-  def one(id) do
+  def one(domain, hash16) do
     db_ref = :persistent_term.get(:main_ro)
+    hash = Base.decode16(hash16, case: :mixed)
 
-    Token.get(id)
+    DNS.get(domain, hash)
+    |> tap(&IO.inspect(&1))
+    |> fun()
   end
 
   def all(params) do
@@ -20,6 +23,7 @@ defmodule Ippan.Ecto.Token do
       from(@table)
       |> filter_offset(params)
       |> filter_limit(params)
+      |> filter_type(params)
       |> filter_search(params)
       |> filter_select()
       |> sort(params)
@@ -31,7 +35,7 @@ defmodule Ippan.Ecto.Token do
 
     case Sqlite.query(db_ro, sql, args) do
       {:ok, results} ->
-        Enum.map(results, &Token.list_to_map(&1))
+        Enum.map(results, &(DNS.list_to_map(&1) |> fun()))
 
       _ ->
         []
@@ -49,6 +53,17 @@ defmodule Ippan.Ecto.Token do
 
   defp filter_search(query, _), do: query
 
+  defp filter_type(query, %{"type" => type}) do
+    where(query, [t], like(t.type, ^type))
+  end
+
+  defp filter_type(query, _), do: query
   defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
   defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
+
+  defp fun(nil), do: nil
+
+  defp fun(x = %{hash: hash}) do
+    %{x | hash: Utils.encode16(hash)}
+  end
 end

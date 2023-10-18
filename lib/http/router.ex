@@ -109,13 +109,15 @@ defmodule Ipnworker.Router do
   forward("/v1/dl", to: Ipnworker.FileRoutes)
   forward("/v1/round", to: Ipnworker.RoundRoutes)
   forward("/v1/block", to: Ipnworker.BlockRoutes)
-  forward("/v1/jackpot", to: Ipnworker.JackpotRoutes)
   forward("/v1/txs", to: Ipnworker.TxRoutes)
-  # forward "/v1/account", to: Ipnworker.AccountRoutes
-  # forward "/v1/network", to: Ipnworker.NetRoutes
-  # forward "/v1/event", to: Ipnworker.EventRoutes
+  forward("/v1/validator", to: Ipnworker.ValidatorRoutes)
   forward("/v1/token", to: Ipnworker.TokenRoutes)
-  # forward "/v1/domain", to: Ipnworker.DomainRoutes
+  forward("/v1/jackpot", to: Ipnworker.JackpotRoutes)
+  forward("/v1/domain", to: Ipnworker.DomainRoutes)
+  forward("/v1/dns", to: Ipnworker.DnsRoutes)
+  forward("/v1/network", to: Ipnworker.NetworkRoutes)
+  forward("/v1/account", to: Ipnworker.AccountRoutes)
+  forward "/v1/event", to: Ipnworker.EventRoutes
   # forward "/v1/snap", to: Ipnworker.SnapRoutes
 
   match _ do

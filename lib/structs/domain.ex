@@ -1,4 +1,5 @@
 defmodule Ippan.Domain do
+  require Sqlite
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
           name: String.t(),
@@ -133,7 +134,7 @@ defmodule Ippan.Domain do
 
   defmacro get(id) do
     quote location: :keep do
-      Sqlite.get(:token, "get_domain", unquote(id), Ippan.Token)
+      Sqlite.fetch("get_domain", unquote(id))
     end
   end
 

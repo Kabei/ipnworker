@@ -22,7 +22,13 @@ defmodule Ipnworker.TokenRoutes do
     |> send_json()
   end
 
+  get "/:id/supply" do
+    dets = DetsPlux.get(:stats)
+    amount = DetsPlux.get(dets, DetsPlux.tuple(id, "supply"), 0)
+    send_resp(conn, 200, Integer.to_string(amount))
+  end
+
   match _ do
-    send_resp(conn, 404, "oops")
+    send_resp(conn, 404, "Not found")
   end
 end

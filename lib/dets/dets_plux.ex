@@ -523,8 +523,8 @@ defmodule DetsPlux do
   @spec info(pid(), transaction() | nil) :: [] | nil
   # def info(%__MODULE__{pid: pid}), do: info(pid)
 
-  def info(pid, ets \\ nil) do
-    call(pid, {:info, ets})
+  def info(pid, item) do
+    info(pid, nil, item)
   end
 
   def handle(pid, tx \\ nil) do
@@ -558,7 +558,7 @@ defmodule DetsPlux do
   def info(pid, ets, item)
       when item == :file_size or item == :filename or item == :size or
              item == :type or item == :creation_stats do
-    case info(pid, ets) do
+    case call(pid, {:info, ets}) do
       nil -> nil
       list -> Keyword.get(list, item)
     end

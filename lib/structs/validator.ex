@@ -151,7 +151,7 @@ defmodule Ippan.Validator do
 
   defmacro total do
     quote location: :keep do
-      Sqlite.one("total_validators", 0)
+      Sqlite.one("total_validators", [], 0)
     end
   end
 

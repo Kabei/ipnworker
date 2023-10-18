@@ -1,18 +1,18 @@
-defmodule Ippan.Ecto.Token do
-  alias Ippan.Token
+defmodule Ippan.Ecto.Domain do
+  alias Ippan.Domain
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
-  require Token
+  require Domain
 
-  @table "token"
-  @select ~w(id name owner avatar decimal symbol max_supply props created_at updated_at)a
+  @table "domain"
+  @select ~w(name owner email avatar records enabled created_at renewed_at updated_at)a
 
-  def one(id) do
+  def one(name) do
     db_ref = :persistent_term.get(:main_ro)
 
-    Token.get(id)
+    Domain.get(name)
   end
 
   def all(params) do
@@ -31,7 +31,7 @@ defmodule Ippan.Ecto.Token do
 
     case Sqlite.query(db_ro, sql, args) do
       {:ok, results} ->
-        Enum.map(results, &Token.list_to_map(&1))
+        Enum.map(results, &Domain.list_to_map(&1))
 
       _ ->
         []
@@ -45,6 +45,11 @@ defmodule Ippan.Ecto.Token do
   defp filter_search(query, %{"q" => q}) do
     q = "%#{q}%"
     where(query, [t], like(t.name, ^q))
+  end
+
+  defp filter_search(query, %{"email" => q}) do
+    q = "%#{q}%"
+    where(query, [t], like(t.email, ^q))
   end
 
   defp filter_search(query, _), do: query

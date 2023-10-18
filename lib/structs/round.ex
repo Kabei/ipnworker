@@ -180,4 +180,14 @@ defmodule Ippan.Round do
       Sqlite.step("insert_round", unquote(args))
     end
   end
+
+  defmacro last do
+    quote location: :keep do
+      Sqlite.fetch("last_round", [])
+      |> case do
+        nil -> {0, nil}
+        [x, y] -> {x, y}
+      end
+    end
+  end
 end
