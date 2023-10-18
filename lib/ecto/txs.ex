@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Tx do
 
   @primary_key false
   @schema_prefix "history"
-  schema "events" do
+  schema "txs" do
     field(:block_id, :integer)
     field(:hash, :binary)
     field(:type, :integer)
@@ -24,7 +24,7 @@ defmodule Ippan.Ecto.Tx do
   def one(block_id, hash16) do
     hash = Base.decode16!(hash16, case: :mixed)
 
-    from(e in Tx, where: e.block_id == ^block_id and e.hash == ^hash, limit: 1)
+    from(tx in Tx, where: tx.block_id == ^block_id and tx.hash == ^hash, limit: 1)
     |> filter_select()
     |> Repo.one()
     |> case do

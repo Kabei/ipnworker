@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
   "vsn" INTEGER
 );
 
-CREATE TABLE IF NOT EXISTS history.events(
+CREATE TABLE IF NOT EXISTS history.txs(
   "block_id" BIGINT,
   "hash" BYTEA NOT NULL,
   "type" INTEGER NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS history.events(
   PRIMARY KEY("block_id", "hash")
 );
 
-CREATE INDEX IF NOT EXISTS events_block_id_idx ON history.events("block_id");
+CREATE INDEX IF NOT EXISTS txs_block_id_idx ON history.txs("block_id");
 
 DO $$
 BEGIN
@@ -65,6 +65,6 @@ SELECT create_hypertable('history.rounds', 'id', chunk_time_interval => 151200, 
 SELECT create_hypertable('history.jackpot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
 SELECT create_hypertable('history.snapshot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
 SELECT create_hypertable('history.blocks', 'id', chunk_time_interval => 7560000, if_not_exists => TRUE);
-SELECT create_hypertable('history.events', 'block_id', chunk_time_interval => 7560000, if_not_exists => TRUE);
+SELECT create_hypertable('history.txs', 'block_id', chunk_time_interval => 7560000, if_not_exists => TRUE);
 END IF;
 END$$;

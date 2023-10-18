@@ -65,8 +65,8 @@ defmodule PgStore do
     end
   end
 
-  def insert_event(conn, params) do
-    Postgrex.query(conn, query_parse("EXECUTE insert_event($1,$2,$3,$4,$5,$6,$7,$8)", params), [])
+  def insert_txs(conn, params) do
+    Postgrex.query(conn, query_parse("EXECUTE insert_txs($1,$2,$3,$4,$5,$6,$7,$8)", params), [])
   end
 
   def insert_block(conn, params) do

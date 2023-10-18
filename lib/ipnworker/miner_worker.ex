@@ -117,7 +117,7 @@ defmodule MinerWorker do
             TxHandler.regular()
 
             if writer do
-              PgStore.insert_event(pg_conn, [
+              PgStore.insert_txs(pg_conn, [
                 block_id,
                 hash,
                 type,
@@ -138,7 +138,7 @@ defmodule MinerWorker do
             TxHandler.insert_deferred()
 
             if writer do
-              PgStore.insert_event(pg_conn, [
+              PgStore.insert_txs(pg_conn, [
                 block_id,
                 hash,
                 type,
