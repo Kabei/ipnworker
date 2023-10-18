@@ -2,7 +2,7 @@ defmodule Platform do
   alias Ippan.{Env, Token, Validator}
   require Token
   require Validator
-  require SqliteStore
+  require Sqlite
 
   @token Application.compile_env(:ipnworker, :token)
 
@@ -57,13 +57,13 @@ defmodule Platform do
 
         "env" ->
           Enum.each(values, fn x ->
-            SqliteStore.step("insert_env", Env.to_list(x))
+            Sqlite.step("insert_env", Env.to_list(x))
           end)
       end
     end
 
     # save all
-    SqliteStore.sync(db_ref)
+    Sqlite.sync(db_ref)
     DetsPlux.sync(wallet_dets, wallet_tx)
   end
 end

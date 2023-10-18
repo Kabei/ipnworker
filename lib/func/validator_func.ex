@@ -2,7 +2,7 @@ defmodule Ippan.Func.Validator do
   import Guards
   alias Ippan.Validator
   require Validator
-  require SqliteStore
+  require Sqlite
   require BalanceStore
 
   @token Application.compile_env(:ipnworker, :token)

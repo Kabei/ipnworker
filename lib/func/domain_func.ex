@@ -2,7 +2,7 @@ defmodule Ippan.Func.Domain do
   alias Ippan.Domain
   alias Ippan.Utils
   require Domain
-  require SqliteStore
+  require Sqlite
   require BalanceStore
 
   @max_fullname_size 255

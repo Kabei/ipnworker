@@ -204,31 +204,31 @@ defmodule Ippan.Block do
 
   defmacro exists?(id) do
     quote bind_quoted: [id: id], location: :keep do
-      SqliteStore.exists?("exists_block", [id])
+      Sqlite.exists?("exists_block", [id])
     end
   end
 
   defmacro exists_local?(creator_id, height) do
     quote bind_quoted: [creator_id: creator_id, height: height], location: :keep do
-      SqliteStore.exists?("exists_local_block", [creator_id, height])
+      Sqlite.exists?("exists_local_block", [creator_id, height])
     end
   end
 
   defmacro last_created(creator_id) do
     quote bind_quoted: [id: creator_id], location: :keep do
-      SqliteStore.step("last_block_created", [id])
+      Sqlite.step("last_block_created", [id])
     end
   end
 
   defmacro total_created(create_id) do
     quote bind_quoted: [id: create_id], location: :keep do
-      SqliteStore.one("total_blocks_created", [id])
+      Sqlite.one("total_blocks_created", [id])
     end
   end
 
   defmacro insert(args) do
     quote location: :keep do
-      SqliteStore.step("insert_block", unquote(args))
+      Sqlite.step("insert_block", unquote(args))
     end
   end
 end

@@ -1,6 +1,6 @@
 defmodule Ippan.Func.Tx do
   alias Ippan.Token
-  require SqliteStore
+  require Sqlite
   require BalanceStore
   require Token
   require Logger
@@ -102,7 +102,7 @@ defmodule Ippan.Func.Tx do
     db_ref = :persistent_term.get(:asset_conn)
     hash = Base.decode16!(hash16, case: :mixed)
 
-    case SqliteStore.exists?("exists_refund", [hash, account_id]) do
+    case Sqlite.exists?("exists_refund", [hash, account_id]) do
       false ->
         raise IppanError, "Hash refund not exists"
 

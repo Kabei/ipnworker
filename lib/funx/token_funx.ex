@@ -1,7 +1,7 @@
 defmodule Ippan.Funx.Token do
   alias Ippan.Token
   require Token
-  require SqliteStore
+  require Sqlite
   require BalanceStore
 
   @token Application.compile_env(:ipnworker, :token)

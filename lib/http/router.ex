@@ -4,15 +4,14 @@ defmodule Ipnworker.Router do
   plug(:match)
   plug(:dispatch)
 
-  alias Ippan.{ClusterNodes, TxHandler, Validator}
-  require SqliteStore
-  require Validator
-  require TxHandler
-  require Logger
-
   @json Application.compile_env(:ipnworker, :json)
   @max_size Application.compile_env(:ipnworker, :message_max_size)
 
+  alias Ippan.{ClusterNodes, TxHandler, Validator}
+  require Sqlite
+  require Validator
+  require TxHandler
+  require Logger
   import Ippan.Utils, only: [json: 1]
 
   post "/v1/call" do
@@ -107,11 +106,11 @@ defmodule Ipnworker.Router do
     end
   end
 
-  forward "/v1/dl", to: Ipnworker.FileRoutes
-  forward "/v1/round", to: Ipnworker.RoundRoutes
-  forward "/v1/block", to: Ipnworker.BlockRoutes
-  forward "/v1/jackpot", to: Ipnworker.JackpotRoutes
-  forward "/v1/txs", to: Ipnworker.TxRoutes
+  forward("/v1/dl", to: Ipnworker.FileRoutes)
+  forward("/v1/round", to: Ipnworker.RoundRoutes)
+  forward("/v1/block", to: Ipnworker.BlockRoutes)
+  forward("/v1/jackpot", to: Ipnworker.JackpotRoutes)
+  forward("/v1/txs", to: Ipnworker.TxRoutes)
   # forward "/v1/account", to: Ipnworker.AccountRoutes
   # forward "/v1/network", to: Ipnworker.NetRoutes
   # forward "/v1/event", to: Ipnworker.EventRoutes

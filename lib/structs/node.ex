@@ -70,25 +70,25 @@ defmodule Ippan.Node do
 
   defmacro insert(node) do
     quote do
-      SqliteStore.step("insert_node", unquote(node))
+      Sqlite.step("insert_node", unquote(node))
     end
   end
 
   defmacro get(id) do
     quote location: :keep do
-      SqliteStore.get(:cluster, "get_node", [unquote(id)], Ippan.Node)
+      Sqlite.get(:cluster, "get_node", [unquote(id)], Ippan.Node)
     end
   end
 
   defmacro fetch(id) do
     quote location: :keep do
-      SqliteStore.fetch("get_node", [unquote(id)])
+      Sqlite.fetch("get_node", [unquote(id)])
     end
   end
 
   defmacro delete_all do
     quote location: :keep do
-      SqliteStore.step("delete_nodes", [])
+      Sqlite.step("delete_nodes", [])
     end
   end
 end

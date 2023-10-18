@@ -66,49 +66,49 @@ defmodule Ippan.DNS do
 
   defmacro insert(args) do
     quote location: :keep do
-      SqliteStore.step("insert_dns", unquote(args))
+      Sqlite.step("insert_dns", unquote(args))
     end
   end
 
   defmacro get(domain, hash) do
     quote location: :keep do
-      SqliteStore.get(:dns, "get_dns", [unquote(domain), unquote(hash)], Ippan.DNS)
+      Sqlite.get(:dns, "get_dns", [unquote(domain), unquote(hash)], Ippan.DNS)
     end
   end
 
   defmacro exists?(domain, hash) do
     quote bind_quoted: [domain: domain, hash: hash], location: :keep do
-      SqliteStore.exists?("exists_dns", [domain, hash])
+      Sqlite.exists?("exists_dns", [domain, hash])
     end
   end
 
   defmacro update(map, args) do
     quote location: :keep do
-      SqliteStore.update("dns.dns", unquote(map), unquote(args))
+      Sqlite.update("dns.dns", unquote(map), unquote(args))
     end
   end
 
   defmacro delete(domain) do
     quote bind_quoted: [domain: domain], location: :keep do
-      SqliteStore.step("delete_dns", [domain])
+      Sqlite.step("delete_dns", [domain])
     end
   end
 
   defmacro delete(domain, name) do
     quote bind_quoted: [domain: domain, name: name], location: :keep do
-      SqliteStore.step("delete_name_dns", [domain, name])
+      Sqlite.step("delete_name_dns", [domain, name])
     end
   end
 
   defmacro delete_hash(domain, name, hash) do
     quote bind_quoted: [domain: domain, name: name, hash: hash], location: :keep do
-      SqliteStore.step("delete_hash_dns", [domain, name, hash])
+      Sqlite.step("delete_hash_dns", [domain, name, hash])
     end
   end
 
   defmacro delete_type(domain, name, type) do
     quote bind_quoted: [domain: domain, name: name, type: type], location: :keep do
-      SqliteStore.step("delete_type_dns", [domain, name, type])
+      Sqlite.step("delete_type_dns", [domain, name, type])
     end
   end
 

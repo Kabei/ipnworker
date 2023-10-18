@@ -1,6 +1,6 @@
 defmodule Ippan.ClusterNodes do
   alias Ippan.{Node, Network, BlockHandler, TxHandler, Round, Validator}
-  require SqliteStore
+  require Sqlite
   require BalanceStore
   require Ippan.{Node, Validator, Round, TxHandler}
 
@@ -51,7 +51,7 @@ defmodule Ippan.ClusterNodes do
       Node.insert(node)
     end)
 
-    SqliteStore.sync(db_ref)
+    Sqlite.sync(db_ref)
     next_init(db_ref)
     connect_to_miner(db_ref)
   end
@@ -61,7 +61,7 @@ defmodule Ippan.ClusterNodes do
     v = Validator.get(vid)
     :persistent_term.put(:validator, v)
 
-    case SqliteStore.fetch("last_block_created", []) do
+    case Sqlite.fetch("last_block_created", []) do
       nil ->
         :persistent_term.put(:height, 0)
 
@@ -237,7 +237,7 @@ defmodule Ippan.ClusterNodes do
   defp run_jackpot(%{id: round_id, jackpot: {amount, winner}}, db_ref, pgid)
        when amount > 0 do
     data = [round_id, winner, amount]
-    :done = SqliteStore.step("insert_jackpot", data)
+    :done = Sqlite.step("insert_jackpot", data)
 
     if pgid do
       PgStore.insert_jackpot(pgid, data)

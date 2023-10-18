@@ -1,7 +1,7 @@
 defmodule Ippan.Func.Balance do
   alias Ippan.Token
   require BalanceStore
-  require SqliteStore
+  require Sqlite
   require Token
 
   def lock(%{id: account_id}, to_id, token_id, amount)

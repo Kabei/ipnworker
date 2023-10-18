@@ -2,7 +2,7 @@ defmodule Ippan.Funx.Validator do
   alias Ippan.{ClusterNodes, Validator}
   alias Phoenix.PubSub
   require Validator
-  require SqliteStore
+  require Sqlite
   require BalanceStore
 
   @pubsub :pubsub

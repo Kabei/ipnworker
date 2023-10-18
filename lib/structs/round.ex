@@ -171,13 +171,13 @@ defmodule Ippan.Round do
 
   defmacro exists?(id) do
     quote bind_quoted: [id: id], location: :keep do
-      SqliteStore.exists?("exists_round", [id])
+      Sqlite.exists?("exists_round", [id])
     end
   end
 
   defmacro insert(args) do
     quote location: :keep do
-      SqliteStore.step("insert_round", unquote(args))
+      Sqlite.step("insert_round", unquote(args))
     end
   end
 end

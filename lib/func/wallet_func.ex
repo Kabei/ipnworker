@@ -1,7 +1,7 @@
 defmodule Ippan.Func.Wallet do
   alias Ippan.{Address, Validator}
   require Validator
-  require SqliteStore
+  require Sqlite
 
   def subscribe(
         %{id: account_id, validator: validator},

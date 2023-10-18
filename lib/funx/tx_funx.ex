@@ -1,6 +1,6 @@
 defmodule Ippan.Funx.Tx do
   alias Ippan.Utils
-  require SqliteStore
+  require Sqlite
   require BalanceStore
 
   @token Application.compile_env(:ipnworker, :token)
@@ -83,7 +83,7 @@ defmodule Ippan.Funx.Tx do
 
     db_ref = :persistent_term.get(:asset_conn)
 
-    SqliteStore.step("insert_refund", [
+    Sqlite.step("insert_refund", [
       hash,
       account_id,
       to,
@@ -125,7 +125,7 @@ defmodule Ippan.Funx.Tx do
     tx = DetsPlux.tx(:balance)
 
     {:row, [sender_id, token_id, refund_amount]} =
-      SqliteStore.step("get_delete_refund", [hash, account_id, round_id])
+      Sqlite.step("get_delete_refund", [hash, account_id, round_id])
 
     balance_key = DetsPlux.tuple(sender_id, token_id)
     BalanceStore.income(dets, tx, balance_key, refund_amount)

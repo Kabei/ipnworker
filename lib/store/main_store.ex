@@ -1,6 +1,6 @@
 defmodule MainStore do
   alias Exqlite.Sqlite3NIF
-  require SqliteStore
+  require Sqlite
 
   @version 0
 
@@ -38,12 +38,12 @@ defmodule MainStore do
   def init(_) do
     filename = Path.join(:persistent_term.get(:store_dir), @filename)
 
-    {:ok, db_ref} = SqliteStore.open_setup(@name, filename, @creations, @attaches)
+    {:ok, db_ref} = Sqlite.open_setup(@name, filename, @creations, @attaches)
     # execute alter tables if exists new version
-    :ok = SqliteStore.check_version(db_ref, @alter, @version)
+    :ok = Sqlite.check_version(db_ref, @alter, @version)
     # prepare statements
-    SqliteStore.prepare_statements(db_ref, @statements, :stmt)
-    SqliteStore.begin(db_ref)
+    Sqlite.prepare_statements(db_ref, @statements, :stmt)
+    Sqlite.begin(db_ref)
     # put in global conn and statements
     :persistent_term.put(@key_conn, db_ref)
 
@@ -54,7 +54,7 @@ defmodule MainStore do
 
   def terminate do
     db_ref = :persistent_term.get(@key_conn)
-    SqliteStore.release_statements(db_ref, @statements, :stmt)
+    Sqlite.release_statements(db_ref, @statements, :stmt)
     Sqlite3NIF.close(db_ref)
     :persistent_term.erase(@key_conn)
   end

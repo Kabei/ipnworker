@@ -1,7 +1,7 @@
 defmodule Ippan.Funx.Dns do
   alias Ippan.{Domain, DNS}
   require BalanceStore
-  require SqliteStore
+  require Sqlite
   require DNS
 
   @token Application.compile_env(:ipnworker, :token)

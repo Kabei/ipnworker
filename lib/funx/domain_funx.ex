@@ -1,7 +1,7 @@
 defmodule Ippan.Funx.Domain do
   alias Ippan.{Domain, DNS}
   require BalanceStore
-  require SqliteStore
+  require Sqlite
   require Domain
   require DNS
 

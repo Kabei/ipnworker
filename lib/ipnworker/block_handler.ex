@@ -6,7 +6,7 @@ defmodule Ippan.BlockHandler do
     only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
 
   require TxHandler
-  require SqliteStore
+  require Sqlite
   require Validator
 
   @version Application.compile_env(:ipnworker, :version)

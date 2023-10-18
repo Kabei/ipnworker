@@ -1,7 +1,7 @@
 defmodule Ippan.Func.Token do
   alias Ippan.Token
   require BalanceStore
-  require SqliteStore
+  require Sqlite
   require Token
 
   @max_number 1_000_000_000_000_000_000_000_000_000

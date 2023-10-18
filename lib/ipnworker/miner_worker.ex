@@ -2,7 +2,7 @@ defmodule MinerWorker do
   use GenServer
   alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
-  require SqliteStore
+  require Sqlite
   require TxHandler
   require Block
   require Logger

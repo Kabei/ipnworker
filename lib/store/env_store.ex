@@ -1,8 +1,8 @@
 defmodule EnvStore do
-  require SqliteStore
+  require Sqlite
 
   def load(db_ref) do
-    data = SqliteStore.all("all_env")
+    data = Sqlite.all("all_env")
 
     for [name, value] <- data do
       :persistent_term.put(name, :erlang.binary_to_term(value))
@@ -12,12 +12,12 @@ defmodule EnvStore do
   def put(db_ref, name, value) do
     value = transform(name, value)
     :persistent_term.put({:env, name}, value)
-    SqliteStore.step("insert_env", [name, :erlang.term_to_binary(value)])
+    Sqlite.step("insert_env", [name, :erlang.term_to_binary(value)])
   end
 
   def delete(db_ref, name) do
     :persistent_term.erase({:env, name})
-    SqliteStore.step("delete_env", [name])
+    Sqlite.step("delete_env", [name])
   end
 
   def owner, do: :persistent_term.get({:env, "OWNER"}, nil)
