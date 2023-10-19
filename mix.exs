@@ -16,6 +16,8 @@ defmodule Ipnworker.MixProject do
     ]
   end
 
+  def version, do: @version
+
   # Run "mix help compile.app" to learn about applications.
   def application do
     if System.otp_release() |> String.to_integer() < @min_otp,

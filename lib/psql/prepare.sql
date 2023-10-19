@@ -12,3 +12,7 @@ AS INSERT INTO history.jackpot VALUES($1,$2,$3);
 
 PREPARE insert_snapshot(bigint, bytea, bigint)
 AS INSERT INTO history.snapshot VALUES($1,$2,$3);
+
+PREPARE upsert_balance(bytea, bytea, bigint, bigint)
+AS INSERT INTO history.balance VALUES($1,$2,$3,$4)
+ON CONFLICT (id,token) DO UPDATE SET balance = EXCLUDED.balance, lock = EXCLUDED.lock;

@@ -56,6 +56,25 @@ CREATE TABLE IF NOT EXISTS history.txs(
   PRIMARY KEY("block_id", "hash")
 );
 
+CREATE TABLE IF NOT EXISTS history.txs(
+  "block_id" BIGINT,
+  "hash" BYTEA NOT NULL,
+  "type" INTEGER NOT NULL,
+  "from" BYTEA,
+  "nonce" BIGINT,
+  "size" INTEGER,
+  "args" TEXT,
+  PRIMARY KEY("block_id", "hash")
+);
+
+CREATE TABLE IF NOT EXISTS history.balance(
+  "id" BYTEA,
+  "token" BYTEA,
+  "balance" BIGINT,
+  "lock" BIGINT,
+  PRIMARY KEY("id", "token")
+);
+
 CREATE INDEX IF NOT EXISTS txs_block_id_idx ON history.txs("block_id");
 
 DO $$

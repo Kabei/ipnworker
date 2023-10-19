@@ -214,6 +214,9 @@ defmodule Ippan.ClusterNodes do
       round_encode = Round.to_list(round)
       Round.insert(round_encode)
 
+      # save balances
+      run_save_balances(balance_tx, pg_conn)
+
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
 
       if writer do
@@ -252,4 +255,14 @@ defmodule Ippan.ClusterNodes do
   end
 
   defp run_jackpot(_, _, _), do: :ok
+
+  defp run_save_balances(_tx, nil), do: nil
+
+  defp run_save_balances(balance_tx, pg_conn) do
+    :ets.tab2list(balance_tx)
+    |> Enum.each(fn {_, {key, {balance, lock}}} ->
+      [id, token] = String.split(key, "|", parts: 2)
+      PgStore.insert_balance(pg_conn, [id, token, balance, lock])
+    end)
+  end
 end

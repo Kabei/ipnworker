@@ -14,7 +14,7 @@ defmodule EnvStore do
     data = Sqlite.all("all_env")
 
     Enum.each(data, fn [name, value] ->
-      :persistent_term.put(name, :erlang.binary_to_term(value))
+      :persistent_term.put({:env, name}, :erlang.binary_to_term(value))
     end)
   end
 
@@ -43,10 +43,6 @@ defmodule EnvStore do
     :persistent_term.get({:env, "VALIDATOR.PRICE"}, 100_000)
   end
 
-  def jackpot_reward do
-    :persistent_term.get({:env, "JACKPOT.REWARD"}, 100)
-  end
-
   def network_fee do
     :persistent_term.get({:env, "NETWORK.FEE"}, 1)
   end
@@ -55,20 +51,13 @@ defmodule EnvStore do
     :persistent_term.get({:env, "ROUND.BLOCKS"}, 10)
   end
 
-  def round_delegates do
-    :persistent_term.get({:env, "ROUND.DELEGATES"}, 20)
-  end
-
   defp transform("TOKEN.PRICE", x), do: if(is_integer(x) and x > 0, do: x, else: 50_000)
 
   defp transform("VALIDATOR.PRICE", x), do: if(is_integer(x) and x > 0, do: x, else: 100_000)
-
-  defp transform("JACKPOT.REWARD", x), do: if(x in 1..100_000, do: x, else: 100)
 
   defp transform("NETWORK.FEE", x), do: if(is_integer(x) and x > 0, do: x, else: 1)
 
   defp transform("ROUND.BLOCKS", x), do: if(x in 1..100, do: x, else: 10)
 
-  defp transform("ROUND.DELEGATES", x), do: if(x in 1..100, do: x, else: 20)
   defp transform(_, x), do: x
 end

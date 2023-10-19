@@ -9,21 +9,22 @@ defmodule Ipnworker.NetworkRoutes do
   @token Application.compile_env(@app, :token)
 
   @options %{
-    "name" => Application.compile_env(@app, :name),
-    "token" => @token,
-    "message_max_size" => Application.compile_env(@app, :message_max_size),
-    "version" => Application.compile_env(@app, :version),
-    "block_max_size" => Application.compile_env(@app, :block_max_size),
+    "app_version" => Ipnworker.MixProject.version(),
     "block_data_max_size" => Application.compile_env(@app, :block_data_max_size),
-    "block_interval" => Application.compile_env(@app, :block_interval),
     "block_extension" => Application.compile_env(@app, :block_extension),
+    "block_interval" => Application.compile_env(@app, :block_interval),
+    "block_max_size" => Application.compile_env(@app, :block_max_size),
+    "blockchain_version" => Application.compile_env(@app, :version),
     "decode_extension" => Application.compile_env(@app, :decode_extension),
     "note_max_size" => Application.compile_env(@app, :note_max_size),
     "max_tx_amount" => Application.compile_env(@app, :max_tx_amount),
-    "timeout_refund" => Application.compile_env(@app, :timeout_refund),
+    "message_max_size" => Application.compile_env(@app, :message_max_size),
     "message_timeout" => Application.compile_env(@app, :message_timeout),
     "max_validators" => Application.compile_env(@app, :max_validators),
-    "max_tokens" => Application.compile_env(@app, :max_tokens)
+    "max_tokens" => Application.compile_env(@app, :max_tokens),
+    "name" => Application.compile_env(@app, :name),
+    "timeout_refund" => Application.compile_env(@app, :timeout_refund),
+    "token" => @token
   }
 
   if Mix.env() == :dev do

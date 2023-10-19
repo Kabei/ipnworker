@@ -63,6 +63,7 @@ defmodule Platform do
     end
 
     # save all
+    IO.puts("Here active")
     Sqlite.sync(db_ref)
     DetsPlux.sync(wallet_dets, wallet_tx)
   end
