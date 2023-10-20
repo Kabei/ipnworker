@@ -168,7 +168,7 @@ defmodule Ippan.ClusterNodes do
       #   :persistent_term.put(:block_id, next_block_id)
       # end
 
-      for block = %{"creator" => block_creator_id, "height" => height} <- blocks do
+      for block = %{"creator" => block_creator_id} <- blocks do
         # if vid == block_creator_id do
         #   if :persistent_term.get(:height, 0) < height do
         #     :persistent_term.put(:height, height)
