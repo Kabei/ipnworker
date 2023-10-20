@@ -83,7 +83,7 @@ defmodule MinerWorker do
       b = Block.to_list(block)
 
       Block.insert(b)
-      |> IO.inspect(x1)
+      |> IO.inspect()
 
       if writer do
         PgStore.insert_block(pg_conn, b)
