@@ -88,8 +88,8 @@ defmodule PgStore do
     )
   end
 
-  def insert_balance(conn, params) do
-    Postgrex.query(conn, query_parse("EXECUTE insert_balance($1,$2,$3,$4)", params), [])
+  def upsert_balance(conn, params) do
+    Postgrex.query(conn, query_parse("EXECUTE upsert_balance($1,$2,$3,$4)", params), [])
   end
 
   def insert_jackpot(conn, params) do

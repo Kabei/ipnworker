@@ -213,7 +213,7 @@ defmodule Ippan.ClusterNodes do
       Round.insert(round_encode)
 
       # save balances
-      # run_save_balances(balance_tx, pg_conn)
+      run_save_balances(balance_tx, pg_conn)
 
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
       IO.inspect("step 4")
@@ -238,13 +238,13 @@ defmodule Ippan.ClusterNodes do
 
   defp run_reward(_, _, _, _), do: :ok
 
-  defp run_jackpot(%{id: round_id, jackpot: {winner, amount}}, db_ref, pgid)
+  defp run_jackpot(%{id: round_id, jackpot: {winner, amount}}, db_ref, pg_conn)
        when amount > 0 do
     data = [round_id, winner, amount]
     :done = Sqlite.step("insert_jackpot", data)
 
     if pgid do
-      PgStore.insert_jackpot(pgid, data)
+      PgStore.insert_jackpot(pg_conn, data)
     end
 
     # Push event
@@ -263,7 +263,7 @@ defmodule Ippan.ClusterNodes do
     :ets.tab2list(balance_tx)
     |> Enum.each(fn {_key, {key, {balance, lock}}} ->
       [id, token] = String.split(key, "|", parts: 2)
-      PgStore.insert_balance(pg_conn, [id, token, balance, lock])
+      PgStore.upsert_balance(pg_conn, [id, token, balance, lock])
     end)
   end
 end
