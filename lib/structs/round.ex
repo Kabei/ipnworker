@@ -104,8 +104,26 @@ defmodule Ippan.Round do
   @impl true
   def to_map({_id, map}), do: map
 
-  def to_text(x = %{hash: hash, prev: prev, jackpot: jackpot}) do
-    %{x | hash: Utils.encode16(hash), jackpot: Tuple.to_list(jackpot), prev: Utils.encode16(prev)}
+  def to_text(
+        x = %{
+          hash: hash,
+          prev: prev,
+          jackpot: {winner, amount},
+          signature: signature,
+          blocks: blocks
+        }
+      ) do
+    blocks = Enum.map(blocks, &Block.to_text(&1))
+
+    %{
+      x
+      | blocks: blocks,
+        hash: Utils.encode16(hash),
+        prev: Utils.encode16(prev),
+        jackpot_winner: winner,
+        jackpot_amount: amount,
+        signature: Utils.encode64(signature)
+    }
   end
 
   def to_text(x = %{hash: hash, prev: prev}) do

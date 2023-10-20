@@ -65,7 +65,12 @@ defmodule Ippan.Ecto.Round do
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [r], asc: r.id)
   defp sort(query, _), do: order_by(query, [r], desc: r.id)
 
-  defp fun(x = %{hash: hash, prev: prev}) do
-    %{x | hash: Utils.encode16(hash), prev: Utils.encode16(prev)}
+  defp fun(x = %{hash: hash, prev: prev, signature: signature}) do
+    %{
+      x
+      | hash: Utils.encode16(hash),
+        prev: Utils.encode16(prev),
+        signature: Utils.encode64(signature)
+    }
   end
 end
