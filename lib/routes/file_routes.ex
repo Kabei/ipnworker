@@ -13,7 +13,7 @@ defmodule Ipnworker.FileRoutes do
   alias Ippan.{Block, ClusterNodes}
 
   get "/block/:vid/:height" do
-    base_dir = :persistent_term.get(:decode_dir)
+    base_dir = :persistent_term.get(:block_dir)
     block_path = Path.join([base_dir, "#{vid}.#{height}.#{@block_extension}"])
 
     if File.exists?(block_path) do
@@ -26,7 +26,7 @@ defmodule Ipnworker.FileRoutes do
   end
 
   get "/decode/:vid/:height" do
-    base_dir = :persistent_term.get(:block_dir)
+    base_dir = :persistent_term.get(:decode_dir)
     block_path = Path.join([base_dir, "#{vid}.#{height}.#{@decode_extension}"])
 
     if File.exists?(block_path) do
