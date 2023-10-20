@@ -91,6 +91,7 @@ defmodule MinerWorker do
 
       # Push event
       PubSub.broadcast(@pubsub, "block.new", block)
+      PubSub.broadcast(@pubsub, "block:#{block_id}", block)
 
       {:reply, :ok, state}
     rescue
