@@ -43,7 +43,7 @@ defmodule RoundCommit do
 
   def rollback(db_ref) do
     balance_tx = DetsPlux.tx(:balance)
-    supply_tx = DetsPlux.tx(:supply)
+    supply_tx = DetsPlux.tx(:stats, :supply)
     wallet_tx = DetsPlux.tx(:wallet)
 
     Sqlite.rollback(db_ref)
