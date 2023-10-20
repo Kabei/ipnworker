@@ -29,4 +29,8 @@ defmodule Ipnworker.EventRoutes do
   get "/block/:id" do
     SSE.stream(conn, @pubsub, "block:#{id}", timeout: 20_000)
   end
+
+  match _ do
+    send_resp(conn, 404, "Not found")
+  end
 end
