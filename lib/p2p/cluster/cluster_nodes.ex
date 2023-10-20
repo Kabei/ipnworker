@@ -1,8 +1,8 @@
 defmodule Ippan.ClusterNodes do
-  alias Ippan.{Block, Node, Network, BlockHandler, TxHandler, Round, Validator}
+  alias Ippan.{Node, Network, BlockHandler, TxHandler, Round, Validator}
   require Sqlite
   require BalanceStore
-  require Ippan.{Block, Node, Validator, Round, TxHandler}
+  require Ippan.{Node, Validator, Round, TxHandler}
 
   @pubsub :pubsub
   @token Application.compile_env(:ipnworker, :token)
@@ -61,14 +61,6 @@ defmodule Ippan.ClusterNodes do
     vid = :persistent_term.get(:vid)
     v = Validator.get(vid)
     :persistent_term.put(:validator, v)
-
-    case Block.last_created(vid) do
-      nil ->
-        :persistent_term.put(:height, 0)
-
-      [_, _, height] ->
-        :persistent_term.put(:height, height)
-    end
   end
 
   defp connect_to_miner(db_ref) do
@@ -116,11 +108,14 @@ defmodule Ippan.ClusterNodes do
   Create a new round. Received from a IPNCORE
   """
   def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
+    IO.inspect("handle 1")
     mow = :persistent_term.get(:mow)
-    round = MapUtil.to_atoms(msg_round)
+    round = MapUtil.to_existing_atoms(msg_round)
 
     if mow do
       pgid = PgStore.pool()
+
+      IO.inspect("handle 2")
 
       Postgrex.transaction(
         pgid,
@@ -147,8 +142,11 @@ defmodule Ippan.ClusterNodes do
          hostname,
          pg_conn
        ) do
+    IO.inspect("step 0")
     db_ref = :persistent_term.get(:main_conn)
     writer = pg_conn != nil
+
+    IO.inspect("step 0/5")
 
     unless Round.exists?(round_id) do
       vid = :persistent_term.get(:vid)
@@ -219,6 +217,7 @@ defmodule Ippan.ClusterNodes do
 
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
       IO.inspect("step 4")
+
       if writer do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
       end
