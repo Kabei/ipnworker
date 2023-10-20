@@ -120,8 +120,7 @@ defmodule Ippan.Round do
       | blocks: blocks,
         hash: Utils.encode16(hash),
         prev: Utils.encode16(prev),
-        jackpot_winner: winner,
-        jackpot_amount: amount,
+        jackpot: %{winner: winner, amount: amout},
         signature: Utils.encode64(signature)
     }
   end
