@@ -1,4 +1,5 @@
 defmodule Ippan.Block do
+  alias Ippan.Utils
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
           id: non_neg_integer() | nil,

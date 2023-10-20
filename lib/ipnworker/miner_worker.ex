@@ -1,6 +1,5 @@
 defmodule MinerWorker do
   use GenServer
-  alias Ippan.Ecto
   alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
   require Sqlite

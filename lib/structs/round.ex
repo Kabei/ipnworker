@@ -1,6 +1,5 @@
 defmodule Ippan.Round do
-  alias Ippan.Utils
-  alias Ippan.Block
+  alias Ippan.{Block, Utils}
 
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
