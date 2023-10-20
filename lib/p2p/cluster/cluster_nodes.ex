@@ -158,22 +158,22 @@ defmodule Ippan.ClusterNodes do
       IO.inspect(round.id)
 
       pool_pid = Process.whereis(:minerpool)
-      # IO.inspect("step 1")
+      IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
-      blocks_len = length(blocks)
+      # blocks_len = length(blocks)
 
-      if blocks_len != 0 do
-        next_block_id = :persistent_term.get(:block_id, 0) + blocks_len - 1
-        :persistent_term.put(:block_id, next_block_id)
-      end
+      # if blocks_len != 0 do
+      #   next_block_id = :persistent_term.get(:block_id, 0) + blocks_len - 1
+      #   :persistent_term.put(:block_id, next_block_id)
+      # end
 
       for block = %{"creator" => block_creator_id, "height" => height} <- blocks do
-        if vid == block_creator_id do
-          if :persistent_term.get(:height, 0) < height do
-            :persistent_term.put(:height, height)
-          end
-        end
+        # if vid == block_creator_id do
+        #   if :persistent_term.get(:height, 0) < height do
+        #     :persistent_term.put(:height, height)
+        #   end
+        # end
 
         Task.async(fn ->
           creator = Validator.get(block_creator_id)
@@ -196,8 +196,7 @@ defmodule Ippan.ClusterNodes do
       end
       |> Task.await_many(:infinity)
 
-      # IO.inspect("step 2")
-      # wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
+      IO.inspect("step 2")
 
       TxHandler.run_deferred_txs()
 
@@ -211,7 +210,7 @@ defmodule Ippan.ClusterNodes do
         Validator.delete(round_creator_id)
       end
 
-      # IO.inspect("step 3")
+      IO.inspect("step 3")
       round_encode = Round.to_list(round)
       Round.insert(round_encode)
 
@@ -219,7 +218,7 @@ defmodule Ippan.ClusterNodes do
       run_save_balances(balance_tx, pg_conn)
 
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
-
+      IO.inspect("step 4")
       if writer do
         {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
       end
@@ -228,7 +227,7 @@ defmodule Ippan.ClusterNodes do
       PubSub.broadcast(@pubsub, "round.new", round)
       PubSub.broadcast(@pubsub, "round:#{round_id}", round)
 
-      :persistent_term.put(:round, round_id)
+      # :persistent_term.put(:round, round_id)
     end
   end
 

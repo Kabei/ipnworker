@@ -51,14 +51,14 @@ defmodule MinerWorker do
     writer = pg_conn != nil
 
     try do
-      # IO.inspect("Bstep 1")
+      IO.inspect("Bstep 1")
       # balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
       # wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
       nonce_dets = DetsPlux.get(:nonce)
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
-      # IO.inspect("Bstep 2")
+      IO.inspect("Bstep 2")
       # Download decode-file
       if File.exists?(decode_path) do
         :ok
@@ -68,7 +68,7 @@ defmodule MinerWorker do
         :ok = Download.await(url, decode_path)
       end
 
-      # IO.inspect("Bstep 3")
+      IO.inspect("Bstep 3")
       {:ok, content} = File.read(decode_path)
 
       %{"data" => txs, "vsn" => version_file} =
@@ -79,14 +79,15 @@ defmodule MinerWorker do
 
       run_miner(round_id, block_id, creator, txs, nonce_dets, pg_conn, writer)
 
-      # IO.inspect("Bstep 4")
+      IO.inspect("Bstep 4")
       b = Block.to_list(block)
+
       Block.insert(b)
-      # |> IO.inspect(x1)
+      |> IO.inspect(x1)
 
       if writer do
         PgStore.insert_block(pg_conn, b)
-        # |> IO.inspect()
+        |> IO.inspect()
       end
 
       # Push event
