@@ -100,8 +100,8 @@ defmodule Ippan.TxHandler do
               var!(hash),
               var!(type),
               var!(from),
-              var!(args),
               var!(nonce),
+              var!(args),
               [var!(body), var!(signature)],
               var!(size)
             ],
@@ -118,8 +118,8 @@ defmodule Ippan.TxHandler do
               var!(type),
               key,
               var!(from),
-              var!(args),
               var!(nonce),
+              var!(args),
               [var!(body), var!(signature)],
               var!(size)
             ],
@@ -163,8 +163,8 @@ defmodule Ippan.TxHandler do
             var!(hash),
             var!(type),
             var!(from),
-            var!(args),
             var!(nonce),
+            var!(args),
             var!(size)
           ]
 
@@ -176,8 +176,8 @@ defmodule Ippan.TxHandler do
             var!(type),
             key,
             var!(from),
-            var!(args),
             var!(nonce),
+            var!(args),
             var!(size)
           ]
       end
