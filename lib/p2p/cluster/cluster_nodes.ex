@@ -243,7 +243,7 @@ defmodule Ippan.ClusterNodes do
     data = [round_id, winner, amount]
     :done = Sqlite.step("insert_jackpot", data)
 
-    if pgid do
+    if pg_conn do
       PgStore.insert_jackpot(pg_conn, data)
     end
 
