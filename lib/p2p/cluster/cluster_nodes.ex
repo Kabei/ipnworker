@@ -110,7 +110,7 @@ defmodule Ippan.ClusterNodes do
   def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
     IO.inspect("handle 1")
     mow = :persistent_term.get(:mow)
-    round = MapUtil.to_existing_atoms(msg_round)
+    round = MapUtil.to_atoms(msg_round)
 
     if mow do
       pgid = PgStore.pool()
