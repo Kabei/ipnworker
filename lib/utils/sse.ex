@@ -23,7 +23,7 @@ defmodule SSE do
     transport = adapter.socket.transport_module
 
     transport.controlling_process(socket, self())
-    transport.setopts(socket, [{:active, false}])
+    transport.setopts(socket, [{:active, true}])
 
     loop(conn, pubsub, topic, once, timeout)
   end
