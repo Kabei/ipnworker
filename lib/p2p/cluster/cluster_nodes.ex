@@ -52,11 +52,12 @@ defmodule Ippan.ClusterNodes do
     end)
 
     Sqlite.sync(db_ref)
-    next_init(db_ref)
+    next_init()
     connect_to_miner(db_ref)
   end
 
-  defp next_init(db_ref) do
+  defp next_init do
+    db_ref = :persistent_term.get(:main_conn)
     vid = :persistent_term.get(:vid)
     v = Validator.get(vid)
     :persistent_term.put(:validator, v)
