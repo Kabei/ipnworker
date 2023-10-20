@@ -202,7 +202,7 @@ defmodule Ippan.ClusterNodes do
         Validator.get(round_creator_id)
 
       run_reward(round, round_creator, balance_pid, balance_tx)
-      # run_jackpot(round, db_ref, pg_conn)
+      run_jackpot(round, db_ref, pg_conn)
 
       if reason > 0 do
         Validator.delete(round_creator_id)
