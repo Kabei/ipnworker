@@ -1,5 +1,6 @@
 defmodule MinerWorker do
   use GenServer
+  alias Ippan.Ecto
   alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
   require Sqlite
@@ -91,8 +92,9 @@ defmodule MinerWorker do
       end
 
       # Push event
-      PubSub.broadcast(@pubsub, "block.new", block)
-      PubSub.broadcast(@pubsub, "block:#{block_id}", block)
+      msg = Block.to_text(block)
+      PubSub.broadcast(@pubsub, "block.new", msg)
+      PubSub.broadcast(@pubsub, "block:#{block_id}", msg)
 
       {:reply, :ok, state}
     rescue

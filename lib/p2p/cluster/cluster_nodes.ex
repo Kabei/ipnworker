@@ -224,8 +224,9 @@ defmodule Ippan.ClusterNodes do
       end
 
       # Push event
-      PubSub.broadcast(@pubsub, "round.new", round)
-      PubSub.broadcast(@pubsub, "round:#{round_id}", round)
+      msg = Round.to_text(round)
+      PubSub.broadcast(@pubsub, "round.new", msg)
+      PubSub.broadcast(@pubsub, "round:#{round_id}", msg)
 
       # :persistent_term.put(:round, round_id)
     end

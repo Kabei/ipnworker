@@ -1,4 +1,5 @@
 defmodule Ippan.Round do
+  alias Ippan.Utils
   alias Ippan.Block
 
   @behaviour Ippan.Struct
@@ -103,6 +104,14 @@ defmodule Ippan.Round do
 
   @impl true
   def to_map({_id, map}), do: map
+
+  def to_text(x = %{hash: hash, prev: prev, jackpot: jackpot}) do
+    %{x | hash: Utils.encode16(hash), jackpot: Tuple.to_list(jackpot), prev: Utils.encode16(prev)}
+  end
+
+  def to_text(x = %{hash: hash, prev: prev}) do
+    %{x | hash: Utils.encode16(hash), prev: Utils.encode16(prev)}
+  end
 
   def compute_hash(id, prev, creator, hashes) do
     ([

@@ -106,6 +106,16 @@ defmodule Ippan.Block do
   @impl true
   def to_map({_id, x}), do: x
 
+  def to_text(x = %{hash: hash, prev: prev, hashfile: hashfile, signature: signature}) do
+    %{
+      x
+      | hash: Utils.encode16(hash),
+        prev: Utils.encode16(prev),
+        hashfile: Utils.encode16(hashfile),
+        signature: Utils.encode64(signature)
+    }
+  end
+
   @spec put_hash(term()) :: term()
   def put_hash(
         block = %{
