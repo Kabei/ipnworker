@@ -16,8 +16,9 @@ defmodule Ippan.Block do
           vsn: non_neg_integer()
         }
 
-  @block_extension Application.compile_env(:ipnworker, :block_extension)
-  @decode_extension Application.compile_env(:ipnworker, :decode_extension)
+  @block_extension Application.compile_env(:ipncore, :block_extension)
+  @decode_extension Application.compile_env(:ipncore, :decode_extension)
+  @hash_module Blake3.Native
 
   defstruct [
     :id,
@@ -134,7 +135,7 @@ defmodule Ippan.Block do
       to_string(timestamp)
     ]
     |> IO.iodata_to_binary()
-    |> Blake3.hash()
+    |> @hash_module.hash()
   end
 
   @spec sign(binary()) :: {:ok, binary()} | {:error, term()}
@@ -173,12 +174,12 @@ defmodule Ippan.Block do
   end
 
   def cluster_block_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipnworker, :http)[:port]
+    port = Application.get_env(:ipncore, :http)[:port]
     "http://#{hostname}:#{port}/v1/dl/block/#{creator_id}/#{height}"
   end
 
   def cluster_decode_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipnworker, :http)[:port]
+    port = Application.get_env(:ipncore, :http)[:port]
     "http://#{hostname}:#{port}/v1/dl/decode/#{creator_id}/#{height}"
   end
 
@@ -190,7 +191,6 @@ defmodule Ippan.Block do
     elem(CBOR.Decoder.decode(content), 0)
   end
 
-  @hash_module Blake3.Native
   def hash_file(path) do
     state = @hash_module.new()
 
@@ -201,6 +201,12 @@ defmodule Ippan.Block do
 
   defp normalize(nil), do: ""
   defp normalize(x), do: x
+
+  defmacro get(id) do
+    quote bind_quoted: [id: id], location: :keep do
+      Sqlite.fetch("get_block", [id])
+    end
+  end
 
   defmacro exists?(id) do
     quote bind_quoted: [id: id], location: :keep do
@@ -214,9 +220,9 @@ defmodule Ippan.Block do
     end
   end
 
-  defmacro last_created(creator_id) do
-    quote bind_quoted: [id: creator_id], location: :keep do
-      Sqlite.step("last_block_created", [id])
+  defmacro last_created(creator_id, default \\ nil) do
+    quote bind_quoted: [id: creator_id, default: default], location: :keep do
+      Sqlite.fetch("last_block_created", [id], default)
     end
   end
 
@@ -227,8 +233,8 @@ defmodule Ippan.Block do
   end
 
   defmacro total_created(create_id) do
-    quote bind_quoted: [id: create_id], location: :keep do
-      Sqlite.one("total_blocks_created", [id], 0)
+    quote location: :keep do
+      Sqlite.one("total_blocks_created", [unquote(create_id)], 0)
     end
   end
 

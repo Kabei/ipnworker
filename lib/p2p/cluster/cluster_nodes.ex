@@ -1,8 +1,8 @@
 defmodule Ippan.ClusterNodes do
-  alias Ippan.{Node, Network, BlockHandler, TxHandler, Round, Validator}
+  alias Ippan.{Block, Node, Network, BlockHandler, TxHandler, Round, Validator}
   require Sqlite
   require BalanceStore
-  require Ippan.{Node, Validator, Round, TxHandler}
+  require Ippan.{Block, Node, Validator, Round, TxHandler}
 
   @pubsub :pubsub
   @token Application.compile_env(:ipnworker, :token)
@@ -62,7 +62,7 @@ defmodule Ippan.ClusterNodes do
     v = Validator.get(vid)
     :persistent_term.put(:validator, v)
 
-    case Sqlite.fetch("last_block_created", []) do
+    case Block.last_created(vid) do
       nil ->
         :persistent_term.put(:height, 0)
 

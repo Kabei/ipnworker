@@ -183,7 +183,7 @@ defmodule DetsPlux do
 
   defp key_hash(key) do
     <<hash::binary-size(@hash_size), _::binary>> =
-      Blake3.hash(key)
+      Blake3.Native.hash(key)
 
     hash
   end
