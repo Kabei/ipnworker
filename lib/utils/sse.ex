@@ -75,7 +75,8 @@ defmodule SSE do
         Logger.debug("TCP error")
         shutdown(conn, pubsub, topic)
 
-      {:plug_conn, _msg} ->
+      {:plug_conn, msg} ->
+        Logger.debug("plug_conn #{inspect(msg)}")
         loop(conn, pubsub, topic, once, timeout)
 
       {:EXIT, _from, _reason} ->
