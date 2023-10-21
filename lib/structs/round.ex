@@ -113,7 +113,6 @@ defmodule Ippan.Round do
           blocks: blocks
         }
       ) do
-    IO.inspect(blocks)
     blocks = Enum.map(blocks, &Block.to_text(&1))
 
     %{
