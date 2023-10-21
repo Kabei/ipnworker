@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
   "hashfile" BYTEA,
-  "signature" BYTEA NOT NULL,
+  "signature" BYTEA,
   "round" BIGINT NOT NULL,
   "timestamp" BIGINT NOT NULL,
   "count" INTEGER DEFAULT 0,
