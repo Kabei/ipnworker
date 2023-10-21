@@ -1,18 +1,16 @@
 defmodule Ipnworker.Router do
   use Plug.Router
-
-  plug(:match)
-  plug(:dispatch)
+  alias Ippan.{ClusterNodes, TxHandler, Validator}
+  require Ippan.{Validator, TxHandler}
+  require Sqlite
+  require Logger
+  import Ippan.Utils, only: [json: 1]
 
   @json Application.compile_env(:ipnworker, :json)
   @max_size Application.compile_env(:ipnworker, :message_max_size)
 
-  alias Ippan.{ClusterNodes, TxHandler, Validator}
-  require Sqlite
-  require Validator
-  require TxHandler
-  require Logger
-  import Ippan.Utils, only: [json: 1]
+  plug(:match)
+  plug(:dispatch)
 
   post "/v1/call" do
     try do
@@ -99,7 +97,8 @@ defmodule Ipnworker.Router do
         |> put_resp_header("location", url)
         |> send_resp(302, "")
 
-      [FunctionClauseError, ArgumentError] ->
+      e in [FunctionClauseError, ArgumentError] ->
+        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
         send_resp(conn, 400, "Invalid arguments")
 
       e ->
@@ -119,7 +118,7 @@ defmodule Ipnworker.Router do
   forward("/v1/dns", to: Ipnworker.DnsRoutes)
   forward("/v1/network", to: Ipnworker.NetworkRoutes)
   forward("/v1/account", to: Ipnworker.AccountRoutes)
-  forward "/v1/event", to: Ipnworker.EventRoutes
+  forward("/v1/event", to: Ipnworker.EventRoutes)
   # forward "/v1/snap", to: Ipnworker.SnapRoutes
 
   match _ do
