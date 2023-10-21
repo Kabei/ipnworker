@@ -52,7 +52,7 @@ defmodule Ippan.Ecto.Round do
     from(Round)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_round(params)
+    |> filter_fixed(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -63,11 +63,11 @@ defmodule Ippan.Ecto.Round do
     select(query, [r], map(r, @select))
   end
 
-  defp filter_round(query, %{"id" => id}) do
+  defp filter_fixed(query, %{"fixed" => id}) do
     where(query, [r], r.id <= ^id)
   end
 
-  defp filter_round(query, _), do: query
+  defp filter_fixed(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [r], asc: r.id)
   defp sort(query, _), do: order_by(query, [r], desc: r.id)
