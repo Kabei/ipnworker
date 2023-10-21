@@ -111,7 +111,7 @@ defmodule MinerWorker do
     nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
 
     Enum.each(transactions, fn
-      [hash, type, from, nonce, args, size], acc ->
+      [hash, type, from, nonce, args, size] ->
         case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
@@ -132,7 +132,7 @@ defmodule MinerWorker do
             end
         end
 
-      [hash, type, arg_key, from, nonce, args, size], acc ->
+      [hash, type, arg_key, from, nonce, args, size] ->
         case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1
