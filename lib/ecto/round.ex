@@ -1,6 +1,6 @@
 defmodule Ippan.Ecto.Round do
   use Ecto.Schema
-  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3]
+  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
   alias Ippan.Utils
   alias Ipnworker.Repo
   alias __MODULE__
