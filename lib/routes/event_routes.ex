@@ -19,7 +19,11 @@ defmodule Ipnworker.EventRoutes do
   end
 
   get "/jackpot" do
-    SSE.stream(conn, @pubsub, "block.new", once: false, timeout: 45_000)
+    SSE.stream(conn, @pubsub, "jackpot", once: false, timeout: 515_000)
+  end
+
+  get "/validator" do
+    SSE.stream(conn, @pubsub, "validator", once: false, timeout: :infinity)
   end
 
   get "/round/:id" do

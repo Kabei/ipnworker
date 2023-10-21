@@ -1,5 +1,6 @@
 defmodule Ippan.Funx.Validator do
-  alias Ippan.{ClusterNodes, Validator}
+  alias Ippan.Utils
+  alias Ippan.Validator
   alias Phoenix.PubSub
   require Validator
   require Sqlite
@@ -69,9 +70,8 @@ defmodule Ippan.Funx.Validator do
               :persistent_term.put(:validator, validator)
             end
 
-            event = %{"event" => "validator.new", "data" => validator}
+            event = %{"event" => "validator.new", "data" => Validator.to_text(validator)}
             PubSub.broadcast(@pubsub, @topic, event)
-            ClusterNodes.broadcast(event)
         end
     end
   end
@@ -99,9 +99,16 @@ defmodule Ippan.Funx.Validator do
 
         Validator.update(map, id: id)
 
+        # transform to text
+        fun = fn x -> Utils.encode64(x) end
+
+        map =
+          map
+          |> MapUtil.transform(:pubkey, fun)
+          |> MapUtil.transform(:net_pubkey, fun)
+
         event = %{"event" => "validator.update", "data" => %{"id" => id, "args" => map}}
         PubSub.broadcast(@pubsub, @topic, event)
-        ClusterNodes.broadcast(event)
     end
   end
 
@@ -120,6 +127,5 @@ defmodule Ippan.Funx.Validator do
 
     event = %{"event" => "validator.delete", "data" => id}
     PubSub.broadcast(@pubsub, @topic, event)
-    ClusterNodes.broadcast(event)
   end
 end
