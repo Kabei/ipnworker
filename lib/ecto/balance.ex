@@ -1,6 +1,6 @@
 defmodule Ippan.Ecto.Balance do
   use Ecto.Schema
-  import Ecto.Query, only: [from: 1, order_by: 3, select: 3]
+  import Ecto.Query, only: [from: 2, order_by: 3, select: 3]
   alias Ipnworker.Repo
   alias __MODULE__
 
@@ -14,12 +14,12 @@ defmodule Ippan.Ecto.Balance do
     field(:lock, :integer)
   end
 
-  @select ~w(balance lock)a
+  @select ~w(token balance lock)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
-  def all(params) do
-    from(Balance)
+  def all(params, id) do
+    from(b in Balance, where: b.id == ^id)
     |> filter_offset(params)
     |> filter_limit(params)
     |> filter_select()

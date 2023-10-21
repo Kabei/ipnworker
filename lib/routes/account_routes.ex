@@ -12,8 +12,7 @@ defmodule Ipnworker.AccountRoutes do
   plug(:dispatch)
 
   get "/balance/:id" do
-    fetch_query(conn)
-    |> Balance.all()
+    Balance.all(fetch_query(conn), id)
     |> send_json()
   end
 
