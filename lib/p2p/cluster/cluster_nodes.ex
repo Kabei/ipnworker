@@ -223,8 +223,8 @@ defmodule Ippan.ClusterNodes do
       IO.inspect("step 4")
 
       if writer do
-        IO.inspect(round_encode)
-        {:ok, _} = PgStore.insert_round(pg_conn, round_encode)
+        PgStore.insert_round(pg_conn, round_encode)
+        |> IO.inspect()
       end
 
       # Push event
