@@ -113,7 +113,7 @@ defmodule Ippan.Round do
           blocks: blocks
         }
       ) do
-        IO.inspect(block)
+    IO.inspect(blocks)
     blocks = Enum.map(blocks, &Block.to_text(&1))
 
     %{
@@ -126,23 +126,11 @@ defmodule Ippan.Round do
     }
   end
 
-  def to_text(
-        x = %{
-          hash: hash,
-          prev: prev,
-          jackpot: {winner, amount},
-          signature: signature,
-          blocks: blocks
-        }
-      ) do
-    blocks = Enum.map(blocks, &Block.to_text(&1))
-
+  def to_text(x = %{hash: hash, prev: prev, signature: signature}) do
     %{
       x
-      | blocks: blocks,
-        hash: Utils.encode16(hash),
+      | hash: Utils.encode16(hash),
         prev: Utils.encode16(prev),
-        jackpot: %{winner: winner, amount: amount},
         signature: Utils.encode64(signature)
     }
   end
