@@ -145,7 +145,7 @@ defmodule Ippan.TxHandler do
       [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
 
-      Wallet.update_nonce!(var!(wallet_dets), var!(nonce_tx), var!(from), var!(nonce))
+      Wallet.update_nonce!(var!(nonce_dets), var!(nonce_tx), var!(from), var!(nonce))
 
       source = %{
         id: var!(from),
