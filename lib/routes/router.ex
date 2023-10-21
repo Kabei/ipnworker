@@ -83,9 +83,11 @@ defmodule Ipnworker.Router do
       end
     rescue
       e in IppanError ->
+        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
         send_resp(conn, 400, e.message)
 
       e in IppanRedirectError ->
+        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
         db_ref = :persistent_term.get(:main_conn)
 
         %{hostname: hostname} =

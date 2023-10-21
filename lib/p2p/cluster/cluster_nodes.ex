@@ -150,8 +150,6 @@ defmodule Ippan.ClusterNodes do
     db_ref = :persistent_term.get(:main_conn)
     writer = pg_conn != nil
 
-    IO.inspect("step 0/5")
-
     unless Round.exists?(round_id) do
       vid = :persistent_term.get(:vid)
       balance_pid = DetsPlux.get(:balance)
