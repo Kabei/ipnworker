@@ -32,7 +32,6 @@ defmodule Ippan.BlockHandler do
       remote_url = Block.url(hostname, creator_id, height)
       output_path = Block.block_path(creator_id, height)
       file_exists = File.exists?(output_path)
-      filename = Path.basename(output_path)
 
       unless file_exists do
         :ok = Download.from(remote_url, output_path, @max_block_size)
@@ -97,7 +96,8 @@ defmodule Ippan.BlockHandler do
             raise IppanError, "Invalid block messages count"
           end
 
-          export_path = Path.join(:persistent_term.get(:decode_dir), filename)
+          export_path =
+            Path.join(:persistent_term.get(:decode_dir), Block.decode_path(creator_id, height))
 
           :ok =
             File.write(
