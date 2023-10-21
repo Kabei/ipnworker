@@ -10,7 +10,7 @@ defmodule Ippan.Funx.Coin do
   def send(
         %{
           id: account_id,
-          validator: %{owner: owner, fee_type: fee_type, fee: vfee},
+          validator: %{fee: vfee, fee_type: fee_type, owner: owner},
           size: size
         },
         to,

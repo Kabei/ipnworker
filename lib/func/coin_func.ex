@@ -1,5 +1,5 @@
 defmodule Ippan.Func.Coin do
-  alias Ippan.Token
+  alias Ippan.{Token, Utils}
   require Sqlite
   require BalanceStore
   require Token
@@ -9,11 +9,20 @@ defmodule Ippan.Func.Coin do
   @note_max_size Application.compile_env(:ipnworker, :note_max_size)
   @token Application.compile_env(:ipnworker, :token)
 
-  def send(source = %{id: account_id}, to, token_id, amount)
+  def send(
+        source = %{
+          id: account_id,
+          size: size,
+          validator: %{fee: vfee, fee_type: fee_type}
+        },
+        to,
+        token_id,
+        amount
+      )
       when is_integer(amount) and amount <= @max_tx_amount and
              account_id != to do
     bt = BalanceTrace.new(source)
-    fees = Tools.fees!(source, amount)
+    fees = Utils.calc_fees!(fee_type, vfee, amount, size)
 
     case token_id == @token do
       true ->
