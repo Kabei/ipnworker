@@ -32,7 +32,7 @@ defmodule Ipnworker.Application do
       :poolboy.child_spec(:minerpool, miner_config()),
       {Phoenix.PubSub, [name: :pubsub]},
       ClusterNodes,
-      {Bandit, [plug: Ipnworker.Endpoint, scheme: :http] ++ Application.get_env(@otp_app, :http)}
+      {Bandit, Application.get_env(@otp_app, :http)}
     ]
 
     opts = [strategy: :one_for_one, name: Ipnworker.Supervisor]

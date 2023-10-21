@@ -9,6 +9,8 @@ http_port = System.get_env("HTTP_PORT", "8080") |> String.to_integer()
 
 # HTTP server
 config :ipnworker, :http,
+  plug: Ipnworker.Endpoint,
+  scheme: :http,
   port: http_port,
   http_1_options: [
     compress: false
