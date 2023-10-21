@@ -76,8 +76,7 @@ defmodule Ippan.TxHandler do
       # Check nonce
       nonce_dets = DetsPlux.get(:nonce)
       cache_nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
-      nonce_key = Wallet.gte_nonce!(nonce_dets, cache_nonce_tx, var!(from), var!(nonce))
-      balance_dets = DetsPlux.get(:balance)
+      Wallet.gte_nonce!(nonce_dets, cache_nonce_tx, var!(from), var!(nonce))
 
       source = %{
         id: var!(from),
@@ -90,7 +89,7 @@ defmodule Ippan.TxHandler do
       return = apply(mod, fun, [source | var!(args)])
 
       # Update nonce
-      DetsPlux.put(cache_nonce_tx, nonce_key, var!(nonce))
+      DetsPlux.put(cache_nonce_tx, var!(from), var!(nonce))
 
       case deferred do
         false ->
