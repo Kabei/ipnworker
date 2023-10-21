@@ -114,7 +114,7 @@ defmodule MinerWorker do
       [hash, type, from, nonce, args, size] ->
         case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
-            acc + 1
+            nil
 
           _number ->
             TxHandler.regular()
@@ -135,7 +135,7 @@ defmodule MinerWorker do
       [hash, type, arg_key, from, nonce, args, size] ->
         case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
-            acc + 1
+            nil
 
           _number ->
             TxHandler.insert_deferred()
