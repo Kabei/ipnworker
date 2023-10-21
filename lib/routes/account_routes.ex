@@ -1,7 +1,8 @@
 defmodule Ipnworker.AccountRoutes do
   use Plug.Router
+  alias Ippan.Ecto.Balance
   alias Ippan.Utils
-  import Ippan.Utils, only: [json: 1]
+  import Ippan.Utils, only: [fetch_query: 1, json: 1, send_json: 1]
 
   if Mix.env() == :dev do
     use Plug.Debugger
@@ -10,8 +11,11 @@ defmodule Ipnworker.AccountRoutes do
   plug(:match)
   plug(:dispatch)
 
-  # get "/balance/:id" do
-  # end
+  get "/balance/:id" do
+    fetch_query(conn)
+    |> Balance.all()
+    |> send_json()
+  end
 
   get "/balance/:id/:token" do
     dets = DetsPlux.get(:balance)

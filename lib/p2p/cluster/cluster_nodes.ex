@@ -64,14 +64,18 @@ defmodule Ippan.ClusterNodes do
   end
 
   defp connect_to_miner(db_ref) do
-    miner = :persistent_term.get(:miner)
+    test = System.get_env("test")
 
-    case Node.fetch(miner) do
-      nil ->
-        :ok
+    if is_nil(test) do
+      miner = :persistent_term.get(:miner)
 
-      node ->
-        connect_async(Node.list_to_map(node))
+      case Node.fetch(miner) do
+        nil ->
+          :ok
+
+        node ->
+          connect_async(Node.list_to_map(node))
+      end
     end
   end
 
