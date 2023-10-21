@@ -1,6 +1,6 @@
 defmodule Ippan.Ecto.Snapshot do
   use Ecto.Schema
-  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3]
+  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
   alias Ippan.Utils
   alias Ipnworker.Repo
   alias __MODULE__
@@ -32,6 +32,7 @@ defmodule Ippan.Ecto.Snapshot do
     from(Snapshot)
     |> filter_offset(params)
     |> filter_limit(params)
+    |> filter_below(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -41,6 +42,12 @@ defmodule Ippan.Ecto.Snapshot do
   defp filter_select(query) do
     select(query, [s], map(s, @select))
   end
+
+  defp filter_below(query, %{"below" => id}) do
+    where(query, [s], s.round_id < ^id)
+  end
+
+  defp filter_below(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [s], asc: s.round_id)
   defp sort(query, _), do: order_by(query, [s], desc: s.round_id)
