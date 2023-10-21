@@ -132,7 +132,7 @@ defmodule MinerWorker do
             end
         end
 
-      body = [hash, type, arg_key, from, nonce, args, size], acc ->
+      [hash, type, arg_key, from, nonce, args, size], acc ->
         case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
           :error ->
             acc + 1

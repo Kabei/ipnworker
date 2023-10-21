@@ -211,17 +211,17 @@ defmodule Ippan.TxHandler do
   defmacro insert_deferred do
     quote location: :keep do
       key = {var!(type), var!(arg_key)}
-      # body = [hash, account_id, validator_id, args, size, block_id]
+      body = [var!(hash), var!(from), var!(validator), var!(args), var!(size), var!(block_id)]
 
       case :ets.lookup(:dtx, key) do
         [] ->
-          :ets.insert(:dtx, {key, var!(body)})
+          :ets.insert(:dtx, {key, body})
 
         [{_msg_key, [xhash | _rest] = xbody}] ->
           xblock_id = List.last(xbody)
 
           if var!(hash) < xhash or (var!(hash) == xhash and var!(block_id) < xblock_id) do
-            :ets.insert(:dtx, {key, var!(body)})
+            :ets.insert(:dtx, {key, body})
           else
             false
           end
