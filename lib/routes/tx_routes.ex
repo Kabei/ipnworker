@@ -16,8 +16,13 @@ defmodule Ipnworker.TxRoutes do
     |> send_json()
   end
 
-  get "/:block/:hash" do
-    Tx.one(block, hash)
+  get "/:block/:ix" do
+    Tx.one(block, ix)
+    |> send_json()
+  end
+
+  get "/:creator/:height/:hash" do
+    Tx.one(creator, height, hash)
     |> send_json()
   end
 

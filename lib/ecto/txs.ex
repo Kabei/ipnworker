@@ -1,6 +1,7 @@
 defmodule Ippan.Ecto.Tx do
   use Ecto.Schema
   import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
+  alias Ippan.Ecto.Block
   alias Ippan.Utils
   alias Ipnworker.Repo
   alias __MODULE__
@@ -30,10 +31,27 @@ defmodule Ippan.Ecto.Tx do
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
-  def one(block_id, hash16) do
+  def one(block_id, ix) do
+    from(tx in Tx, where: tx.ix == ^ix and tx.block_id == ^block_id, limit: 1)
+    |> filter_select()
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      x -> fun(x)
+    end
+  end
+
+  def one(vid, height, hash16) do
     hash = Base.decode16!(hash16, case: :mixed)
 
-    from(tx in Tx, where: tx.block_id == ^block_id and tx.hash == ^hash, limit: 1)
+    from(b in Block,
+      join: tx in Tx,
+      on: tx.block_id == b.id,
+      where:
+        b.creator == ^vid and b.height == ^height and
+          tx.hash == ^hash,
+      limit: 1
+    )
     |> filter_select()
     |> Repo.one()
     |> case do
