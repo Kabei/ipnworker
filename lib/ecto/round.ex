@@ -24,7 +24,7 @@ defmodule Ippan.Ecto.Round do
     field(:extras, :binary)
   end
 
-  @select ~w(id hash prev creator signature coinbase reward count tx_count size reason)a
+  @select ~w(id hash prev creator signature coinbase reward count tx_count size status)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
