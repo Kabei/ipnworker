@@ -1,5 +1,6 @@
 defmodule Ippan.ClusterNodes do
   alias Ippan.{Node, Network, BlockHandler, TxHandler, Round, Validator}
+  alias Ipnworker.NodeSync
   require Ippan.{Node, Validator, Round, TxHandler}
   require Sqlite
   require BalanceStore
@@ -67,15 +68,22 @@ defmodule Ippan.ClusterNodes do
     test = System.get_env("test")
 
     if is_nil(test) do
-      miner = :persistent_term.get(:miner)
+      spawn(fn ->
+        miner = :persistent_term.get(:miner)
 
-      case Node.fetch(miner) do
-        nil ->
-          :ok
+        case Node.fetch(miner) do
+          nil ->
+            :ok
 
-        node ->
-          connect_async(Node.list_to_map(node))
-      end
+          node ->
+            connect(Node.list_to_map(node))
+            mow = :persistent_term.get(:mow)
+
+            if mow do
+              NodeSync.start_link(nil)
+            end
+        end
+      end)
     end
   end
 
@@ -135,17 +143,17 @@ defmodule Ippan.ClusterNodes do
 
   def handle_message(_event, _data, _state), do: :ok
 
-  defp build_round(
-         round = %{
-           id: round_id,
-           blocks: blocks,
-           creator: round_creator_id,
-           status: status,
-           tx_count: tx_count
-         },
-         hostname,
-         pg_conn
-       ) do
+  def build_round(
+        round = %{
+          id: round_id,
+          blocks: blocks,
+          creator: round_creator_id,
+          status: status,
+          tx_count: tx_count
+        },
+        hostname,
+        pg_conn
+      ) do
     IO.inspect("step 0")
     db_ref = :persistent_term.get(:main_conn)
     writer = pg_conn != nil
@@ -161,20 +169,7 @@ defmodule Ippan.ClusterNodes do
       IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
-      # blocks_len = length(blocks)
-
-      # if blocks_len != 0 do
-      #   next_block_id = :persistent_term.get(:block_id, 0) + blocks_len - 1
-      #   :persistent_term.put(:block_id, next_block_id)
-      # end
-
       for block = %{"creator" => block_creator_id} <- blocks do
-        # if vid == block_creator_id do
-        #   if :persistent_term.get(:height, 0) < height do
-        #     :persistent_term.put(:height, height)
-        #   end
-        # end
-
         Task.async(fn ->
           creator = Validator.get(block_creator_id)
 
