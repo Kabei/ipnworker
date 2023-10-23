@@ -55,7 +55,6 @@ defmodule MinerWorker do
       IO.inspect("Bstep 1")
       # balances = {DetsPlux.get(:balance), DetsPlux.tx(:balance)}
       # wallets = {DetsPlux.get(:wallet), DetsPlux.tx(:wallet)}
-      nonce_dets = DetsPlux.get(:nonce)
 
       # Request verify a remote blockfile
       decode_path = Block.decode_path(creator_id, height)
@@ -78,7 +77,7 @@ defmodule MinerWorker do
       if version != version_file or version != @version,
         do: raise(IppanError, "Block file version failed")
 
-      run_miner(round_id, block_id, creator, txs, nonce_dets, pg_conn, writer)
+      run_miner(round_id, block_id, creator, txs, pg_conn, writer)
 
       {:reply, :ok, state}
     rescue
@@ -108,7 +107,8 @@ defmodule MinerWorker do
     end
   end
 
-  defp run_miner(round_id, block_id, validator, transactions, nonce_dets, pg_conn, writer) do
+  defp run_miner(round_id, block_id, validator, transactions, pg_conn, writer) do
+    nonce_dets = DetsPlux.get(:nonce)
     nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
     counter_ref = :counters.new(1, [])
 
@@ -136,6 +136,7 @@ defmodule MinerWorker do
             json_type(),
             @json.encode!(args)
           ])
+          |> IO.inspect()
 
           :counters.add(counter_ref, 1, 1)
         end
@@ -163,6 +164,7 @@ defmodule MinerWorker do
             json_type(),
             @json.encode!(args)
           ])
+          |> IO.inspect()
 
           :counters.add(counter_ref, 1, 1)
         end
