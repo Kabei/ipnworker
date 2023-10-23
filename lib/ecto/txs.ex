@@ -66,40 +66,35 @@ defmodule Ippan.Ecto.Tx do
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block_id)
   defp sort(query, _), do: order_by(query, [tx], desc: tx.block_id)
 
-  defp fun(x = %{args: nil, hash: hash, ctype: ctype, status: status}) do
-    %{x | hash: Utils.encode16(hash), ctype: ctype(ctype), status: status_text(status)}
+  defp fun(x = %{args: nil, hash: hash, ctype: ctype}) do
+    %{x | hash: Utils.encode16(hash), ctype: ctype(ctype)}
   end
 
-  defp fun(x = %{args: args, ctype: 0, hash: hash, status: status}) do
-    %{x | hash: Utils.encode16(hash), ctype: @craw, args: args, status: status_text(status)}
+  defp fun(x = %{args: args, ctype: 0, hash: hash}) do
+    %{x | hash: Utils.encode16(hash), ctype: @craw, args: args}
   end
 
-  defp fun(x = %{args: args, ctype: 1, hash: hash, status: status}) do
+  defp fun(x = %{args: args, ctype: 1, hash: hash}) do
     %{
       x
       | hash: Utils.encode16(hash),
         ctype: @cjson,
-        args: @json.decode!(args),
-        status: status_text(status)
+        args: @json.decode!(args)
     }
   end
 
-  defp fun(x = %{args: args, ctype: 2, hash: hash, status: status}) do
+  defp fun(x = %{args: args, ctype: 2, hash: hash}) do
     %{
       x
       | hash: Utils.encode16(hash),
         ctype: @ccbor,
-        args: CBOR.Decoder.decode(args) |> elem(0),
-        status: status_text(status)
+        args: CBOR.Decoder.decode(args) |> elem(0)
     }
   end
 
   defp ctype(0), do: @craw
   defp ctype(1), do: @cjson
   defp ctype(2), do: @ccbor
-
-  def status_text(0), do: "sucess"
-  def status_text(_), do: "cancelled"
 
   defmacro binary_type do
     quote do
