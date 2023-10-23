@@ -68,22 +68,23 @@ defmodule Ippan.ClusterNodes do
     test = System.get_env("test")
 
     if is_nil(test) do
-      spawn(fn ->
-        miner = :persistent_term.get(:miner)
+      IO.inspect("here go")
 
-        case Node.fetch(miner) do
-          nil ->
-            :ok
+      miner = :persistent_term.get(:miner)
 
-          node ->
-            connect(Node.list_to_map(node))
-            mow = :persistent_term.get(:mow)
+      case Node.fetch(miner) do
+        nil ->
+          :ok
 
-            if mow do
-              NodeSync.start_link(nil)
-            end
-        end
-      end)
+        node ->
+          connect(Node.list_to_map(node))
+
+          mow = :persistent_term.get(:mow)
+
+          if mow do
+            NodeSync.start_link(nil)
+          end
+      end
     end
   end
 
