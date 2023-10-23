@@ -50,9 +50,9 @@ defmodule Ippan.Ecto.Tx do
       where:
         b.creator == ^vid and b.height == ^height and
           tx.hash == ^hash,
+      select: map(tx, @select),
       limit: 1
     )
-    |> filter_select()
     |> Repo.one()
     |> case do
       nil -> nil
