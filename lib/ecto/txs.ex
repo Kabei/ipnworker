@@ -19,13 +19,14 @@ defmodule Ippan.Ecto.Tx do
     field(:hash, :binary)
     field(:type, :integer)
     field(:from, :binary)
+    field(:status, :integer)
     field(:nonce, :integer)
     field(:size, :integer)
     field(:ctype, :integer)
     field(:args, :binary)
   end
 
-  @select ~w(ix block_id hash type from nonce size ctype args)a
+  @select ~w(ix block_id hash type from status nonce size ctype args)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -65,25 +66,40 @@ defmodule Ippan.Ecto.Tx do
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block_id)
   defp sort(query, _), do: order_by(query, [tx], desc: tx.block_id)
 
-  defp fun(x = %{args: nil, hash: hash, ctype: ctype}) do
-    %{x | hash: Utils.encode16(hash), ctype: ctype(ctype)}
+  defp fun(x = %{args: nil, hash: hash, ctype: ctype, status: status}) do
+    %{x | hash: Utils.encode16(hash), ctype: ctype(ctype), status: status_text(status)}
   end
 
-  defp fun(x = %{args: args, ctype: 0, hash: hash}) do
-    %{x | hash: Utils.encode16(hash), ctype: @craw, args: args}
+  defp fun(x = %{args: args, ctype: 0, hash: hash, status: status}) do
+    %{x | hash: Utils.encode16(hash), ctype: @craw, args: args, status: status_text(status)}
   end
 
-  defp fun(x = %{args: args, ctype: 1, hash: hash}) do
-    %{x | hash: Utils.encode16(hash), ctype: @cjson, args: @json.decode!(args)}
+  defp fun(x = %{args: args, ctype: 1, hash: hash, status: status}) do
+    %{
+      x
+      | hash: Utils.encode16(hash),
+        ctype: @cjson,
+        args: @json.decode!(args),
+        status: status_text(status)
+    }
   end
 
-  defp fun(x = %{args: args, ctype: 2, hash: hash}) do
-    %{x | hash: Utils.encode16(hash), ctype: @ccbor, args: CBOR.Decoder.decode(args) |> elem(0)}
+  defp fun(x = %{args: args, ctype: 2, hash: hash, status: status}) do
+    %{
+      x
+      | hash: Utils.encode16(hash),
+        ctype: @ccbor,
+        args: CBOR.Decoder.decode(args) |> elem(0),
+        status: status_text(status)
+    }
   end
 
   defp ctype(0), do: @craw
   defp ctype(1), do: @cjson
   defp ctype(2), do: @ccbor
+
+  def status_text(0), do: "sucess"
+  def status_text(_), do: "cancelled"
 
   defmacro binary_type do
     quote do
