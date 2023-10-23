@@ -14,23 +14,12 @@ defmodule Ipnworker.FileRoutes do
 
   get "/block/:vid/:height" do
     base_dir = :persistent_term.get(:block_dir)
-    block_path = Path.join([base_dir, "#{vid}.#{height}.#{@block_extension}"])
+    filename = "#{vid}.#{height}.#{@block_extension}"
+    block_path = Path.join([base_dir, filename])
 
     if File.exists?(block_path) do
       conn
-      |> put_resp_content_type("application/octet-stream")
-      |> send_file(200, block_path)
-    else
-      send_resp(conn, 404, "")
-    end
-  end
-
-  get "/decode/:vid/:height" do
-    base_dir = :persistent_term.get(:decode_dir)
-    block_path = Path.join([base_dir, "#{vid}.#{height}.#{@decode_extension}"])
-
-    if File.exists?(block_path) do
-      conn
+      |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
       |> put_resp_content_type("application/octet-stream")
       |> send_file(200, block_path)
     else
@@ -42,6 +31,7 @@ defmodule Ipnworker.FileRoutes do
         case Download.await(url, block_path) do
           :ok ->
             conn
+            |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
             |> put_resp_content_type("application/octet-stream")
             |> send_file(200, block_path)
 
@@ -51,6 +41,20 @@ defmodule Ipnworker.FileRoutes do
       else
         send_resp(conn, 404, "")
       end
+    end
+  end
+
+  get "/decode/:vid/:height" do
+    base_dir = :persistent_term.get(:decode_dir)
+    filename = "#{vid}.#{height}.#{@decode_extension}"
+    block_path = Path.join([base_dir, filename])
+
+    if File.exists?(block_path) do
+      conn
+      |> put_resp_content_type("application/octet-stream")
+      |> send_file(200, block_path)
+    else
+      send_resp(conn, 404, "")
     end
   end
 

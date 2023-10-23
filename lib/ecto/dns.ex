@@ -1,7 +1,7 @@
 defmodule Ippan.Ecto.DNS do
   alias Ippan.{DNS, Utils}
   alias Ipnworker.Repo
-  import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
+  import Ecto.Query, only: [from: 2, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
   require DNS
@@ -17,9 +17,9 @@ defmodule Ippan.Ecto.DNS do
     |> fun()
   end
 
-  def all(params) do
+  def all(domain, params) do
     q =
-      from(@table)
+      from(d in @table, where: d.domain == ^domain)
       |> filter_offset(params)
       |> filter_limit(params)
       |> filter_type(params)

@@ -14,6 +14,7 @@ defmodule Ippan.Block do
           count: non_neg_integer(),
           rejected: non_neg_integer(),
           size: non_neg_integer(),
+          status: integer(),
           vsn: non_neg_integer()
         }
 
@@ -31,6 +32,7 @@ defmodule Ippan.Block do
     :prev,
     :signature,
     :timestamp,
+    :status,
     count: 0,
     rejected: 0,
     size: 0,
@@ -39,7 +41,7 @@ defmodule Ippan.Block do
 
   @spec fields :: [binary()]
   def fields do
-    ~w(id creator height round hash hashfile prev signature timestamp count rejected size vsn)
+    ~w(id creator height round hash hashfile prev signature timestamp count rejected size status vsn)
   end
 
   @impl true
@@ -57,6 +59,7 @@ defmodule Ippan.Block do
       x.count,
       x.rejected,
       x.size,
+      x.status,
       x.vsn
     ]
   end
@@ -85,6 +88,7 @@ defmodule Ippan.Block do
         count,
         rejected,
         size,
+        status,
         vsn
       ]) do
     %{
@@ -100,6 +104,7 @@ defmodule Ippan.Block do
       count: count,
       rejected: rejected,
       size: size,
+      status: status,
       vsn: vsn
     }
   end
@@ -165,6 +170,12 @@ defmodule Ippan.Block do
   def sign(hash) do
     privkey = :persistent_term.get(:privkey)
     Cafezinho.Impl.sign(hash, privkey)
+  end
+
+  def cancel(block, status) when status > 0 do
+    block
+    |> Map.put(:status, status)
+    |> Map.put(:rejected, -1)
   end
 
   def hashes_and_count_txs_and_size(blocks) do

@@ -5,19 +5,27 @@ defmodule Ippan.Ecto.Tx do
   alias Ipnworker.Repo
   alias __MODULE__
 
+  @json Application.compile_env(:ipnworker, :json)
+
+  @craw "application/octet-stream"
+  @cjson "application/json"
+  @ccbor "application/cbor"
+
   @primary_key false
   @schema_prefix "history"
   schema "txs" do
+    field(:ix, :integer)
     field(:block_id, :integer)
     field(:hash, :binary)
     field(:type, :integer)
     field(:from, :binary)
     field(:nonce, :integer)
     field(:size, :integer)
-    field(:args, :string)
+    field(:ctype, :integer)
+    field(:args, :binary)
   end
 
-  @select ~w(block_id hash type from nonce size args)a
+  @select ~w(ix block_id hash type from nonce size ctype args)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -57,7 +65,41 @@ defmodule Ippan.Ecto.Tx do
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block_id)
   defp sort(query, _), do: order_by(query, [tx], desc: tx.block_id)
 
-  defp fun(x = %{hash: hash}) do
-    %{x | hash: Utils.encode16(hash)}
+  defp fun(x = %{args: nil, hash: hash, ctype: ctype}) do
+    %{x | hash: Utils.encode16(hash), ctype: ctype(ctype)}
+  end
+
+  defp fun(x = %{args: args, ctype: 0, hash: hash}) do
+    %{x | hash: Utils.encode16(hash), ctype: @craw, args: args}
+  end
+
+  defp fun(x = %{args: args, ctype: 1, hash: hash}) do
+    %{x | hash: Utils.encode16(hash), ctype: @cjson, args: @json.decode!(args)}
+  end
+
+  defp fun(x = %{args: args, ctype: 2, hash: hash}) do
+    %{x | hash: Utils.encode16(hash), ctype: @ccbor, args: CBOR.Decoder.decode(args) |> elem(0)}
+  end
+
+  defp ctype(0), do: @craw
+  defp ctype(1), do: @cjson
+  defp ctype(2), do: @ccbor
+
+  defmacro binary_type do
+    quote do
+      0
+    end
+  end
+
+  defmacro json_type do
+    quote do
+      1
+    end
+  end
+
+  defmacro cbor_type do
+    quote do
+      2
+    end
   end
 end

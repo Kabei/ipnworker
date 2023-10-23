@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "count" BIGINT,
   "tx_count" BIGINT,
   "size" BIGINT,
-  "reason" INTEGER,
+  "status" INTEGER,
   "blocks" BYTEA,
   "extras" BYTEA
 );
@@ -42,18 +42,22 @@ CREATE TABLE IF NOT EXISTS history.blocks(
   "count" INTEGER DEFAULT 0,
   "rejected" INTEGER,
   "size" BIGINT DEFAULT 0,
+  "status" INTEGER,
   "vsn" INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS history.txs(
+  "ix" integer,
   "block_id" BIGINT,
   "hash" BYTEA NOT NULL,
   "type" INTEGER NOT NULL,
   "from" BYTEA,
+  "status" INTEGER,
   "nonce" BIGINT,
   "size" INTEGER,
-  "args" TEXT,
-  PRIMARY KEY("block_id", "hash")
+  "ctype" INTEGER,
+  "args" BYTEA,
+  PRIMARY KEY("ix", "block_id")
 );
 
 CREATE TABLE IF NOT EXISTS history.balance(
@@ -64,7 +68,7 @@ CREATE TABLE IF NOT EXISTS history.balance(
   PRIMARY KEY("id", "token")
 );
 
-CREATE INDEX IF NOT EXISTS txs_block_id_idx ON history.txs("block_id");
+CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
 
 DO $$
 BEGIN

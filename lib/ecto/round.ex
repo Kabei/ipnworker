@@ -19,7 +19,7 @@ defmodule Ippan.Ecto.Round do
     field(:count, :integer)
     field(:tx_count, :integer)
     field(:size, :integer)
-    field(:reason, :integer)
+    field(:status, :integer)
     field(:blocks, :binary)
     field(:extras, :binary)
   end

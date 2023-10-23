@@ -1,8 +1,8 @@
 defmodule Ippan.ClusterNodes do
   alias Ippan.{Node, Network, BlockHandler, TxHandler, Round, Validator}
+  require Ippan.{Node, Validator, Round, TxHandler}
   require Sqlite
   require BalanceStore
-  require Ippan.{Node, Validator, Round, TxHandler}
 
   @pubsub :pubsub
   @token Application.compile_env(:ipnworker, :token)
@@ -140,7 +140,7 @@ defmodule Ippan.ClusterNodes do
            id: round_id,
            blocks: blocks,
            creator: round_creator_id,
-           reason: reason,
+           status: status,
            tx_count: tx_count
          },
          hostname,
@@ -206,7 +206,7 @@ defmodule Ippan.ClusterNodes do
       run_reward(round, round_creator, balance_pid, balance_tx)
       run_jackpot(round, db_ref, pg_conn)
 
-      if reason > 0 do
+      if status > 0 do
         Validator.delete(round_creator_id)
       end
 

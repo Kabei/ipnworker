@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS block(
   count INTEGER DEFAULT 0,
   rejected INTEGER,
   size BIGINT DEFAULT 0,
+  status INTEGER,
   vsn INTEGER,
   UNIQUE(creator, height)
 ) WITHOUT ROWID;
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS round(
   count BIGINT,
   tx_count BIGINT,
   size BIGINT,
-  reason INTEGER,
+  status INTEGER,
   blocks BLOB,
   extra BLOB
 ) WITHOUT ROWID;

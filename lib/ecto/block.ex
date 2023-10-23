@@ -21,10 +21,11 @@ defmodule Ippan.Ecto.Block do
     field(:count, :integer)
     field(:rejected, :integer)
     field(:size, :integer)
+    field(:status, :integer)
     field(:vsn, :integer)
   end
 
-  @select ~w(id creator height hash prev hashfile signature round timestamp count rejected size vsn)a
+  @select ~w(id creator height hash prev hashfile signature round timestamp count rejected size status vsn)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 

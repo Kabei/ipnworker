@@ -10,9 +10,8 @@ defmodule Ipnworker.DnsRoutes do
   plug(:match)
   plug(:dispatch)
 
-  get "/all" do
-    fetch_query(conn)
-    |> DNS.all()
+  get "/:domain" do
+    DNS.all(domain, fetch_query(conn))
     |> send_json()
   end
 
