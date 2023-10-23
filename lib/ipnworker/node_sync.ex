@@ -32,7 +32,7 @@ defmodule Ipnworker.NodeSync do
 
       if diff > 0 do
         IO.inspect("init")
-        init_round = if local_round_id == -1, do: 0, else: local_round_id
+        init_round = max(local_round_id, 0)
 
         {:ok, %{db_ref: db_ref, miner: node, round: init_round, target: remote_round_id},
          {:continue, :init}}
