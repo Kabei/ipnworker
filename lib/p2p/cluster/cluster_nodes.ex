@@ -276,7 +276,7 @@ defmodule Ippan.ClusterNodes do
 
       pid ->
         case Process.alive?(pid) do
-          true -> :ets.insert(:queue, {id, round})
+          true -> :ets.insert(:queue, {round.id, round})
           false -> false
         end
     end
