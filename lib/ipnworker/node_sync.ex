@@ -90,14 +90,14 @@ defmodule Ipnworker.NodeSync do
       build(round, hostname)
     end)
 
-    if round_id == target_id do
+    if round_id >= target_id do
       if :ets.info(ets_queue, :size) > 0 do
         {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
       else
         {:stop, :normal, state}
       end
     else
-      {:noreply, %{state | offset: offset + @offset, round: round_id + 1}, {:continue, :init}}
+      {:noreply, %{state | offset: offset + @offset, round: round_id + @offset}, {:continue, :init}}
     end
   end
 
