@@ -40,6 +40,7 @@ defmodule Ipnworker.NodeSync do
         IO.inspect("init sync")
         init_round = max(local_round_id, 0)
         ets_queue = :ets.new(:queue, @ets_opts)
+        :persistent_term.put(:node_sync, self())
 
         {:ok,
          %{
@@ -105,6 +106,11 @@ defmodule Ipnworker.NodeSync do
   def handle_cast({:round, %{id: id} = round}, state = %{queue: ets_queue}) do
     :ets.insert(ets_queue, {id, round})
     {:noreply, state}
+  end
+
+  @impl true
+  def terminate(_reason, _state) do
+    :persistent_term.erase(:node_sync)
   end
 
   defp build(round, hostname) do

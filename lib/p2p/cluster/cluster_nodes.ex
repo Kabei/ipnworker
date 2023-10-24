@@ -270,9 +270,15 @@ defmodule Ippan.ClusterNodes do
   end
 
   defp node_syncing?(round) do
-    case Process.alive?(NodeSync) do
-      true -> GenServer.cast(NodeSync, {:round, round})
-      false -> false
+    case :persistent_term.get(:node_sync, nil) do
+      nil ->
+        false
+
+      pid ->
+        case Process.alive?(pid) do
+          true -> GenServer.cast(NodeSync, {:round, round})
+          false -> false
+        end
     end
   end
 end
