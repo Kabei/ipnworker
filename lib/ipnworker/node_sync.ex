@@ -100,7 +100,7 @@ defmodule Ipnworker.NodeSync do
     IO.inspect("Queue | round: ##{key}")
     [{_key, round}] = :ets.lookup(ets_queue, key)
     build(round, hostname)
-    :ets.delete(key)
+    :ets.delete(ets_queue, key)
 
     {:noreply, state, {:continue, {:next, :ets.next(ets_queue, key)}}}
   end
