@@ -15,6 +15,7 @@ defmodule Ipnworker.NodeSync do
     write_concurrency: true
   ]
 
+  @offset 50
   @opts timeout: 10_000, retry: 10
 
   def start_link(args) do
@@ -41,7 +42,7 @@ defmodule Ipnworker.NodeSync do
       if diff > 0 do
         IO.inspect("init sync")
         init_round = max(local_round_id, 0)
-        :ets.new(:queue, @ets_opts)
+        :ets.new(:sync, @ets_opts)
         :persistent_term.put(:node_sync, self())
 
         {:ok,
@@ -49,8 +50,10 @@ defmodule Ipnworker.NodeSync do
            db_ref: db_ref,
            node: node.id,
            hostname: node.hostname,
-           queue: :ets.whereis(:queue),
+           offset: 0,
+           queue: :ets.whereis(:sync),
            round: init_round,
+           starts: local_round_id + 1,
            target: remote_round_id
          }, {:continue, :init}}
       else
@@ -66,16 +69,26 @@ defmodule Ipnworker.NodeSync do
         state = %{
           hostname: hostname,
           node: node_id,
+          offset: offset,
+          starts: starts,
           round: round_id,
           target: target_id,
           queue: ets_queue
         }
       ) do
     IO.inspect("round: ##{round_id}")
-    {:ok, new_round} = ClusterNodes.call(node_id, "get_round", round_id)
-    round = MapUtil.to_atoms(new_round)
 
-    build(round, hostname)
+    {:ok, new_rounds} =
+      ClusterNodes.call(node_id, "get_rounds", %{
+        "limit" => @offset,
+        "offset" => offset,
+        "starts" => starts
+      })
+
+    Enum.each(new_rounds, fn new_round ->
+      round = MapUtil.to_atoms(new_round)
+      build(round, hostname)
+    end)
 
     if round_id == target_id do
       if :ets.info(ets_queue, :size) > 0 do
@@ -84,7 +97,7 @@ defmodule Ipnworker.NodeSync do
         {:stop, :normal, state}
       end
     else
-      {:noreply, %{state | round: round_id + 1}, {:continue, :init}}
+      {:noreply, %{state | offset: offset + @offset, round: round_id + 1}, {:continue, :init}}
     end
   end
 
@@ -105,16 +118,13 @@ defmodule Ipnworker.NodeSync do
     {:noreply, state, {:continue, {:next, :ets.next(ets_queue, key)}}}
   end
 
-  # @impl true
-  # def handle_cast({:round, round = %{id: id}}, state = %{queue: ets_queue}) do
-  #   :ets.insert(ets_queue, {id, round})
-  #   {:noreply, state}
-  # end
-
   @impl true
-  def terminate(_reason, _state) do
+  def terminate(_reason, %{queue: ets_queue}) do
     :persistent_term.erase(:node_sync)
+    :ets.delete(ets_queue)
   end
+
+  def terminate(_reason, _state), do: :ok
 
   defp build(round, hostname) do
     pgid = PgStore.pool()
