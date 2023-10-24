@@ -276,7 +276,7 @@ defmodule Ippan.ClusterNodes do
 
       pid ->
         case Process.alive?(pid) do
-          true -> GenServer.cast(NodeSync, {:round, round})
+          true -> GenServer.cast(pid, {:round, round})
           false -> false
         end
     end

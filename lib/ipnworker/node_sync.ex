@@ -98,12 +98,13 @@ defmodule Ipnworker.NodeSync do
     IO.inspect("Queue | round: ##{key}")
     [{_key, round}] = :ets.lookup(ets_queue, key)
     build(round, hostname)
+    :ets.delete(key)
 
     {:noreply, state, {:continue, {:next, :ets.next(ets_queue, key)}}}
   end
 
   @impl true
-  def handle_cast({:round, %{id: id} = round}, state = %{queue: ets_queue}) do
+  def handle_cast({:round, round = %{id: id}}, state = %{queue: ets_queue}) do
     :ets.insert(ets_queue, {id, round})
     {:noreply, state}
   end
