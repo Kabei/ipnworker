@@ -31,7 +31,7 @@ defmodule Ipnworker.NodeSync do
 
     if is_nil(node) do
       IO.inspect("no init")
-      {:stop, :normal, nil}
+      {:stop, :normal}
     else
       {:ok, {remote_round_id, _hash}} =
         ClusterNodes.call(node.id, "last_round", nil, @opts)
@@ -55,7 +55,7 @@ defmodule Ipnworker.NodeSync do
          }, {:continue, :init}}
       else
         IO.inspect("No Sync")
-        {:stop, :normal, nil}
+        {:stop, :normal}
       end
     end
   end
@@ -105,11 +105,11 @@ defmodule Ipnworker.NodeSync do
     {:noreply, state, {:continue, {:next, :ets.next(ets_queue, key)}}}
   end
 
-  @impl true
-  def handle_cast({:round, round = %{id: id}}, state = %{queue: ets_queue}) do
-    :ets.insert(ets_queue, {id, round})
-    {:noreply, state}
-  end
+  # @impl true
+  # def handle_cast({:round, round = %{id: id}}, state = %{queue: ets_queue}) do
+  #   :ets.insert(ets_queue, {id, round})
+  #   {:noreply, state}
+  # end
 
   @impl true
   def terminate(_reason, _state) do
