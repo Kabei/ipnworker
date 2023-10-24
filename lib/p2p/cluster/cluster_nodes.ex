@@ -122,23 +122,26 @@ defmodule Ippan.ClusterNodes do
   """
   def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
     IO.inspect("handle 1")
-    mow = :persistent_term.get(:mow)
     round = MapUtil.to_atoms(msg_round)
 
-    if mow do
-      pgid = PgStore.pool()
+    if node_syncing?(round) != :ok do
+      mow = :persistent_term.get(:mow)
 
-      IO.inspect("handle 2")
+      if mow do
+        pgid = PgStore.pool()
 
-      Postgrex.transaction(
-        pgid,
-        fn conn ->
-          build_round(round, hostname, conn)
-        end,
-        timeout: :infinity
-      )
-    else
-      build_round(round, hostname, nil)
+        IO.inspect("handle 2")
+
+        Postgrex.transaction(
+          pgid,
+          fn conn ->
+            build_round(round, hostname, conn)
+          end,
+          timeout: :infinity
+        )
+      else
+        build_round(round, hostname, nil)
+      end
     end
   end
 
@@ -264,5 +267,12 @@ defmodule Ippan.ClusterNodes do
       [id, token] = String.split(key, "|", parts: 2)
       PgStore.upsert_balance(pg_conn, [id, token, balance, lock])
     end)
+  end
+
+  defp node_syncing?(round) do
+    case Process.alive?(NodeSync) do
+      true -> GenServer.cast(NodeSync, {:round, round})
+      false -> false
+    end
   end
 end

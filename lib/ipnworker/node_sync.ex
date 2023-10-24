@@ -7,6 +7,12 @@ defmodule Ipnworker.NodeSync do
   require Sqlite
   require Logger
 
+  @ets_opts [
+    :ordered_set,
+    read_concurrency: true,
+    write_concurrency: true
+  ]
+
   @opts timeout: 10_000, retry: 10
 
   def start_link(args) do
@@ -31,13 +37,21 @@ defmodule Ipnworker.NodeSync do
       diff = remote_round_id - local_round_id
 
       if diff > 0 do
-        IO.inspect("init")
+        IO.inspect("init sync")
         init_round = max(local_round_id, 0)
+        ets_queue = :ets.new(:queue, @ets_opts)
 
-        {:ok, %{db_ref: db_ref, miner: node, round: init_round, target: remote_round_id},
-         {:continue, :init}}
+        {:ok,
+         %{
+           db_ref: db_ref,
+           node: node.id,
+           hostname: node.hostname,
+           queue: ets_queue,
+           round: init_round,
+           target: remote_round_id
+         }, {:continue, :init}}
       else
-        IO.inspect("fail")
+        IO.inspect("No Sync")
         {:stop, :normal, nil}
       end
     end
@@ -46,18 +60,26 @@ defmodule Ipnworker.NodeSync do
   @impl true
   def handle_continue(
         :init,
-        state = %{db_ref: db_ref, miner: node, round: round_id, target: target_id}
+        state = %{
+          hostname: hostname,
+          node: node_id,
+          round: round_id,
+          target: target_id,
+          queue: ets_queue
+        }
       ) do
     IO.inspect("round: ##{round_id}")
-    {:ok, new_round} = ClusterNodes.call(node.id, "get_round", round_id)
+    {:ok, new_round} = ClusterNodes.call(node_id, "get_round", round_id)
+    round = MapUtil.to_atoms(new_round)
 
-    IO.inspect(new_round)
-
-    build(new_round, node.hostname)
+    build(round, hostname)
 
     if round_id == target_id do
-      Sqlite.sync(db_ref)
-      {:stop, :normal, state}
+      if :ets.info(ets_queue, :size) > 0 do
+        {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
+      else
+        {:stop, :normal, state}
+      end
     else
       {:noreply, %{state | round: round_id + 1}, {:continue, :init}}
     end
@@ -67,17 +89,25 @@ defmodule Ipnworker.NodeSync do
     {:stop, :normal, state}
   end
 
+  def handle_continue({:next, :"$end_of_table"}, state) do
+    {:stop, :normal, state}
+  end
+
+  def handle_continue({:next, key}, state = %{hostname: hostname, queue: ets_queue}) do
+    IO.inspect("Queue | round: ##{key}")
+    [{_key, round}] = :ets.lookup(ets_queue, key)
+    build(round, hostname)
+
+    {:noreply, state, {:continue, {:next, :ets.next(ets_queue, key)}}}
+  end
+
   @impl true
-  def terminate(_reason, nil) do
-    Logger.debug("NodeSync: Nothing")
+  def handle_cast({:round, %{id: id} = round}, state = %{queue: ets_queue}) do
+    :ets.insert(ets_queue, {id, round})
+    {:noreply, state}
   end
 
-  def terminate(_reason, %{round: round_id, target: target_id}) do
-    Logger.debug("[NodeSync] | Success: #{target_id == round_id}")
-  end
-
-  defp build(new_round, hostname) do
-    round = MapUtil.to_atoms(new_round)
+  defp build(round, hostname) do
     pgid = PgStore.pool()
 
     Postgrex.transaction(
