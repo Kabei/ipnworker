@@ -124,7 +124,7 @@ defmodule Ippan.ClusterNodes do
     IO.inspect("handle 1")
     round = MapUtil.to_atoms(msg_round)
 
-    if node_syncing?(round) != :ok do
+    unless node_syncing?(round) do
       mow = :persistent_term.get(:mow)
 
       if mow do
@@ -276,7 +276,7 @@ defmodule Ippan.ClusterNodes do
 
       pid ->
         case Process.alive?(pid) do
-          true -> GenServer.cast(pid, {:round, round})
+          true -> :ets.insert(:queue, {id, round})
           false -> false
         end
     end

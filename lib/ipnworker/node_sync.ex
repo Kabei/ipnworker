@@ -9,6 +9,8 @@ defmodule Ipnworker.NodeSync do
 
   @ets_opts [
     :ordered_set,
+    :named_table,
+    :public,
     read_concurrency: true,
     write_concurrency: true
   ]
@@ -39,7 +41,7 @@ defmodule Ipnworker.NodeSync do
       if diff > 0 do
         IO.inspect("init sync")
         init_round = max(local_round_id, 0)
-        ets_queue = :ets.new(:queue, @ets_opts)
+        :ets.new(:queue, @ets_opts)
         :persistent_term.put(:node_sync, self())
 
         {:ok,
@@ -47,7 +49,7 @@ defmodule Ipnworker.NodeSync do
            db_ref: db_ref,
            node: node.id,
            hostname: node.hostname,
-           queue: ets_queue,
+           queue: :ets.whereis(:queue),
            round: init_round,
            target: remote_round_id
          }, {:continue, :init}}
