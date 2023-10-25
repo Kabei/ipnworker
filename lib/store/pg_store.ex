@@ -13,6 +13,7 @@ defmodule PgStore do
   # DB Pool connexions
   @pool :pg_pool
   @repo Ipnworker.Repo
+  @json Application.compile_env(:ipnworker, :json)
 
   def child_spec(_args) do
     %{
@@ -66,7 +67,11 @@ defmodule PgStore do
   end
 
   def insert_tx(conn, params) do
-    Postgrex.query(conn, query_parse("EXECUTE insert_tx($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", params), [])
+    Postgrex.query(
+      conn,
+      query_parse("EXECUTE insert_tx($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", params),
+      []
+    )
   end
 
   def insert_block(conn, params) do
@@ -167,13 +172,16 @@ defmodule PgStore do
           "NULL"
 
         is_binary(value) ->
-          case text?(value) do
+          case String.valid?(value) do
             false ->
               bytea(value)
 
             true ->
               "'#{String.replace(value, "'", "''")}'"
           end
+
+        is_map(value) ->
+          "'#{String.replace(@json.encode!(value), "'", "''")}'"
 
         true ->
           "#{value}"

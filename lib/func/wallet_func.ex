@@ -3,7 +3,7 @@ defmodule Ippan.Func.Wallet do
   require Validator
   require Sqlite
 
-  def subscribe(
+  def new(
         %{id: account_id, validator: validator},
         pubkey,
         validator_id,
@@ -35,15 +35,10 @@ defmodule Ippan.Func.Wallet do
     end
   end
 
-  def unsubscribe(%{validator: validator}, new_validator_id) do
-    db_ref = :persistent_term.get(:main_conn)
-
+  def subscribe(%{validator: validator}, validator_id) do
     cond do
-      validator.id == new_validator_id ->
+      validator_id == validator.id ->
         raise IppanError, "Already subscribe"
-
-      not Validator.exists?(new_validator_id) ->
-        raise IppanError, "Validator not exists"
 
       true ->
         :ok
