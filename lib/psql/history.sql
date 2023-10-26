@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS history.balance(
 CREATE TABLE IF NOT EXISTS history.payments(
   "ix" INTEGER,
   "block" BIGINT,
+  "type" INTEGER,
   "from" BYTEA,
   "to" BYTEA,
   "token" BYTEA,

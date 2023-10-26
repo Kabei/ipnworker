@@ -9,13 +9,14 @@ defmodule Ippan.Ecto.Payments do
   schema "payments" do
     field(:ix, :integer)
     field(:block, :integer)
+    field(:type, :integer)
     field(:from, :binary)
     field(:to, :binary)
     field(:token, :binary)
     field(:amount, :integer)
   end
 
-  @select ~w(ix block from to token amount)a
+  @select ~w(ix block type from to token amount)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
