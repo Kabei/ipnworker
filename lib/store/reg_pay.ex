@@ -12,7 +12,7 @@ defmodule RegPay do
   defmacro init do
     if @master do
       quote do
-        tid = :ets.new(:payment, [:bag, :public, read_concurrency: true, write_concurrency: true])
+        tid = :ets.new(:payment, [:duplicate_bag, :public, read_concurrency: true, write_concurrency: true])
         :persistent_term.put(:payment, tid)
       end
     end
