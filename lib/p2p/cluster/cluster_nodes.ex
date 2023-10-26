@@ -8,6 +8,7 @@ defmodule Ippan.ClusterNodes do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @pubsub :pubsub
+  @master Application.compile_env(@app, :master)
 
   use Network,
     app: @app,
@@ -161,7 +162,6 @@ defmodule Ippan.ClusterNodes do
       ) do
     IO.inspect("step 0")
     db_ref = :persistent_term.get(:main_conn)
-    writer = pg_conn != nil
 
     unless Round.exists?(round_id) do
       vid = :persistent_term.get(:vid)
@@ -220,7 +220,7 @@ defmodule Ippan.ClusterNodes do
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
       IO.inspect("step 4")
 
-      if writer do
+      if @master do
         PgStore.insert_round(pg_conn, round_encode)
         |> IO.inspect()
       end

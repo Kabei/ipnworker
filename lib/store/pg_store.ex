@@ -14,6 +14,7 @@ defmodule PgStore do
   # DB Pool connexions
   @pool :pg_pool
   @repo Ipnworker.Repo
+  @master Application.compile_env(@app, :master)
 
   def child_spec(_args) do
     %{
@@ -22,26 +23,26 @@ defmodule PgStore do
     }
   end
 
-  def start do
-    case :persistent_term.get(:mow) do
-      true ->
-        opts =
-          Application.get_env(@app, @repo)
-          |> then(fn opts ->
-            writers = Keyword.get(opts, :wsize, 1)
-            Keyword.put(opts, :pool_size, writers)
-          end)
+  if @master do
+    def start do
+      opts =
+        Application.get_env(@app, @repo)
+        |> then(fn opts ->
+          writers = Keyword.get(opts, :wsize, 1)
+          Keyword.put(opts, :pool_size, writers)
+        end)
 
-        {:ok, pid} = Postgrex.start_link(opts)
-        :persistent_term.put(@pool, pid)
+      {:ok, pid} = Postgrex.start_link(opts)
+      :persistent_term.put(@pool, pid)
 
-        init(pid, opts)
-        print(opts)
+      init(pid, opts)
+      print(opts)
 
-        {:ok, pid}
-
-      false ->
-        :ignore
+      {:ok, pid}
+    end
+  else
+    def start do
+      :ignore
     end
   end
 

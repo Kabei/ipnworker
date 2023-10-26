@@ -8,7 +8,7 @@ key_dir = System.get_env("KEY_DIR", "priv/secret.key")
 role = System.get_env("ROLE", "worker")
 
 # Node setup
-config :ipnworker, :master, false
+config :ipnworker, :master, true
 
 # Folders setup
 config :ipnworker, :data_dir, data_dir

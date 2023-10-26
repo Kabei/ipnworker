@@ -14,6 +14,7 @@ defmodule MinerWorker do
   @pubsub :pubsub
   @version Application.compile_env(@app, :version)
   @json Application.compile_env(@app, :json)
+  @master Application.compile_env(@app, :master)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)
@@ -51,7 +52,6 @@ defmodule MinerWorker do
         state
       ) do
     db_ref = :persistent_term.get(:main_conn)
-    writer = pg_conn != nil
 
     try do
       IO.inspect("Bstep 1")
@@ -79,7 +79,7 @@ defmodule MinerWorker do
       if version != version_file or version != @version,
         do: raise(IppanError, "Block file version failed")
 
-      run_miner(round_id, block_id, creator, txs, pg_conn, writer)
+      run_miner(round_id, block_id, creator, txs, pg_conn)
 
       {:reply, :ok, state}
     rescue
@@ -97,7 +97,7 @@ defmodule MinerWorker do
       Block.insert(b)
       |> IO.inspect()
 
-      if writer do
+      if @master do
         PgStore.insert_block(pg_conn, b)
         |> IO.inspect()
       end
@@ -109,7 +109,7 @@ defmodule MinerWorker do
     end
   end
 
-  defp run_miner(round_id, block_id, validator, transactions, pg_conn, writer) do
+  defp run_miner(round_id, block_id, validator, transactions, pg_conn) do
     nonce_dets = DetsPlux.get(:nonce)
     nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
     counter_ref = :counters.new(1, [])
@@ -126,7 +126,7 @@ defmodule MinerWorker do
               TxHandler.regular()
           end
 
-        if writer do
+        if @master do
           ix = :counters.get(counter_ref, 1)
 
           PgStore.insert_tx(pg_conn, [
@@ -158,7 +158,7 @@ defmodule MinerWorker do
               TxHandler.insert_deferred()
           end
 
-        if writer do
+        if @master do
           PgStore.insert_tx(pg_conn, [
             :counters.get(counter_ref, 1),
             block_id,
