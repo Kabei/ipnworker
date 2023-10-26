@@ -7,13 +7,7 @@ defmodule Ippan.Funx.Domain do
 
   @one_day 18_000
 
-  def new(
-        %{id: account_id, round: round_id},
-        name,
-        owner,
-        days,
-        opts \\ %{}
-      ) do
+  def new(source = %{id: account_id, round: round_id}, name, owner, days, opts \\ %{}) do
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
@@ -49,7 +43,7 @@ defmodule Ippan.Funx.Domain do
   end
 
   def update(
-        %{id: account_id, round: round_id, validator: %{owner: vOwner}},
+        source = %{id: account_id, round: round_id, validator: %{owner: vOwner}},
         name,
         opts \\ %{}
       ) do
@@ -84,17 +78,13 @@ defmodule Ippan.Funx.Domain do
     end
   end
 
-  def renew(
-        %{id: account_id, round: round_id},
-        name,
-        days
-      ) do
+  def renew(source = %{id: account_id, round: round_id}, name, days) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     price = Domain.price(name, days)
 
     case BalanceStore.pay_burn(account_id, price) do
-      false ->
+      :error ->
         :error
 
       _ ->

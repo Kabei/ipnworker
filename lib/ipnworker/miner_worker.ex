@@ -1,6 +1,7 @@
 defmodule MinerWorker do
   use GenServer
   import Ippan.Ecto.Tx, only: [json_type: 0]
+  require RegPay
   alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
   require Sqlite
@@ -112,6 +113,7 @@ defmodule MinerWorker do
     nonce_dets = DetsPlux.get(:nonce)
     nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
     counter_ref = :counters.new(1, [])
+    ets_payment = :persistent_term.get(:payment)
 
     Enum.each(transactions, fn
       [hash, type, from, nonce, args, size] ->
@@ -125,8 +127,10 @@ defmodule MinerWorker do
           end
 
         if writer do
+          ix = :counters.get(counter_ref, 1)
+
           PgStore.insert_tx(pg_conn, [
-            :counters.get(counter_ref, 1),
+            ix,
             block_id,
             hash,
             type,
@@ -138,6 +142,8 @@ defmodule MinerWorker do
             @json.encode!(args)
           ])
           |> IO.inspect()
+
+          RegPay.commit_tx(pg_conn, ets_payment, hash, ix, block_id)
 
           :counters.add(counter_ref, 1, 1)
         end

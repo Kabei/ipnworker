@@ -6,6 +6,7 @@ defmodule Ippan.ClusterNodes do
   require BalanceStore
 
   @app Mix.Project.config()[:app]
+  @token Application.compile_env(@app, :token)
   @pubsub :pubsub
 
   use Network,
@@ -213,7 +214,7 @@ defmodule Ippan.ClusterNodes do
       round_encode = Round.to_list(round)
       Round.insert(round_encode)
 
-      # save balances
+      # Save balances
       run_save_balances(balance_tx, pg_conn)
 
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
@@ -234,7 +235,8 @@ defmodule Ippan.ClusterNodes do
   end
 
   defp run_reward(%{reward: amount}, creator, dets, tx) when amount > 0 do
-    BalanceStore.coinbase(creator.owner, amount)
+    source = %{hash: nil}
+    BalanceStore.coinbase(creator.owner, @token, amount)
   end
 
   defp run_reward(_, _, _, _), do: :ok

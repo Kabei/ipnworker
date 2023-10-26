@@ -4,13 +4,7 @@ defmodule Ippan.Funx.Dns do
   require Sqlite
   require DNS
 
-  def new(
-        %{id: account_id, validator: %{owner: vOwner}},
-        fullname,
-        type,
-        data,
-        ttl
-      ) do
+  def new(source = %{id: account_id, validator: %{owner: vOwner}}, fullname, type, data, ttl) do
     db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
@@ -39,7 +33,7 @@ defmodule Ippan.Funx.Dns do
   end
 
   def update(
-        %{id: account_id, validator: %{owner: vOwner}},
+        source = %{id: account_id, validator: %{owner: vOwner}},
         fullname,
         dns_hash16,
         params

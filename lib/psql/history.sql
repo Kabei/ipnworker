@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
 
 CREATE TABLE IF NOT EXISTS history.txs(
   "ix" integer,
-  "block_id" BIGINT,
+  "block" BIGINT,
   "hash" BYTEA NOT NULL,
   "type" INTEGER NOT NULL,
   "from" BYTEA,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS history.txs(
   "size" INTEGER,
   "ctype" INTEGER,
   "args" BYTEA,
-  PRIMARY KEY("ix", "block_id")
+  PRIMARY KEY("ix", "block")
 );
 
 CREATE TABLE IF NOT EXISTS history.balance(
@@ -66,6 +66,16 @@ CREATE TABLE IF NOT EXISTS history.balance(
   "balance" BIGINT,
   "lock" BIGINT,
   PRIMARY KEY("id", "token")
+);
+
+CREATE TABLE IF NOT EXISTS history.payments(
+  "ix" INTEGER,
+  "block" BIGINT,
+  "from" BYTEA,
+  "to" BYTEA,
+  "token" BYTEA,
+  "amount" BIGINT,
+  PRIMARY KEY("ix", "block")
 );
 
 CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
@@ -77,6 +87,7 @@ SELECT create_hypertable('history.rounds', 'id', chunk_time_interval => 151200, 
 SELECT create_hypertable('history.jackpot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
 SELECT create_hypertable('history.snapshot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
 SELECT create_hypertable('history.blocks', 'id', chunk_time_interval => 7560000, if_not_exists => TRUE);
-SELECT create_hypertable('history.txs', 'block_id', chunk_time_interval => 7560000, if_not_exists => TRUE);
+SELECT create_hypertable('history.txs', 'block', chunk_time_interval => 7560000, if_not_exists => TRUE);
+SELECT create_hypertable('history.payments', 'block', chunk_time_interval => 7560000, if_not_exists => TRUE);
 END IF;
 END$$;

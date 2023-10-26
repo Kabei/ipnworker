@@ -1,8 +1,10 @@
 defmodule Ippan.Funx.Coin do
-  require RegPay
   alias Ippan.Utils
   require Sqlite
   require BalanceStore
+  require RegPay
+
+  @dialyzer {:nowarn_function, [lock: 4, unlock: 4]}
 
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
@@ -10,7 +12,7 @@ defmodule Ippan.Funx.Coin do
   @refund_timeout 3 * 18_000
 
   def send(
-        %{
+        source = %{
           id: from,
           validator: %{fee: vfee, fee_type: fee_type, owner: vOwner},
           size: size
@@ -75,14 +77,14 @@ defmodule Ippan.Funx.Coin do
     ])
   end
 
-  def coinbase(_source, token_id, outputs) do
+  def coinbase(source, token_id, outputs) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
 
     total =
       for [account, value] <- outputs do
-        BalanceStore.coinbase(account, value)
+        BalanceStore.coinbase(account, token_id, value)
         value
       end
       |> Enum.sum()
@@ -90,7 +92,7 @@ defmodule Ippan.Funx.Coin do
     TokenSupply.add(supply, total)
   end
 
-  def burn(%{id: account_id}, token_id, amount) do
+  def burn(source = %{id: account_id}, token_id, amount) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
@@ -99,7 +101,7 @@ defmodule Ippan.Funx.Coin do
   end
 
   def refund(
-        %{id: from, round: round_id},
+        source = %{id: from, round: round_id},
         hash16
       ) do
     hash = Base.decode16!(hash16, case: :mixed)
@@ -113,14 +115,14 @@ defmodule Ippan.Funx.Coin do
     BalanceStore.send(refund_amount)
   end
 
-  def lock(_source, to, token_id, amount) do
+  def lock(source, to, token_id, amount) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
 
     BalanceStore.lock(to, token_id, amount)
   end
 
-  def unlock(_source, to, token_id, amount) do
+  def unlock(source, to, token_id, amount) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
 

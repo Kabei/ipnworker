@@ -74,6 +74,14 @@ defmodule PgStore do
     )
   end
 
+  def insert_pay(conn, params) do
+    Postgrex.query(
+      conn,
+      query_parse("EXECUTE insert_pay($1,$2,$3,$4,$5,$6)", params),
+      []
+    )
+  end
+
   def insert_block(conn, params) do
     Postgrex.query(
       conn,

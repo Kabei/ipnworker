@@ -8,11 +8,12 @@ defmodule Ippan.Funx.Validator do
 
   @app Mix.Project.config()[:app]
   @pubsub :pubsub
+  @token Application.compile_env(@app, :token)
   @max_validators Application.compile_env(@app, :max_validators)
   @topic "validator"
 
   def new(
-        %{id: account_id, round: round_id},
+        source = %{id: account_id, round: round_id},
         owner_id,
         hostname,
         port,
@@ -75,7 +76,7 @@ defmodule Ippan.Funx.Validator do
     end
   end
 
-  def update(%{id: account_id, round: round_id}, id, opts) do
+  def update(source = %{id: account_id, round: round_id}, id, opts) do
     map_filter = Map.take(opts, Validator.editable())
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
@@ -106,14 +107,14 @@ defmodule Ippan.Funx.Validator do
     end
   end
 
-  def delete(%{id: account_id}, id) do
+  def delete(source = %{id: account_id}, id) do
     db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     validator = Validator.get(id)
 
     if validator.stake > 0 do
-      BalanceStore.coinbase(account_id, validator.stake)
+      BalanceStore.coinbase(account_id, @token, validator.stake)
     end
 
     Validator.delete(id)

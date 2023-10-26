@@ -17,7 +17,7 @@ defmodule Ippan.Ecto.Tx do
   @schema_prefix "history"
   schema "txs" do
     field(:ix, :integer)
-    field(:block_id, :integer)
+    field(:block, :integer)
     field(:hash, :binary)
     field(:type, :integer)
     field(:from, :binary)
@@ -28,12 +28,12 @@ defmodule Ippan.Ecto.Tx do
     field(:args, :binary)
   end
 
-  @select ~w(ix block_id hash type from status nonce size ctype args)a
+  @select ~w(ix block hash type from status nonce size ctype args)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
-  def one(block_id, ix) do
-    from(tx in Tx, where: tx.ix == ^ix and tx.block_id == ^block_id, limit: 1)
+  def one(block, ix) do
+    from(tx in Tx, where: tx.ix == ^ix and tx.block == ^block, limit: 1)
     |> filter_select()
     |> Repo.one()
     |> case do
@@ -47,7 +47,7 @@ defmodule Ippan.Ecto.Tx do
 
     from(b in Block,
       join: tx in Tx,
-      on: tx.block_id == b.id,
+      on: tx.block == b.id,
       where:
         b.creator == ^vid and b.height == ^height and
           tx.hash == ^hash,
@@ -77,13 +77,13 @@ defmodule Ippan.Ecto.Tx do
   end
 
   defp filter_below(query, %{"below" => id}) do
-    where(query, [tx], tx.block_id < ^id)
+    where(query, [tx], tx.block < ^id)
   end
 
   defp filter_below(query, _), do: query
 
-  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block_id)
-  defp sort(query, _), do: order_by(query, [tx], desc: tx.block_id)
+  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block)
+  defp sort(query, _), do: order_by(query, [tx], desc: tx.block)
 
   defp fun(x = %{args: nil, hash: hash, ctype: ctype}) do
     %{x | hash: Utils.encode16(hash), ctype: ctype(ctype)}

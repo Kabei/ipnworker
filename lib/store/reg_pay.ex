@@ -3,6 +3,9 @@ defmodule RegPay do
   # 1. Pay
   # 2. Fees
   # 3. Burn
+  # 4. lock
+  # 5. unlock
+
   @app Mix.Project.config()[:app]
   @master Application.compile_env(@app, :master, false)
 
@@ -15,66 +18,124 @@ defmodule RegPay do
     end
   end
 
-  defmacro coinbase(hash, to, token, amount) do
+  defmacro reg_coinbase(to, token, amount) do
     if @master do
       quote location: :keep do
+        %{hash: hash} = var!(source)
+
         :ets.insert(
-          :payment,
-          {unquote(hash), 0, nil, unquote(to), unquote(token), unquote(amount)}
+          :persistent_term.get(:payment),
+          {hash, 0, nil, unquote(to), unquote(token), unquote(amount)}
         )
+      end
+    else
+      quote do
+        var!(source)
       end
     end
   end
 
-  defmacro payment(hash, from, to, token, amount) do
+  defmacro reg_payment(from, to, token, amount) do
     if @master do
       quote location: :keep do
+        %{hash: hash} = var!(source)
+
         :ets.insert(
-          :payment,
-          {unquote(hash), 1, unquote(from), unquote(to), unquote(token), unquote(amount)}
+          :persistent_term.get(:payment),
+          {hash, 1, unquote(from), unquote(to), unquote(token), unquote(amount)}
         )
+      end
+    else
+      quote do
+        var!(source)
       end
     end
   end
 
-  defmacro fees(hash, from, to, token, amount) do
+  defmacro reg_fees(from, to, token, amount) do
     if @master do
       quote location: :keep do
+        %{hash: hash} = var!(source)
+
         :ets.insert(
-          :payment,
-          {unquote(hash), 2, unquote(from), unquote(to), unquote(token), unquote(amount)}
+          :persistent_term.get(:payment),
+          {hash, 2, unquote(from), unquote(to), unquote(token), unquote(amount)}
         )
+      end
+    else
+      quote do
+        var!(source)
       end
     end
   end
 
-  defmacro burn(hash, from, token, amount) do
+  defmacro reg_burn(from, token, amount) do
     if @master do
       quote location: :keep do
+        %{hash: hash} = var!(source)
+
         :ets.insert(
-          :payment,
-          {unquote(hash), 3, unquote(from), nil, unquote(token), unquote(amount)}
+          :persistent_term.get(:payment),
+          {hash, 3, unquote(from), nil, unquote(token), unquote(amount)}
         )
+      end
+    else
+      quote do
+        var!(source)
       end
     end
   end
 
-  defmacro commit_tx(ix, block_id) do
-    quote location: :keep do
-      Enum.each(:ets.lookup(:payment, var!(hash)), fn {_, type, from, to, token, amount} ->
-        PgStore.insert_pay(var!(pg_conn), [
-          unquote(ix),
-          unquote(block_id),
-          type,
-          from,
-          to,
-          token,
-          amount
-        ])
-      end)
+  defmacro reg_lock(to, token, amount) do
+    if @master do
+      quote location: :keep do
+        %{hash: hash, id: from} = var!(source)
 
-      :ets.delete(:payment, var!(hash))
+        :ets.insert(
+          :persistent_term.get(:payment),
+          {hash, 4, from, unquote(to), unquote(token), unquote(amount)}
+        )
+      end
+    else
+      quote do
+        var!(source)
+      end
     end
+  end
+
+  defmacro reg_unlock(to, token, amount) do
+    if @master do
+      quote location: :keep do
+        %{hash: hash, id: from} = var!(source)
+
+        :ets.insert(
+          :persistent_term.get(:payment),
+          {hash, 5, from, unquote(to), unquote(token), unquote(amount)}
+        )
+      end
+    else
+      quote do
+        var!(source)
+      end
+    end
+  end
+
+  def commit_tx(nil, _, _, _), do: nil
+
+  def commit_tx(pg_conn, ets_payment, hash, ix, block_id) do
+    Enum.each(:ets.lookup(ets_payment, hash), fn {_, type, from, to, token, amount} ->
+      PgStore.insert_pay(pg_conn, [
+        ix,
+        block_id,
+        type,
+        from,
+        to,
+        token,
+        amount
+      ])
+    end)
+
+    :ets.delete(:payment, hash)
   end
 
   defmacro commit_reward(round_id, to, token, amount) do

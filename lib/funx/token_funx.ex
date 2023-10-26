@@ -8,7 +8,7 @@ defmodule Ippan.Funx.Token do
   @max_tokens Application.compile_env(@app, :max_tokens)
 
   def new(
-        %{id: account_id, round: round_id},
+        source = %{id: account_id, round: round_id},
         id,
         owner_id,
         name,
@@ -54,7 +54,7 @@ defmodule Ippan.Funx.Token do
   end
 
   def update(
-        %{
+        source = %{
           id: account_id,
           round: round_id,
           validator: %{owner: vOwner}
