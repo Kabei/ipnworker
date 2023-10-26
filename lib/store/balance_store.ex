@@ -226,6 +226,8 @@ defmodule BalanceStore do
         else
           :error
         end
+      else
+        BalanceStore.pay_burn(from, value)
       end
     end
   end

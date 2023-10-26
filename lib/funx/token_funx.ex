@@ -78,7 +78,7 @@ defmodule Ippan.Funx.Token do
           MapUtil.to_atoms(map_filter)
           |> Map.put(:updated_at, round_id)
 
-        Token.update(map, id: id)
+        Token.update(map, id)
     end
   end
 
