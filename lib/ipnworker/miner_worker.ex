@@ -159,8 +159,10 @@ defmodule MinerWorker do
           end
 
         if @master do
+          ix = :counters.get(counter_ref, 1)
+
           PgStore.insert_tx(pg_conn, [
-            :counters.get(counter_ref, 1),
+            ix,
             block_id,
             hash,
             type,
@@ -172,6 +174,8 @@ defmodule MinerWorker do
             @json.encode!(args)
           ])
           |> IO.inspect()
+
+          RegPay.commit_tx(pg_conn, ets_payment, hash, ix, block_id)
 
           :counters.add(counter_ref, 1, 1)
         end

@@ -135,7 +135,7 @@ defmodule RegPay do
       ])
     end)
 
-    :ets.delete(:payment, hash)
+    :ets.delete(ets_payment, hash)
   end
 
   defmacro commit_reward(round_id, to, token, amount) do
