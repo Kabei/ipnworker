@@ -54,13 +54,20 @@ defmodule PgStore do
     pid = pool()
 
     # Destroy all data
-    case Postgrex.query(pid, "DROP SCHEMA history CASCADE;", []) do
+
+    case Postgrex.query(pid, "ALTER SCHEMA history RENAME TO drop_history;", []) do
       {:ok, _} ->
-        # Stop connection
-        stop(pid)
-        # Init connection
-        pid = start()
-        pid
+        case Postgrex.query(pid, "DROP SCHEMA drop_history CASCADE;", []) do
+          {:ok, _} ->
+            # Stop connection
+            stop(pid)
+            # Init connection
+            pid = start()
+            pid
+
+          error ->
+            error
+        end
 
       error ->
         error
