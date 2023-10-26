@@ -75,11 +75,12 @@ CREATE TABLE IF NOT EXISTS history.payments(
   "from" BYTEA,
   "to" BYTEA,
   "token" BYTEA,
-  "amount" BIGINT,
-  PRIMARY KEY("ix", "block")
+  "amount" BIGINT
 );
 
 CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
+
+CREATE INDEX IF NOT EXISTS payments_idx ON history.payments("ix", "block");
 
 DO $$
 BEGIN
