@@ -3,7 +3,7 @@ defmodule BalanceTrace do
 
   defstruct db: nil, from: nil, output: %{}, tx: nil
 
-  def new(%{id: from}) do
+  def new(from) do
     db = DetsPlux.get(:balance)
     tx = DetsPlux.tx(db, :cache_balance)
     %BalanceTrace{db: db, tx: tx, from: from}
