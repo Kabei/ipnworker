@@ -2,7 +2,6 @@ defmodule Ipnworker.Application do
   @moduledoc false
 
   use Application
-  alias Ippan.Utils
   alias Ippan.ClusterNodes
 
   @app Mix.Project.config()[:app]
@@ -43,7 +42,6 @@ defmodule Ipnworker.Application do
     vid = System.get_env("VID")
     name = System.get_env("NAME")
     miner = System.get_env("MINER")
-    mow = System.get_env("MASTER", "0")
 
     cond do
       is_nil(vid) ->
@@ -59,7 +57,6 @@ defmodule Ipnworker.Application do
         :persistent_term.put(:vid, String.to_integer(vid))
         :persistent_term.put(:name, name)
         :persistent_term.put(:miner, miner)
-        :persistent_term.put(:mow, Utils.cast_boolean(mow))
     end
   end
 

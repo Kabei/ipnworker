@@ -81,9 +81,7 @@ defmodule Ippan.ClusterNodes do
         node ->
           connect(Node.list_to_map(node))
 
-          mow = :persistent_term.get(:mow)
-
-          if mow do
+          if @master do
             NodeSync.start_link(nil)
           end
       end
@@ -127,9 +125,7 @@ defmodule Ippan.ClusterNodes do
     round = MapUtil.to_atoms(msg_round)
 
     unless node_syncing?(round) do
-      mow = :persistent_term.get(:mow)
-
-      if mow do
+      if @master do
         pgid = PgStore.pool()
 
         IO.inspect("handle 2")
