@@ -148,6 +148,8 @@ defmodule BalanceStore do
       {balance, lock} = DetsPlux.get_tx(var!(dets), var!(tx), key, {0, 0})
 
       DetsPlux.put(var!(tx), key, {balance + value, lock})
+      supply = TokenSupply.new(token)
+      TokenSupply.add(supply, value)
 
       reg_coinbase(account, token, value)
     end
@@ -252,13 +254,15 @@ defmodule BalanceStore do
     end
   end
 
-  # defmacro income(dets, tx, key, value) do
-  #   quote bind_quoted: [dets: dets, tx: tx, key: key, value: value], location: :keep do
-  #     {balance, lock_amount} = DetsPlux.get_tx(dets, tx, key, {0, 0})
+  defmacro income(dets, tx, account, token, value) do
+    quote bind_quoted: [dets: dets, tx: tx, account: account, token: token, value: value],
+          location: :keep do
+      key = DetsPlux.tuple(account, token)
+      {balance, lock_amount} = DetsPlux.get_tx(dets, tx, key, {0, 0})
 
-  #     DetsPlux.put(tx, key, {balance + value, lock_amount})
-  #   end
-  # end
+      DetsPlux.put(tx, key, {balance + value, lock_amount})
+    end
+  end
 
   # defmacro subtract(dets, tx, key, value) do
   #   quote bind_quoted: [dets: dets, tx: tx, key: key, value: value], location: :keep do

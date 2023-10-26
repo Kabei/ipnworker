@@ -231,8 +231,9 @@ defmodule Ippan.ClusterNodes do
   end
 
   defp run_reward(%{reward: amount}, creator, dets, tx) when amount > 0 do
-    source = %{hash: nil}
-    BalanceStore.coinbase(creator.owner, @token, amount)
+    BalanceStore.income(dets, tx, creator.owner, @token, amount)
+    supply = TokenSupply.new(@token)
+    TokenSupply.add(supply, amount)
   end
 
   defp run_reward(_, _, _, _), do: :ok
@@ -241,6 +242,8 @@ defmodule Ippan.ClusterNodes do
        when amount > 0 do
     data = [round_id, winner, amount]
     :done = Sqlite.step("insert_jackpot", data)
+    supply = TokenSupply.new(@token)
+    TokenSupply.add(supply, amount)
 
     if pg_conn do
       PgStore.insert_jackpot(pg_conn, data)
