@@ -40,7 +40,7 @@ defmodule Ippan.Func.Token do
       Token.exists?(id) ->
         raise IppanError, "Token already exists"
 
-      @max_tokens < Token.total() ->
+      @max_tokens <= Token.total() ->
         raise IppanError, "Maximum tokens exceeded"
 
       true ->
