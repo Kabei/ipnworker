@@ -11,7 +11,7 @@ defmodule Ippan.Func.Coin do
   @token Application.compile_env(@app, :token)
 
   def send(
-        source = %{
+        %{
           id: account_id,
           size: size,
           validator: %{fee: vfee, fee_type: fee_type}
@@ -22,7 +22,7 @@ defmodule Ippan.Func.Coin do
       )
       when is_integer(amount) and amount <= @max_tx_amount and
              account_id != to do
-    bt = BalanceTrace.new(source)
+    bt = BalanceTrace.new(account_id)
     fees = Utils.calc_fees!(fee_type, vfee, amount, size)
 
     case token_id == @token do
@@ -143,7 +143,7 @@ defmodule Ippan.Func.Coin do
     end
   end
 
-  def burn(source, token_id, amount) when is_integer(amount) and amount > 0 do
+  def burn(%{id: account_id}, token_id, amount) when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
@@ -152,8 +152,7 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "Token property invalid"
 
       true ->
-        source
-        |> BalanceTrace.new()
+        BalanceTrace.new(account_id)
         |> BalanceTrace.requires!(token_id, amount)
     end
   end
