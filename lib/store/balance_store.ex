@@ -148,9 +148,6 @@ defmodule BalanceStore do
       {balance, lock} = DetsPlux.get_tx(var!(dets), var!(tx), key, {0, 0})
 
       DetsPlux.put(var!(tx), key, {balance + value, lock})
-      supply = TokenSupply.new(token)
-      TokenSupply.add(supply, value)
-
       reg_coinbase(account, token, value)
     end
   end
@@ -248,6 +245,23 @@ defmodule BalanceStore do
         TokenSupply.subtract(supply, value)
 
         reg_delete(from, token, value)
+      else
+        :error
+      end
+    end
+  end
+
+  defmacro pay_stake(from, value) do
+    quote bind_quoted: [from: from, token: @token, value: value],
+          location: :keep do
+      key = DetsPlux.tuple(from, token)
+      {balance, lock} = DetsPlux.get_tx(var!(dets), var!(tx), key, {0, 0})
+
+      result = balance - value
+
+      if result >= 0 do
+        DetsPlux.put(var!(tx), key, {result, lock})
+        reg_stake(from, token, value)
       else
         :error
       end

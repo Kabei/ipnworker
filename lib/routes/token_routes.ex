@@ -23,8 +23,8 @@ defmodule Ipnworker.TokenRoutes do
   end
 
   get "/:id/supply" do
-    dets = DetsPlux.get(:stats)
-    amount = DetsPlux.get(dets, DetsPlux.tuple(id, "supply"), 0)
+    supply = TokenSupply.cache(id)
+    amount = TokenSupply.get(supply)
     send_resp(conn, 200, Integer.to_string(amount))
   end
 
