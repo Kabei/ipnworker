@@ -6,9 +6,9 @@ defmodule Ippan.Funx.Validator do
   require Sqlite
   require BalanceStore
 
+  @app Mix.Project.config()[:app]
   @pubsub :pubsub
-  @token Application.compile_env(:ipnworker, :token)
-  @max_validators Application.compile_env(:ipnworker, :max_validators)
+  @max_validators Application.compile_env(@app, :max_validators)
   @topic "validator"
 
   def new(
@@ -34,15 +34,14 @@ defmodule Ippan.Funx.Validator do
         :error
 
       true ->
-        stake = Validator.calc_price(next_id)
         map_filter = Map.take(opts, Validator.optionals())
         pubkey = Fast64.decode64(pubkey)
         net_pubkey = Fast64.decode64(net_pubkey)
         dets = DetsPlux.get(:balance)
         tx = DetsPlux.tx(:balance)
-        balance_key = DetsPlux.tuple(account_id, @token)
+        stake = Validator.calc_price(next_id)
 
-        case BalanceStore.subtract(dets, tx, balance_key, stake) do
+        case BalanceStore.pay_burn(account_id, stake) do
           :error ->
             :error
 
@@ -76,20 +75,14 @@ defmodule Ippan.Funx.Validator do
     end
   end
 
-  def update(
-        %{id: account_id, round: round_id},
-        id,
-        opts
-      ) do
+  def update(%{id: account_id, round: round_id}, id, opts) do
     map_filter = Map.take(opts, Validator.editable())
-    fee = EnvStore.network_fee()
-    db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
-    balance_key = DetsPlux.tuple(account_id, @token)
+    fees = EnvStore.network_fee()
 
-    case BalanceStore.subtract(dets, tx, balance_key, fee) do
-      false ->
+    case BalanceStore.pay_burn(account_id, fees) do
+      :error ->
         :error
 
       _ ->
@@ -97,6 +90,7 @@ defmodule Ippan.Funx.Validator do
           MapUtil.to_atoms(map_filter)
           |> Map.put(:updated_at, round_id)
 
+        db_ref = :persistent_term.get(:main_conn)
         Validator.update(map, id: id)
 
         # transform to text
@@ -119,8 +113,7 @@ defmodule Ippan.Funx.Validator do
     validator = Validator.get(id)
 
     if validator.stake > 0 do
-      balance_key = DetsPlux.tuple(account_id, @token)
-      BalanceStore.income(dets, tx, balance_key, validator.stake)
+      BalanceStore.coinbase(account_id, validator.stake)
     end
 
     Validator.delete(id)

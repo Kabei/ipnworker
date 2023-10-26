@@ -18,8 +18,9 @@ defmodule Ippan.Block do
           vsn: non_neg_integer()
         }
 
-  @block_extension Application.compile_env(:ipnworker, :block_extension)
-  @decode_extension Application.compile_env(:ipnworker, :decode_extension)
+  @app Mix.Project.config()[:app]
+  @block_extension Application.compile_env(@app, :block_extension)
+  @decode_extension Application.compile_env(@app, :decode_extension)
   @hash_module Blake3.Native
 
   defstruct [
@@ -208,12 +209,12 @@ defmodule Ippan.Block do
   end
 
   def cluster_block_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipnworker, :http)[:port]
+    port = Application.get_env(@app, :http)[:port]
     "http://#{hostname}:#{port}/v1/dl/block/#{creator_id}/#{height}"
   end
 
   def cluster_decode_url(hostname, creator_id, height) do
-    port = Application.get_env(:ipnworker, :http)[:port]
+    port = Application.get_env(@app, :http)[:port]
     "http://#{hostname}:#{port}/v1/dl/decode/#{creator_id}/#{height}"
   end
 

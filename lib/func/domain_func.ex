@@ -5,8 +5,9 @@ defmodule Ippan.Func.Domain do
   require Sqlite
   require BalanceStore
 
+  @app Mix.Project.config()[:app]
   @max_fullname_size 255
-  @token Application.compile_env(:ipnworker, :token)
+  @token Application.compile_env(@app, :token)
 
   def new(
         %{

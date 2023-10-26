@@ -5,7 +5,8 @@ defmodule Ippan.Func.Dns do
   require Domain
   require BalanceStore
 
-  @token Application.compile_env(:ipnworker, :token)
+  @app Mix.Project.config()[:app]
+  @token Application.compile_env(@app, :token)
   @fullname_max_size 255
   @type_range [1, 2, 6, 15, 16, 28]
   @data_range 1..255

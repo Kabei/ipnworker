@@ -5,7 +5,7 @@ defmodule Ipnworker.NetworkRoutes do
   require Sqlite
   import Ippan.Utils, only: [json: 1]
 
-  @app :ipnworker
+  @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
 
   @options %{

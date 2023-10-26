@@ -9,9 +9,10 @@ defmodule Ippan.BlockHandler do
   require Sqlite
   require Validator
 
-  @version Application.compile_env(:ipnworker, :version)
-  @max_block_size Application.compile_env(:ipnworker, :block_max_size)
-  @json Application.compile_env(:ipnworker, :json)
+  @app Mix.Project.config()[:app]
+  @version Application.compile_env(@app, :version)
+  @max_block_size Application.compile_env(@app, :block_max_size)
+  @json Application.compile_env(@app, :json)
 
   @spec verify_file!(map) :: :ok | :error
   def verify_file!(%{

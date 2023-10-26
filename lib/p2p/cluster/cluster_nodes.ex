@@ -5,11 +5,11 @@ defmodule Ippan.ClusterNodes do
   require Sqlite
   require BalanceStore
 
+  @app Mix.Project.config()[:app]
   @pubsub :pubsub
-  @token Application.compile_env(:ipnworker, :token)
 
   use Network,
-    app: :ipnworker,
+    app: @app,
     name: :cluster,
     table: :cnw,
     server: Ippan.ClusterNodes.Server,
@@ -29,7 +29,7 @@ defmodule Ippan.ClusterNodes do
     pk = :persistent_term.get(:pubkey)
     net_pk = :persistent_term.get(:net_pubkey)
     db_ref = :persistent_term.get(:net_conn)
-    default_port = Application.get_env(:ipnworker, :cluster)[:port]
+    default_port = Application.get_env(@app, :cluster)[:port]
 
     Node.delete_all()
 
@@ -233,9 +233,8 @@ defmodule Ippan.ClusterNodes do
     end
   end
 
-  defp run_reward(%{reward: reward}, creator, balance_pid, balance_tx) when reward > 0 do
-    balance_key = DetsPlux.tuple(creator.owner, @token)
-    BalanceStore.income(balance_pid, balance_tx, balance_key, reward)
+  defp run_reward(%{reward: amount}, creator, dets, tx) when amount > 0 do
+    BalanceStore.coinbase(creator.owner, amount)
   end
 
   defp run_reward(_, _, _, _), do: :ok

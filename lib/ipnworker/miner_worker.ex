@@ -9,9 +9,10 @@ defmodule MinerWorker do
   require Logger
   require Validator
 
+  @app Mix.Project.config()[:app]
   @pubsub :pubsub
-  @version Application.compile_env(:ipnworker, :version)
-  @json Application.compile_env(:ipnworker, :json)
+  @version Application.compile_env(@app, :version)
+  @json Application.compile_env(@app, :json)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)

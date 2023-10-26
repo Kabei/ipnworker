@@ -73,21 +73,6 @@ defmodule Sqlite do
     end
   end
 
-  # defmacro exists?(table, name, args) when is_list(args) do
-  #   key = List.to_tuple(args)
-
-  #   quote bind_quoted: [table: table, name: name, key: key, args: args],
-  #         location: :keep do
-  #     case :ets.member(table, key) do
-  #       true ->
-  #         true
-
-  #       false ->
-  #         Sqlite.exists?(name, args)
-  #     end
-  #   end
-  # end
-
   defmacro fetch(name, args, default \\ nil) do
     quote bind_quoted: [name: name, args: args, default: default],
           location: :keep do
@@ -100,44 +85,6 @@ defmodule Sqlite do
       end
     end
   end
-
-  # defmacro lookup_map(table, db_ref, stmts, name, id, mod_format) do
-  #   quote bind_quoted: [
-  #           table: table,
-  #           db_ref: db_ref,
-  #           stmts: stmts,
-  #           name: name,
-  #           id: id,
-  #           mod_format: mod_format
-  #         ],
-  #         location: :keep do
-  #     case :ets.lookup(table, id) do
-  #       [{_, map}] ->
-  #         map
-
-  #       [] ->
-  #         args = if(is_tuple(id), do: Tuple.to_list(id), else: [id])
-
-  #         case Sqlite3NIF.bind_step(db_ref, Map.get(stmts, name), args) do
-  #           {:row, []} ->
-  #             nil
-
-  #           {:row, data} ->
-  #             {_, map} = result = mod_format.list_to_tuple(data)
-  #             :ets.insert(table, result)
-
-  #             if :ets.info(table, :size) > 10_000_000 do
-  #               :ets.delete(table, :ets.first(table))
-  #             end
-
-  #             map
-
-  #           _ ->
-  #             nil
-  #         end
-  #     end
-  #   end
-  # end
 
   defmacro get(table, name, id, mod) do
     quote bind_quoted: [table: table, name: name, id: id, mod: mod],

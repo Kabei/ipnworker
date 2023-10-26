@@ -5,9 +5,10 @@ defmodule Ippan.Func.Coin do
   require Token
   require Logger
 
-  @max_tx_amount Application.compile_env(:ipnworker, :max_tx_amount)
-  @note_max_size Application.compile_env(:ipnworker, :note_max_size)
-  @token Application.compile_env(:ipnworker, :token)
+  @app Mix.Project.config()[:app]
+  @max_tx_amount Application.compile_env(@app, :max_tx_amount)
+  @note_max_size Application.compile_env(@app, :note_max_size)
+  @token Application.compile_env(@app, :token)
 
   def send(
         source = %{

@@ -8,8 +8,9 @@ defmodule Ipnworker.FileRoutes do
   plug(:match)
   plug(:dispatch)
 
-  @block_extension Application.compile_env(:ipnworker, :block_extension)
-  @decode_extension Application.compile_env(:ipnworker, :decode_extension)
+  @app Mix.Project.config()[:app]
+  @block_extension Application.compile_env(@app, :block_extension)
+  @decode_extension Application.compile_env(@app, :decode_extension)
   alias Ippan.{Block, ClusterNodes}
 
   get "/block/:vid/:height" do

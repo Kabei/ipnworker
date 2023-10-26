@@ -1,4 +1,5 @@
 defmodule MemTables do
+  require RegPay
   # @set_opts [:set, :public, read_concurrency: true, write_concurrency: true]
   # @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: false]
 
@@ -31,6 +32,8 @@ defmodule MemTables do
     for {table, opts} <- @tables_opt do
       :ets.new(table, opts)
     end
+
+    RegPay.init()
 
     :ignore
   end

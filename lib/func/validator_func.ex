@@ -5,8 +5,9 @@ defmodule Ippan.Func.Validator do
   require Sqlite
   require BalanceStore
 
-  @token Application.compile_env(:ipnworker, :token)
-  @max_validators Application.compile_env(:ipnworker, :max_validators)
+  @app Mix.Project.config()[:app]
+  @token Application.compile_env(@app, :token)
+  @max_validators Application.compile_env(@app, :max_validators)
 
   def new(
         %{id: account_id},

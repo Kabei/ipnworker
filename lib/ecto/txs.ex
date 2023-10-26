@@ -6,7 +6,8 @@ defmodule Ippan.Ecto.Tx do
   alias Ipnworker.Repo
   alias __MODULE__
 
-  @json Application.compile_env(:ipnworker, :json)
+  @app Mix.Project.config()[:app]
+  @json Application.compile_env(@app, :json)
 
   @craw "application/octet-stream"
   @cjson "application/json"

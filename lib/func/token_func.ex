@@ -4,9 +4,10 @@ defmodule Ippan.Func.Token do
   require Sqlite
   require Token
 
+  @app Mix.Project.config()[:app]
   @max_number 1_000_000_000_000_000_000_000_000_000
-  @token Application.compile_env(:ipnworker, :token)
-  @max_tokens Application.compile_env(:ipnworker, :max_tokens)
+  @token Application.compile_env(@app, :token)
+  @max_tokens Application.compile_env(@app, :max_tokens)
 
   def new(
         %{id: account_id},

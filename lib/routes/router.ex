@@ -6,8 +6,9 @@ defmodule Ipnworker.Router do
   require Logger
   import Ippan.Utils, only: [json: 1]
 
-  @json Application.compile_env(:ipnworker, :json)
-  @max_size Application.compile_env(:ipnworker, :message_max_size)
+  @app Mix.Project.config()[:app]
+  @json Application.compile_env(@app, :json)
+  @max_size Application.compile_env(@app, :message_max_size)
 
   plug(:match)
   plug(:dispatch)

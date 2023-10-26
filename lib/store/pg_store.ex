@@ -9,11 +9,11 @@ defmodule PgStore do
 
   @alter []
 
-  @app :ipnworker
+  @app Mix.Project.config()[:app]
+  @json Application.compile_env(@app, :json)
   # DB Pool connexions
   @pool :pg_pool
   @repo Ipnworker.Repo
-  @json Application.compile_env(:ipnworker, :json)
 
   def child_spec(_args) do
     %{
