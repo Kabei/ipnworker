@@ -23,8 +23,6 @@ defmodule Ipnworker.Router do
 
           case :ets.member(:hash, hash) do
             false ->
-              # vid = :persistent_term.get(:vid)
-              # height = :persistent_term.get(:height)
               signature = Fast64.decode64(sig64)
               size = byte_size(body) + byte_size(signature)
               %{id: vid} = validator = :persistent_term.get(:validator)
@@ -112,6 +110,7 @@ defmodule Ipnworker.Router do
   forward("/v1/round", to: Ipnworker.RoundRoutes)
   forward("/v1/block", to: Ipnworker.BlockRoutes)
   forward("/v1/txs", to: Ipnworker.TxRoutes)
+  forward("/v1/payment", to: Ipnworker.PaymentsRoutes)
   forward("/v1/validator", to: Ipnworker.ValidatorRoutes)
   forward("/v1/token", to: Ipnworker.TokenRoutes)
   forward("/v1/jackpot", to: Ipnworker.JackpotRoutes)
