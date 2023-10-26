@@ -45,6 +45,15 @@ defmodule Ipnworker.AccountRoutes do
     send_resp(conn, 200, Integer.to_string(nonce))
   end
 
+  head "/:id" do
+    dets = DetsPlux.get(:wallet)
+
+    case DetsPlux.member?(dets, id) do
+      true -> send_resp(conn, 200, "")
+      false -> send_resp(conn, 204, "")
+    end
+  end
+
   match _ do
     send_resp(conn, 404, "Not found")
   end

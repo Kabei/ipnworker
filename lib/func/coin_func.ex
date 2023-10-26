@@ -52,7 +52,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      Token.has_prop?(token, "coinbase") ->
+      not Token.has_prop?(token, "coinbase") ->
         raise IppanError, "Token property invalid"
 
       true ->
@@ -110,7 +110,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "unauthorised"
 
-      "lock" not in token.props ->
+      not Token.has_prop?(token, "lock") ->
         raise IppanError, "Invalid property"
 
       true ->
@@ -133,7 +133,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "unauthorised"
 
-      "lock" not in token.props ->
+      not Token.has_prop?(token, "lock") ->
         raise IppanError, "Invalid property"
 
       true ->
@@ -146,7 +146,7 @@ defmodule Ippan.Func.Coin do
     token = Token.get(token_id)
 
     cond do
-      Token.has_prop?(token, "burn") ->
+      not Token.has_prop?(token, "burn") ->
         raise IppanError, "Token property invalid"
 
       true ->
