@@ -73,7 +73,7 @@ defmodule Ippan.Func.Domain do
         |> MapUtil.validate_email(:email)
 
         BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(@token, EnvStore.network_fee())
+        |> BalanceTrace.requires!(@token, EnvStore.fees())
         |> BalanceTrace.output()
     end
   end

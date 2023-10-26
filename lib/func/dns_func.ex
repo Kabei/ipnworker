@@ -48,7 +48,7 @@ defmodule Ippan.Func.Dns do
 
     dns_hash = Base.decode16!(dns_hash16, case: :mixed)
 
-    fees = EnvStore.network_fee()
+    fees = EnvStore.fees()
 
     db_ref = :persistent_term.get(:main_conn)
 

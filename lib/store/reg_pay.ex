@@ -1,10 +1,15 @@
 defmodule RegPay do
-  # 0. Coinbase / Reward
-  # 1. Pay
-  # 2. Fees
-  # 3. Burn
-  # 4. lock
-  # 5. unlock
+  # Event Transf
+  # 0. Coinbase
+  # 1. Reward
+  # 2. Jackpot
+  # 100. Pay
+  # 101. Refund
+  # 200. Fees
+  # 201. Delete
+  # 300. Burn
+  # 301. lock
+  # 302. unlock
 
   @app Mix.Project.config()[:app]
   @master Application.compile_env(@app, :master, false)
@@ -42,6 +47,23 @@ defmodule RegPay do
     end
   end
 
+  defmacro reg_refund(from, to, token, amount) do
+    if @master do
+      quote location: :keep do
+        %{hash: hash} = var!(source)
+
+        :ets.insert(
+          :persistent_term.get(:payment),
+          {hash, 101, unquote(to), unquote(from), unquote(token), unquote(amount)}
+        )
+      end
+    else
+      quote do
+        var!(source)
+      end
+    end
+  end
+
   defmacro reg_payment(from, to, token, amount) do
     if @master do
       quote location: :keep do
@@ -49,7 +71,7 @@ defmodule RegPay do
 
         :ets.insert(
           :persistent_term.get(:payment),
-          {hash, 1, unquote(from), unquote(to), unquote(token), unquote(amount)}
+          {hash, 100, unquote(from), unquote(to), unquote(token), unquote(amount)}
         )
       end
     else
@@ -66,7 +88,24 @@ defmodule RegPay do
 
         :ets.insert(
           :persistent_term.get(:payment),
-          {hash, 2, unquote(from), unquote(to), unquote(token), unquote(amount)}
+          {hash, 200, unquote(from), unquote(to), unquote(token), unquote(amount)}
+        )
+      end
+    else
+      quote do
+        var!(source)
+      end
+    end
+  end
+
+  defmacro reg_delete(from, token, amount) do
+    if @master do
+      quote location: :keep do
+        %{hash: hash} = var!(source)
+
+        :ets.insert(
+          :persistent_term.get(:payment),
+          {hash, 201, unquote(from), nil, unquote(token), unquote(amount)}
         )
       end
     else
@@ -83,7 +122,7 @@ defmodule RegPay do
 
         :ets.insert(
           :persistent_term.get(:payment),
-          {hash, 3, unquote(from), nil, unquote(token), unquote(amount)}
+          {hash, 300, unquote(from), nil, unquote(token), unquote(amount)}
         )
       end
     else
@@ -100,7 +139,7 @@ defmodule RegPay do
 
         :ets.insert(
           :persistent_term.get(:payment),
-          {hash, 4, from, unquote(to), unquote(token), unquote(amount)}
+          {hash, 400, from, unquote(to), unquote(token), unquote(amount)}
         )
       end
     else
@@ -117,7 +156,7 @@ defmodule RegPay do
 
         :ets.insert(
           :persistent_term.get(:payment),
-          {hash, 5, from, unquote(to), unquote(token), unquote(amount)}
+          {hash, 401, from, unquote(to), unquote(token), unquote(amount)}
         )
       end
     else
@@ -152,7 +191,7 @@ defmodule RegPay do
         PgStore.insert_pay(var!(pg_conn), [
           nil,
           unquote(round_id),
-          0,
+          1,
           nil,
           unquote(to),
           unquote(token),

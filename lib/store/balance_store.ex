@@ -36,22 +36,6 @@ defmodule BalanceStore do
     end
   end
 
-  # defmacro has?(dets, tx, key, value) do
-  #   quote bind_quoted: [dets: dets, tx: tx, key: key, value: value], location: :keep do
-  #     {balance, lock} = DetsPlux.get_tx(dets, tx, key, {0, 0})
-
-  #     case balance >= value do
-  #       true ->
-  #         DetsPlux.put(tx, key, {balance - value, lock})
-
-  #       false ->
-  #         false
-  #     end
-  #   end
-  # end
-
-  ######################################################################
-
   defmacro send(amount) do
     quote bind_quoted: [amount: amount], location: :keep do
       balance_key = DetsPlux.tuple(var!(from), var!(token_id))
@@ -68,10 +52,27 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro send(amount, sacrifice) do
+  defmacro refund(amount) do
+    quote bind_quoted: [amount: amount], location: :keep do
+      balance_key = DetsPlux.tuple(var!(from), var!(token_id))
+      to_balance_key = DetsPlux.tuple(var!(to), var!(token_id))
+
+      {balance, lock1} = DetsPlux.get_tx(var!(dets), var!(tx), balance_key, {0, 0})
+
+      {balance2, lock2} =
+        DetsPlux.get_tx(var!(dets), var!(tx), to_balance_key, {0, 0})
+
+      DetsPlux.put(var!(tx), balance_key, {balance - amount, lock1})
+      DetsPlux.put(var!(tx), to_balance_key, {balance2 + amount, lock2})
+      reg_refund(var!(from), var!(to), var!(token_id), amount)
+    end
+  end
+
+  defmacro send(amount, remove) do
     quote bind_quoted: [
             amount: amount,
-            sacrifice: sacrifice
+            remove: remove,
+            token: @token
           ],
           location: :keep do
       balance_key = DetsPlux.tuple(var!(from), var!(token_id))
@@ -82,20 +83,20 @@ defmodule BalanceStore do
       {balance2, lock2} =
         DetsPlux.get_tx(var!(dets), var!(tx), to_balance_key, {0, 0})
 
-      DetsPlux.put(var!(tx), balance_key, {balance - amount - sacrifice, lock1})
+      DetsPlux.put(var!(tx), balance_key, {balance - amount - remove, lock1})
       DetsPlux.put(var!(tx), to_balance_key, {balance2 + amount, lock2})
-      TokenSupply.subtract(var!(supply), sacrifice)
+      TokenSupply.subtract(var!(supply), remove)
 
       reg_payment(var!(from), var!(to), var!(token_id), amount)
-      reg_burn(var!(from), var!(token_id), sacrifice)
+      reg_delete(var!(from), token, remove)
     end
   end
 
-  defmacro send(amount, fees, sacrifice) do
+  defmacro send(amount, fees, remove) do
     quote bind_quoted: [
             amount: amount,
             fees: fees,
-            sacrifice: sacrifice
+            remove: remove
           ],
           location: :keep do
       balance_key = DetsPlux.tuple(var!(from), var!(token_id))
@@ -110,34 +111,34 @@ defmodule BalanceStore do
       {balance3, lock3} =
         DetsPlux.get_tx(var!(dets), var!(tx), validator_balance_key, {0, 0})
 
-      DetsPlux.put(var!(tx), balance_key, {balance - amount - fees - sacrifice, lock1})
+      DetsPlux.put(var!(tx), balance_key, {balance - amount - fees - remove, lock1})
       DetsPlux.put(var!(tx), to_balance_key, {balance2 + amount, lock2})
       DetsPlux.put(var!(tx), validator_balance_key, {balance3 + fees, lock3})
 
-      TokenSupply.subtract(var!(supply), sacrifice)
+      TokenSupply.subtract(var!(supply), remove)
 
       reg_payment(var!(from), var!(to), var!(token_id), amount)
       reg_fees(var!(from), var!(vOwner), var!(token_id), fees)
-      reg_burn(var!(from), var!(token_id), sacrifice)
+      reg_delete(var!(from), var!(token_id), remove)
     end
   end
 
-  defmacro fees(fees, sacrifice) do
-    quote bind_quoted: [fees: fees, sacrifice: sacrifice, native: @token], location: :keep do
-      balance_key = DetsPlux.tuple(var!(from), native)
-      validator_balance_key = DetsPlux.tuple(var!(vOwner), native)
+  defmacro fees(fees, remove) do
+    quote bind_quoted: [fees: fees, remove: remove, token: @token], location: :keep do
+      balance_key = DetsPlux.tuple(var!(from), token)
+      validator_balance_key = DetsPlux.tuple(var!(vOwner), token)
 
       {balance, lock1} = DetsPlux.get_tx(var!(dets), var!(tx), balance_key, {0, 0})
 
       {balance3, lock3} =
         DetsPlux.get_tx(var!(dets), var!(tx), validator_balance_key, {0, 0})
 
-      DetsPlux.put(var!(tx), balance_key, {balance - fees - sacrifice, lock1})
+      DetsPlux.put(var!(tx), balance_key, {balance - fees - remove, lock1})
       DetsPlux.put(var!(tx), validator_balance_key, {balance3 + fees, lock3})
-      TokenSupply.subtract(var!(supply), sacrifice)
+      TokenSupply.subtract(var!(supply), remove)
 
-      reg_fees(var!(from), var!(vOwner), native, fees)
-      reg_burn(var!(from), var!(token_id), sacrifice)
+      reg_fees(var!(from), var!(vOwner), token, fees)
+      reg_delete(var!(from), token, remove)
     end
   end
 
@@ -149,6 +150,18 @@ defmodule BalanceStore do
       DetsPlux.put(var!(tx), key, {balance + value, lock})
 
       reg_coinbase(account, token, value)
+    end
+  end
+
+  defmacro delete(account, token, amount) do
+    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
+      key = DetsPlux.tuple(account, token)
+      {balance, lock} = DetsPlux.get_tx(var!(dets), var!(tx), key, {0, 0})
+
+      DetsPlux.put(var!(tx), key, {balance - amount, lock})
+      TokenSupply.subtract(var!(supply), amount)
+
+      reg_delete(account, token, amount)
     end
   end
 
@@ -232,7 +245,7 @@ defmodule BalanceStore do
         supply = TokenSupply.new(token)
         TokenSupply.subtract(supply, value)
 
-        reg_burn(from, token, value)
+        reg_delete(from, token, value)
       else
         :error
       end

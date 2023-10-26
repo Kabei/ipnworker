@@ -62,7 +62,7 @@ defmodule Ippan.Func.Token do
       when byte_size(id) <= 10 do
     map_filter = Map.take(opts, Token.editable())
     db_ref = :persistent_term.get(:main_conn)
-    fees = EnvStore.network_fee()
+    fees = EnvStore.fees()
 
     cond do
       opts == %{} ->

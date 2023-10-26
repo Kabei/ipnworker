@@ -72,7 +72,7 @@ defmodule Ippan.Func.Validator do
   def update(%{id: account_id}, id, opts \\ %{}) do
     map_filter = Map.take(opts, Validator.editable())
     db_ref = :persistent_term.get(:main_conn)
-    fees = EnvStore.network_fee()
+    fees = EnvStore.fees()
 
     cond do
       opts == %{} ->
