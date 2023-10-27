@@ -86,9 +86,10 @@ defmodule Ippan.Func.Coin do
   def multisend(
         %{id: from, validator: %{fee: vfee, fee_type: fee_type}, size: size},
         token_id,
-        outputs
+        outputs,
+        note \\ ""
       )
-      when length(outputs) > 0 do
+      when length(outputs) > 0 and byte_size(note) <= @note_max_size do
     total =
       Enum.reduce(outputs, 0, fn [to, amount], acc ->
         cond do
@@ -113,6 +114,7 @@ defmodule Ippan.Func.Coin do
 
     BalanceTrace.new(from)
     |> BalanceTrace.requires!(token_id, total + fees)
+    |> BalanceTrace.output()
   end
 
   def refund(%{id: account_id}, hash16)
