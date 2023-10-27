@@ -86,35 +86,50 @@ defmodule Ippan.Func.Dns do
 
   def delete(%{id: account_id}, fullname)
       when byte_size(fullname) <= @fullname_max_size do
-    {_subdomain, domain} = Domain.split(fullname)
+    {subdomain, domain} = Domain.split(fullname)
     db_ref = :persistent_term.get(:main_conn)
 
-    unless Domain.owner?(domain, account_id) do
-      raise IppanError, "Invalid Owner"
+    cond do
+      not Domain.owner?(domain, account_id) ->
+        raise IppanError, "Invalid Owner"
+
+      not DNS.exists?(domain, subdomain) ->
+        raise IppanError, "Not exists"
+
+      true ->
+        nil
     end
   end
 
   def delete(%{id: account_id}, fullname, type)
       when type in @type_range do
-    {_subdomain, domain} = Domain.split(fullname)
+    {subdomain, domain} = Domain.split(fullname)
     db_ref = :persistent_term.get(:main_conn)
 
-    unless Domain.owner?(domain, account_id) do
-      raise IppanError, "Invalid Owner"
+    cond do
+      not Domain.owner?(domain, account_id) ->
+        raise IppanError, "Invalid Owner"
+
+      not DNS.exists_type?(domain, subdomain, type) ->
+        raise IppanError, "Not exists"
+
+      true ->
+        nil
     end
   end
 
   def delete(%{id: account_id}, fullname, hash16)
       when byte_size(hash16) == 32 do
-    {_subdomain, domain} = Domain.split(fullname)
+    {subdomain, domain} = Domain.split(fullname)
     db_ref = :persistent_term.get(:main_conn)
+    hash = Base.decode16!(hash16, case: :mixed)
 
     cond do
-      not Match.base16(hash16) ->
-        raise IppanError, "Invalid hash"
-
       not Domain.owner?(domain, account_id) ->
         raise IppanError, "Invalid Owner"
+
+      not DNS.exists_hash?(domain, subdomain, hash) ->
+        raise IppanError, "Not exists"
 
       true ->
         nil
