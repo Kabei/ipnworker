@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS history.txs(
   "size" INTEGER,
   "ctype" INTEGER,
   "args" BYTEA,
-  PRIMARY KEY("ix", "block")
+  PRIMARY KEY("from", "nonce")
 );
 
 CREATE TABLE IF NOT EXISTS history.balance(
@@ -69,13 +69,14 @@ CREATE TABLE IF NOT EXISTS history.balance(
 );
 
 CREATE TABLE IF NOT EXISTS history.payments(
-  "ix" INTEGER,
+  "from" BYTEA,
+  "nonce" BIGINT,
   "block" BIGINT,
   "type" INTEGER,
-  "from" BYTEA,
   "to" BYTEA,
   "token" BYTEA,
-  "amount" BIGINT
+  "amount" BIGINT,
+  PRIMARY KEY("from", "nonce")
 );
 
 CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
