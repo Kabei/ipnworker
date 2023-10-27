@@ -226,6 +226,8 @@ defmodule Ippan.ClusterNodes do
       PubSub.broadcast(@pubsub, "round.new", msg)
       PubSub.broadcast(@pubsub, "round:#{round_id}", msg)
 
+      run_maintenance(round_id, db_ref)
+
       # :persistent_term.put(:round, round_id)
     end
   end
@@ -267,6 +269,15 @@ defmodule Ippan.ClusterNodes do
       [id, token] = String.split(key, "|", parts: 2)
       PgStore.upsert_balance(pg_conn, [id, token, balance, lock])
     end)
+  end
+
+  defp run_maintenance(0, _), do: nil
+
+  defp run_maintenance(round_id, db_ref) do
+    if rem(round_id, 25_000) == 0 do
+      Sqlite.step("expiry_refund", [round_id])
+      Sqlite.step("expiry_domain", [round_id])
+    end
   end
 
   defp node_syncing?(round) do
