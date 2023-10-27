@@ -77,23 +77,29 @@ defmodule Ippan.BlockHandler do
           nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
           validator = Validator.get(creator_id)
 
-          umap =
-            Enum.reduce(messages, UMap.new(), fn [body, signature], acc ->
+          ets = :ets.new(:temp, [:set])
+
+          values =
+            Enum.reduce(messages, [], fn [body, signature], acc ->
               hash = Blake3.hash(body)
               size = byte_size(body) + byte_size(signature)
               [type, nonce, from | args] = @json.decode!(body)
 
-              try do
-                result =
-                  TxHandler.decode_from_file!()
+              result =
+                TxHandler.decode_from_file!()
 
-                UMap.put_new(acc, hash, result)
-              catch
-                _ -> acc
+              case :ets.insert_new(ets, {hash, nil}) do
+                true ->
+                  [result | acc]
+
+                false ->
+                  :ets.delete(ets)
+                  raise IppanError, "Invalid block messages duplicated"
               end
             end)
+            |> Enum.reverse()
 
-          if count != UMap.size(umap) do
+          if count != Enum.count(values) do
             raise IppanError, "Invalid block messages count"
           end
 
@@ -103,7 +109,7 @@ defmodule Ippan.BlockHandler do
           :ok =
             File.write(
               export_path,
-              encode_file!(%{"data" => UMap.values(umap), "vsn" => version})
+              encode_file!(%{"data" => values, "vsn" => version})
             )
       end
     rescue

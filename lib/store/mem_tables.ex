@@ -1,8 +1,14 @@
 defmodule MemTables do
-  require RegPay
   # @set_opts [:set, :public, read_concurrency: true, write_concurrency: true]
   # @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: false]
 
+  @ordered_named_opts [
+    :ordered_set,
+    :named_table,
+    :public,
+    read_concurrency: true,
+    write_concurrency: false
+  ]
   @set_named_concurrent_opts [
     :set,
     :named_table,
@@ -14,7 +20,7 @@ defmodule MemTables do
   @tables_opt %{
     hash: @set_named_concurrent_opts,
     dhash: @set_named_concurrent_opts,
-    dtx: @set_named_concurrent_opts,
+    dtx: @ordered_named_opts,
     # cache
     validator: @set_named_concurrent_opts,
     token: @set_named_concurrent_opts,
