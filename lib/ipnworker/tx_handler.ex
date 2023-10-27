@@ -75,7 +75,7 @@ defmodule Ippan.TxHandler do
 
       # Check nonce
       nonce_dets = DetsPlux.get(:nonce)
-      cache_nonce_tx = DetsPlux.tx(:cache_nonce)
+      cache_nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
       Wallet.gte_nonce!(nonce_dets, cache_nonce_tx, var!(from), var!(nonce))
 
       source = %{

@@ -51,7 +51,7 @@ defmodule Ipnworker.Router do
                   :ets.insert(:hash, {hash, height})
 
                   # Update nonce
-                  cache_nonce_tx = DetsPlux.tx(:cache_nonce)
+                  cache_nonce_tx = DetsPlux.tx(:nonce, :cache_nonce)
                   DetsPlux.put(cache_nonce_tx, from, nonce)
 
                   json(%{
