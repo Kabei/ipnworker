@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Validator do
   require Validator
 
   @table "validator"
-  @select ~w(id hostname port name owner pubkey net_pubkey fee_type fee stake failures created_at updated_at)a
+  @select ~w(id hostname port name owner pubkey net_pubkey avatar fee_type fee stake failures created_at updated_at)a
 
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
