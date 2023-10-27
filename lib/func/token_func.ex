@@ -50,11 +50,9 @@ defmodule Ippan.Func.Token do
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_any(:opts, Token.props())
 
-        dets = DetsPlux.get(:balance)
-        tx = DetsPlux.tx(:balance)
-        balance_key = DetsPlux.tuple(account_id, @token)
-
-        BalanceStore.requires!(dets, tx, balance_key, price)
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, price)
+        |> BalanceTrace.output()
     end
   end
 

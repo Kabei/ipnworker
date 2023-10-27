@@ -16,7 +16,7 @@ defmodule Ippan.TxHandler do
 
           pk
 
-        # get first argument and not check (wallet subscribe)
+        # get first argument and not check (wallet.new)
         1 ->
           Fast64.decode64(hd(var!(args)))
 
