@@ -7,24 +7,21 @@ defmodule Ippan.Ecto.Payments do
   @primary_key false
   @schema_prefix "history"
   schema "payments" do
-    field(:ix, :integer)
+    field(:from, :binary)
+    field(:nonce, :integer)
+    field(:to, :binary)
     field(:block, :integer)
     field(:type, :integer)
-    field(:from, :binary)
-    field(:to, :binary)
     field(:token, :binary)
     field(:amount, :integer)
   end
 
-  @select ~w(ix block type from to token amount)a
+  @select ~w(from nonce to block type token amount)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
-  def by(block, ix) do
-    from(p in Payments,
-      where: p.ix == ^ix and p.block == ^block,
-      order_by: [desc: p.block, asc: p.ix]
-    )
+  def by(address, nonce) do
+    from(p in Payments, where: p.from == ^address and p.nonce == ^nonce)
     |> filter_select()
     |> Repo.all()
   end
@@ -49,6 +46,6 @@ defmodule Ippan.Ecto.Payments do
 
   defp filter_below(query, _), do: query
 
-  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.block, asc: p.ix)
-  defp sort(query, _), do: order_by(query, [p], desc: p.block, asc: p.ix)
+  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.block)
+  defp sort(query, _), do: order_by(query, [p], desc: p.block)
 end
