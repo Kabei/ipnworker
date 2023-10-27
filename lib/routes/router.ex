@@ -64,14 +64,11 @@ defmodule Ipnworker.Router do
                   :ets.delete(:dhash, dtx_key)
 
                   case message do
-                    :timeout ->
-                      send_resp(conn, 503, "Service unavailable")
-
-                    :not_exists ->
-                      send_resp(conn, 503, "Service unavailable")
-
-                    message ->
+                    message when is_binary(message) ->
                       send_resp(conn, 400, message)
+
+                    _ ->
+                      send_resp(conn, 503, "")
                   end
               end
 
