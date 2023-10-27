@@ -54,7 +54,7 @@ defmodule RegPay do
 
         :ets.insert(
           :persistent_term.get(:payment),
-          {hash, 101, unquote(to), unquote(from), unquote(token), unquote(amount)}
+          {hash, 101, unquote(from), unquote(to), unquote(token), unquote(amount)}
         )
       end
     else

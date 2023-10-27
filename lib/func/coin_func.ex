@@ -57,7 +57,7 @@ defmodule Ippan.Func.Coin do
 
       true ->
         total =
-          Enum.reduce(outputs, 0, fn [_account_id, amount], acc ->
+          Enum.reduce(outputs, 0, fn [account, amount], acc ->
             cond do
               amount <= 0 ->
                 raise ArgumentError, "Amount must be positive number"
@@ -65,7 +65,7 @@ defmodule Ippan.Func.Coin do
               amount > @max_tx_amount ->
                 raise ArgumentError, "Amount exceeded max value"
 
-              not Match.account?(account_id) ->
+              not Match.account?(account) ->
                 raise ArgumentError, "Account ID invalid"
 
               true ->
@@ -81,6 +81,38 @@ defmodule Ippan.Func.Coin do
           end
         end
     end
+  end
+
+  def multi_send(
+        %{id: from, validator: %{fee: vfee, fee_type: fee_type}, size: size},
+        token_id,
+        outputs
+      )
+      when length(outputs) > 0 do
+    total =
+      Enum.reduce(outputs, 0, fn [to, amount], acc ->
+        cond do
+          amount <= 0 ->
+            raise ArgumentError, "Amount must be positive number"
+
+          amount > @max_tx_amount ->
+            raise ArgumentError, "Amount exceeded max value"
+
+          not Match.account?(to) ->
+            raise ArgumentError, "Account ID invalid"
+
+          to == from ->
+            raise ArgumentError, "Wrong receiver"
+
+          true ->
+            amount + acc
+        end
+      end)
+
+    fees = Utils.calc_fees!(fee_type, vfee, total, size)
+
+    BalanceTrace.new(from)
+    |> BalanceTrace.requires!(token_id, total + fees)
   end
 
   def refund(%{id: account_id}, hash16)

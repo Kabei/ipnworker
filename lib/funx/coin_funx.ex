@@ -21,33 +21,19 @@ defmodule Ippan.Funx.Coin do
         amount
       ) do
     is_validator = vOwner == from
-    is_native_token = @token == token_id
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
     tfees = Utils.calc_fees!(fee_type, vfee, amount, size)
 
-    if is_validator do
-      case is_native_token do
-        true ->
-          BalanceStore.send(amount, tfees)
+    BalanceStore.send(amount)
 
-        _ ->
-          BalanceStore.send(amount)
-          BalanceStore.delete(from, @token, tfees)
-      end
+    if is_validator do
+      BalanceStore.delete(from, @token, tfees)
     else
       remove = ceil(tfees * 0.3)
       fees = tfees - remove
-
-      case is_native_token do
-        true ->
-          BalanceStore.send(amount, fees, remove)
-
-        _ ->
-          BalanceStore.send(amount)
-          BalanceStore.fees(fees, remove)
-      end
+      BalanceStore.fees(fees, remove)
     end
   end
 
@@ -90,6 +76,37 @@ defmodule Ippan.Funx.Coin do
       |> Enum.sum()
 
     TokenSupply.add(supply, total)
+  end
+
+  def multisend(
+        source = %{
+          id: from,
+          validator: %{fee: vfee, fee_type: fee_type, owner: vOwner},
+          size: size
+        },
+        token_id,
+        outputs
+      ) do
+    is_validator = vOwner == from
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    supply = TokenSupply.new(token_id)
+
+    total =
+      Enum.reduce(outputs, 0, fn [to, amount], acc ->
+        BalanceStore.send(amount)
+        acc + amount
+      end)
+
+    tfees = Utils.calc_fees!(fee_type, vfee, total, size)
+
+    if is_validator do
+      BalanceStore.delete(from, @token, total)
+    else
+      remove = ceil(tfees * 0.3)
+      fees = tfees - remove
+      BalanceStore.fees(fees, remove)
+    end
   end
 
   def burn(source = %{id: account_id}, token_id, amount) do
