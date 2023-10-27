@@ -137,7 +137,7 @@ defmodule BalanceStore do
         DetsPlux.put(var!(tx), validator_balance_key, {balance3 + fees, lock3})
         TokenSupply.subtract(var!(supply), remove)
       else
-        BalanceStore.delete(var!(from), var!(token_id), var!(remove))
+        BalanceStore.delete(var!(from), var!(token_id), remove)
       end
     end
   end

@@ -33,8 +33,11 @@ defmodule RoundCommit do
       end
     else
       balance_dets = DetsPlux.get(:balance)
-      balance_tx = DetsPlux.tx(balance_dets, :balance)
+      balance_tx = DetsPlux.tx(:balance)
       DetsPlux.sync(balance_dets, balance_tx)
+      stats_dets = DetsPlux.get(:stats)
+      supply_tx = DetsPlux.tx(stats_dets, :supply)
+      DetsPlux.sync(stats_dets, supply_tx)
       Sqlite.sync(db_ref)
     end
   end
