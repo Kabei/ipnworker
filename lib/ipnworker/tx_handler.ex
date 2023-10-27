@@ -75,21 +75,19 @@ defmodule Ippan.TxHandler do
 
       # Check nonce
       nonce_dets = DetsPlux.get(:nonce)
-      cache_nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
+      cache_nonce_tx = DetsPlux.tx(:cache_nonce)
       Wallet.gte_nonce!(nonce_dets, cache_nonce_tx, var!(from), var!(nonce))
 
       source = %{
         id: var!(from),
         hash: var!(hash),
+        nonce: var!(nonce),
         size: var!(size),
         type: var!(type),
         validator: var!(validator)
       }
 
       return = apply(mod, fun, [source | var!(args)])
-
-      # Update nonce
-      DetsPlux.put(cache_nonce_tx, var!(from), var!(nonce))
 
       case deferred do
         false ->
@@ -149,6 +147,7 @@ defmodule Ippan.TxHandler do
       source = %{
         id: var!(from),
         hash: var!(hash),
+        nonce: var!(nonce),
         size: var!(size),
         type: var!(type),
         validator: var!(validator)
@@ -192,6 +191,7 @@ defmodule Ippan.TxHandler do
         block: var!(block_id),
         hash: var!(hash),
         id: var!(from),
+        nonce: var!(nonce),
         round: var!(round_id),
         size: var!(size),
         type: var!(type),
@@ -210,7 +210,16 @@ defmodule Ippan.TxHandler do
   defmacro insert_deferred do
     quote location: :keep do
       key = {var!(type), var!(arg_key)}
-      body = [var!(hash), var!(from), var!(validator), var!(args), var!(size), var!(block_id)]
+
+      body = [
+        var!(hash),
+        var!(from),
+        var!(validator),
+        var!(nonce),
+        var!(args),
+        var!(size),
+        var!(block_id)
+      ]
 
       case :ets.lookup(:dtx, key) do
         [] ->
@@ -238,6 +247,7 @@ defmodule Ippan.TxHandler do
                          hash,
                          account_id,
                          validator_id,
+                         nonce,
                          args,
                          size,
                          block_id
@@ -248,6 +258,7 @@ defmodule Ippan.TxHandler do
           block: block_id,
           hash: hash,
           id: account_id,
+          nonce: nonce,
           round: var!(round_id),
           size: size,
           type: type,

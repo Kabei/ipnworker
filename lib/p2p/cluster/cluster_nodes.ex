@@ -213,6 +213,8 @@ defmodule Ippan.ClusterNodes do
       # Save balances
       run_save_balances(balance_tx, pg_conn)
 
+      RegPay.commit(pg_conn)
+
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
       IO.inspect("step 4")
 

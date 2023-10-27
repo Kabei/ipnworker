@@ -1,5 +1,4 @@
 defmodule BalanceStore do
-  import RegPay, except: [init: 0, commit_tx: 2, commit_reward: 4]
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
 
@@ -48,7 +47,7 @@ defmodule BalanceStore do
 
       DetsPlux.put(var!(tx), balance_key, {balance - amount, lock1})
       DetsPlux.put(var!(tx), to_balance_key, {balance2 + amount, lock2})
-      reg_payment(var!(from), var!(to), var!(token_id), amount)
+      RegPay.payment(var!(source), var!(from), var!(to), var!(token_id), amount)
     end
   end
 
@@ -64,7 +63,7 @@ defmodule BalanceStore do
 
       DetsPlux.put(var!(tx), balance_key, {balance - amount, lock1})
       DetsPlux.put(var!(tx), to_balance_key, {balance2 + amount, lock2})
-      reg_refund(var!(from), var!(to), var!(token_id), amount)
+      RegPay.refund(var!(source), var!(from), var!(to), var!(token_id), amount)
     end
   end
 
@@ -87,8 +86,8 @@ defmodule BalanceStore do
       DetsPlux.put(var!(tx), to_balance_key, {balance2 + amount, lock2})
       TokenSupply.subtract(var!(supply), remove)
 
-      reg_payment(var!(from), var!(to), var!(token_id), amount)
-      reg_delete(var!(from), token, remove)
+      RegPay.payment(var!(source), var!(from), var!(to), var!(token_id), amount)
+      RegPay.delete(var!(source), var!(from), token, remove)
     end
   end
 
@@ -117,9 +116,9 @@ defmodule BalanceStore do
 
       TokenSupply.subtract(var!(supply), remove)
 
-      reg_payment(var!(from), var!(to), var!(token_id), amount)
-      reg_fees(var!(from), var!(vOwner), var!(token_id), fees)
-      reg_delete(var!(from), var!(token_id), remove)
+      RegPay.payment(var!(source), var!(from), var!(to), var!(token_id), amount)
+      RegPay.fees(var!(source), var!(from), var!(vOwner), var!(token_id), fees)
+      RegPay.delete(var!(source), var!(from), var!(token_id), remove)
     end
   end
 
@@ -137,8 +136,8 @@ defmodule BalanceStore do
       DetsPlux.put(var!(tx), validator_balance_key, {balance3 + fees, lock3})
       TokenSupply.subtract(var!(supply), remove)
 
-      reg_fees(var!(from), var!(vOwner), token, fees)
-      reg_delete(var!(from), token, remove)
+      RegPay.fees(var!(source), var!(from), var!(vOwner), token, fees)
+      RegPay.delete(var!(source), var!(from), token, remove)
     end
   end
 
@@ -148,7 +147,7 @@ defmodule BalanceStore do
       {balance, lock} = DetsPlux.get_tx(var!(dets), var!(tx), key, {0, 0})
 
       DetsPlux.put(var!(tx), key, {balance + value, lock})
-      reg_coinbase(account, token, value)
+      RegPay.coinbase(var!(source), account, token, value)
     end
   end
 
@@ -160,7 +159,7 @@ defmodule BalanceStore do
       DetsPlux.put(var!(tx), key, {balance - amount, lock})
       TokenSupply.subtract(var!(supply), amount)
 
-      reg_delete(account, token, amount)
+      RegPay.delete(var!(source), account, token, amount)
     end
   end
 
@@ -172,7 +171,7 @@ defmodule BalanceStore do
       DetsPlux.put(var!(tx), key, {balance - amount, lock})
       TokenSupply.subtract(var!(supply), amount)
 
-      reg_burn(account, token, amount)
+      RegPay.burn(var!(source), account, token, amount)
     end
   end
 
@@ -184,7 +183,7 @@ defmodule BalanceStore do
       if balance >= value do
         DetsPlux.put(var!(tx), key, {balance - value, lock + value})
 
-        reg_lock(to, token, value)
+        lock(var!(source), to, token, value)
       else
         :error
       end
@@ -199,7 +198,7 @@ defmodule BalanceStore do
       if lock >= value do
         DetsPlux.put(var!(tx), key, {balance + value, lock - value})
 
-        reg_unlock(to, token, value)
+        RegPay.unlock(var!(source), to, token, value)
       else
         :error
       end
@@ -222,7 +221,7 @@ defmodule BalanceStore do
           {balance2, lock2} = DetsPlux.get_tx(var!(dets), var!(tx), to_key, {0, 0})
           DetsPlux.put(var!(tx), to_key, {balance2 + value, lock2})
 
-          reg_fees(from, to, token, value)
+          RegPay.fees(var!(source), from, to, token, value)
         else
           :error
         end
@@ -246,24 +245,7 @@ defmodule BalanceStore do
         supply = TokenSupply.new(token)
         TokenSupply.subtract(supply, value)
 
-        reg_delete(from, token, value)
-      else
-        :error
-      end
-    end
-  end
-
-  defmacro pay_stake(from, value) do
-    quote bind_quoted: [from: from, token: @token, value: value],
-          location: :keep do
-      key = DetsPlux.tuple(from, token)
-      {balance, lock} = DetsPlux.get_tx(var!(dets), var!(tx), key, {0, 0})
-
-      result = balance - value
-
-      if result >= 0 do
-        DetsPlux.put(var!(tx), key, {result, lock})
-        reg_stake(from, token, value)
+        RegPay.delete(var!(source), from, token, value)
       else
         :error
       end

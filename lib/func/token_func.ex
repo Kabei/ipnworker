@@ -94,7 +94,7 @@ defmodule Ippan.Func.Token do
 
     cond do
       TokenSupply.get(supply) != 0 ->
-        raise IppanError, "Invalid operation"
+        raise IppanError, "Token is in use"
 
       not Token.owner?(id, account_id) ->
         raise IppanError, "Invalid owner"

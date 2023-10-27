@@ -1,4 +1,4 @@
-CREATE SCHEMA IF NOT EXISTS history;
+ CREATE SCHEMA IF NOT EXISTS history;
 
 CREATE TABLE IF NOT EXISTS history.rounds(
   "id" BIGINT PRIMARY KEY NOT NULL,
@@ -69,18 +69,22 @@ CREATE TABLE IF NOT EXISTS history.balance(
 );
 
 CREATE TABLE IF NOT EXISTS history.payments(
-  "ix" INTEGER,
+  "from" BYTEA,
+  "nonce" INTEGER,
+  "to" BYTEA,
   "block" BIGINT,
   "type" INTEGER,
-  "from" BYTEA,
-  "to" BYTEA,
   "token" BYTEA,
   "amount" BIGINT
 );
 
 CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
 
-CREATE INDEX IF NOT EXISTS payments_idx ON history.payments("ix", "block");
+CREATE INDEX IF NOT EXISTS payments_from_idx ON history.payments("from", "nonce" DESC);
+
+CREATE INDEX IF NOT EXISTS payments_to_idx ON history.payments("to", "block" DESC);
+
+CREATE INDEX IF NOT EXISTS payments_block_idx ON history.payments("block");
 
 DO $$
 BEGIN

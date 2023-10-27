@@ -113,7 +113,6 @@ defmodule MinerWorker do
     nonce_dets = DetsPlux.get(:nonce)
     nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
     counter_ref = :counters.new(1, [])
-    ets_payment = :persistent_term.get(:payment)
 
     Enum.each(transactions, fn
       [hash, type, from, nonce, args, size] ->
@@ -142,8 +141,6 @@ defmodule MinerWorker do
             @json.encode!(args)
           ])
           |> IO.inspect()
-
-          RegPay.commit_tx(pg_conn, ets_payment, hash, ix, block_id)
 
           :counters.add(counter_ref, 1, 1)
         end
@@ -174,8 +171,6 @@ defmodule MinerWorker do
             @json.encode!(args)
           ])
           |> IO.inspect()
-
-          RegPay.commit_tx(pg_conn, ets_payment, hash, ix, block_id)
 
           :counters.add(counter_ref, 1, 1)
         end

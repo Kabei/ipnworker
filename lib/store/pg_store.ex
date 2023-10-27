@@ -23,8 +23,8 @@ defmodule PgStore do
     }
   end
 
-  if @master do
-    def start do
+  def start do
+    if @master do
       opts =
         Application.get_env(@app, @repo)
         |> then(fn opts ->
@@ -39,9 +39,7 @@ defmodule PgStore do
       print(opts)
 
       {:ok, pid}
-    end
-  else
-    def start do
+    else
       :ignore
     end
   end

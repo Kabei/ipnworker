@@ -50,6 +50,10 @@ defmodule Ipnworker.Router do
                 {:ok, %{"height" => height}} ->
                   :ets.insert(:hash, {hash, height})
 
+                  # Update nonce
+                  cache_nonce_tx = DetsPlux.tx(:cache_nonce)
+                  DetsPlux.put(cache_nonce_tx, from, nonce)
+
                   json(%{
                     "hash" => Base.encode16(hash, case: :lower),
                     "height" => height
