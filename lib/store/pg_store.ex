@@ -14,7 +14,7 @@ defmodule PgStore do
   # DB Pool connexions
   @pool :pg_pool
   @repo Ipnworker.Repo
-  @master Application.compile_env(@app, :master)
+  @history Application.compile_env(@app, :history)
 
   def child_spec(_args) do
     %{
@@ -24,7 +24,7 @@ defmodule PgStore do
   end
 
   def start do
-    if @master do
+    if @history do
       opts =
         Application.get_env(@app, @repo)
         |> then(fn opts ->

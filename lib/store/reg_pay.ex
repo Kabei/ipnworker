@@ -12,9 +12,9 @@ defmodule RegPay do
   # 302. unlock
 
   @app Mix.Project.config()[:app]
-  @master Application.compile_env(@app, :master)
+  @history Application.compile_env(@app, :history)
 
-  if @master do
+  if @history do
     def init do
       tid =
         :ets.new(:payment, [

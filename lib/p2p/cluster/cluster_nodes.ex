@@ -8,7 +8,7 @@ defmodule Ippan.ClusterNodes do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @pubsub :pubsub
-  @master Application.compile_env(@app, :master)
+  @history Application.compile_env(@app, :history)
 
   use Network,
     app: @app,
@@ -81,7 +81,7 @@ defmodule Ippan.ClusterNodes do
         node ->
           connect(Node.list_to_map(node))
 
-          if @master do
+          if @history do
             NodeSync.start_link(nil)
           end
       end
@@ -125,7 +125,7 @@ defmodule Ippan.ClusterNodes do
     round = MapUtil.to_atoms(msg_round)
 
     unless node_syncing?(round) do
-      if @master do
+      if @history do
         pgid = PgStore.pool()
 
         IO.inspect("handle 2")
@@ -218,7 +218,7 @@ defmodule Ippan.ClusterNodes do
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
       IO.inspect("step 4")
 
-      if @master do
+      if @history do
         PgStore.insert_round(pg_conn, round_encode)
         |> IO.inspect()
       end

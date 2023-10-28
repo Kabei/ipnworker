@@ -14,7 +14,7 @@ defmodule MinerWorker do
   @pubsub :pubsub
   @version Application.compile_env(@app, :version)
   @json Application.compile_env(@app, :json)
-  @master Application.compile_env(@app, :master)
+  @history Application.compile_env(@app, :history)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)
@@ -97,7 +97,7 @@ defmodule MinerWorker do
       Block.insert(b)
       |> IO.inspect()
 
-      if @master do
+      if @history do
         PgStore.insert_block(pg_conn, b)
         |> IO.inspect()
       end
@@ -127,7 +127,7 @@ defmodule MinerWorker do
               TxHandler.regular()
           end
 
-        if @master do
+        if @history do
           ix = :counters.get(cref, 1)
 
           PgStore.insert_tx(pg_conn, [
@@ -157,7 +157,7 @@ defmodule MinerWorker do
               TxHandler.insert_deferred(dtx, dtmp)
           end
 
-        if @master do
+        if @history do
           ix = :counters.get(cref, 1)
 
           PgStore.insert_tx(pg_conn, [
