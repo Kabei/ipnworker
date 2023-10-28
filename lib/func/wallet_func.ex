@@ -12,7 +12,7 @@ defmodule Ippan.Func.Wallet do
     pubkey = Fast64.decode64(pubkey)
     id = Address.hash(sig_type, pubkey)
     dets = DetsPlux.get(:wallet)
-    tx = DetsPlux.tx(:cache_wallet)
+    tx = DetsPlux.tx(dets, :cache_wallet)
 
     cond do
       id != account_id ->
