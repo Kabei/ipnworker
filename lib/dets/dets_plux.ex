@@ -1525,6 +1525,7 @@ end
 
 defimpl Enumerable, for: DetsPlux do
   alias DetsPlux.FileReader
+  import DetsPlux, only: [decode: 1]
 
   @suffixId "DEX+"
   @start_offset byte_size(@suffixId)
@@ -1568,7 +1569,7 @@ defimpl Enumerable, for: DetsPlux do
     ret =
       DetsPlux.iterate(acc, new_dataset, old_file, fn acc, _entry_hash, entry_blob, entry ->
         if entry != :delete do
-          fun.(entry || DetsPlux.decode(entry_blob), acc)
+          fun.(entry || decode(entry_blob), acc)
         else
           {:cont, acc}
         end
