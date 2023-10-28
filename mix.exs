@@ -7,7 +7,7 @@ defmodule Ipnworker.MixProject do
 
   def project do
     [
-      app: :ipnworker,
+      app: @app,
       version: @version,
       config_path: "config/config.exs",
       elixir: "~> 1.14",

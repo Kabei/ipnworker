@@ -1,8 +1,7 @@
 defmodule Ipnworker.Application do
   @moduledoc false
-
   use Application
-  alias Ippan.ClusterNodes
+  alias Ippan.{ClusterNodes, DetsSup}
 
   @app Mix.Project.config()[:app]
 
@@ -12,20 +11,11 @@ defmodule Ipnworker.Application do
     make_folders()
     load_keys()
 
-    store_dir = :persistent_term.get(:store_dir)
-    wallet_path = Path.join(store_dir, "wallet.dets")
-    nonce_path = Path.join(store_dir, "nonce.dets")
-    balance_path = Path.join(store_dir, "balance.dets")
-    stats_path = Path.join(store_dir, "stats.dets")
-
     children = [
       MemTables,
-      {DetsPlux, [id: :wallet, file: wallet_path]},
-      {DetsPlux, [id: :nonce, file: nonce_path]},
-      {DetsPlux, [id: :balance, file: balance_path]},
-      {DetsPlux, [id: :stats, file: stats_path]},
       MainStore,
       NetStore,
+      DetsSup,
       PgStore,
       Ipnworker.Repo,
       :poolboy.child_spec(:minerpool, miner_config()),

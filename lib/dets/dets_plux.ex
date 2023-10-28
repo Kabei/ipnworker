@@ -50,6 +50,7 @@ defmodule DetsPlux do
   @dets_suffix :dets
   @txs_suffix :txs
 
+  require Logger
   alias DetsPlux.{Bloom, EntryWriter, FileReader, FileWriter}
   use GenServer
 
@@ -63,17 +64,15 @@ defmodule DetsPlux do
 
   # Inline common instructions
   @compile {:inline,
-            call: 2,
-            call: 3,
-            decode: 1,
-            encode: 1,
             get: 1,
-            key_hash: 1,
+            get: 2,
             key_fun: 1,
             tuple: 2,
             tuple: 3,
             tx: 1,
-            tx: 2}
+            tx: 2,
+            update_counter: 3,
+            update_counter: 4}
 
   defmodule State do
     @moduledoc false
@@ -167,29 +166,44 @@ defmodule DetsPlux do
     {:ok, pid}
   end
 
-  defp call(pid, cmd, timeout \\ :infinity) do
-    :gen_server.call(pid, cmd, timeout)
+  defmacrop call(pid, cmd, timeout \\ :infinity) do
+    quote location: :keep do
+      :gen_server.call(unquote(pid), unquote(cmd), unquote(timeout))
+    end
   end
 
-  def encode(term) do
-    # :erlang.term_to_binary(unquote(term))
-    CBOR.Encoder.encode_into(term, <<>>)
+  defmacro encode(term) do
+    quote location: :keep do
+      # :erlang.term_to_binary(unquote(term))
+      CBOR.Encoder.encode_into(unquote(term), <<>>)
+    end
   end
 
-  def decode(bin) do
-    # :erlang.binary_to_term(unquote(bin))
-    CBOR.Decoder.decode(bin) |> elem(0)
+  defmacro decode(bin) do
+    quote location: :keep do
+      # :erlang.binary_to_term(unquote(bin))
+      CBOR.Decoder.decode(unquote(bin)) |> elem(0)
+    end
   end
 
-  defp key_hash(key) do
-    <<hash::binary-size(@hash_size), _::binary>> =
-      Blake3.Native.hash(key)
+  defmacrop key_hash(key) do
+    quote bind_quoted: [key: key, size: @hash_size], location: :keep do
+      <<hash::binary-size(size), _::binary>> =
+        Blake3.Native.hash(key)
 
-    hash
+      hash
+    end
+  end
+
+  defmacrop key_fun(x) do
+    quote location: :keep do
+      {key, _} = unquote(x)
+      key
+    end
   end
 
   # defp key_fun([key, _]), do: key
-  defp key_fun({key, _}), do: key
+  # defp key_fun({key, _}), do: key
 
   @spec tuple(binary, binary) :: binary
   def tuple(k1, k2) do
@@ -339,8 +353,11 @@ defmodule DetsPlux do
       [{_key, :delete}] ->
         nil
 
-      [{_key, {_, value}}] ->
+      [{_key, value}] ->
         value
+
+      [{_key, v1, v2}] ->
+        {v1, v2}
 
       [] ->
         call(pid, {:lookup, key, key_hash(key)}) || default
@@ -357,16 +374,24 @@ defmodule DetsPlux do
       [{_key, :delete}] ->
         nil
 
-      [{_key, {_, value}}] ->
+      [{_key, value}] ->
         value
+
+      [{_key, v1, v2}] ->
+        {v1, v2}
 
       [] ->
         case call(pid, {:lookup, key, key_hash(key)}) do
           nil ->
             default
 
+          z = {x, y} ->
+            :ets.insert(tx, {key, x, y})
+            z
+
           ret ->
-            :ets.insert(tx, {key, {key, ret}})
+            # :ets.insert(tx, {key, {key, ret}})
+            :ets.insert(tx, {key, ret})
             ret
         end
     end
@@ -381,7 +406,7 @@ defmodule DetsPlux do
       [{_key, :delete}] ->
         false
 
-      [{_key, {_, _value}}] ->
+      [_object] ->
         true
 
       _ ->
@@ -394,24 +419,9 @@ defmodule DetsPlux do
     call(pid, {:member, key, key_hash(key)})
   end
 
-  @spec begin(atom) :: transaction()
-  def begin(name) do
-    tid =
-      :ets.new(name, [
-        @ets_type,
-        :public
-        # read_concurrency: true,
-        # write_concurrency: true
-      ])
-
-    :persistent_term.put({@txs_suffix, name}, tid)
-
-    tid
-  end
-
   @spec tx(atom) :: transaction()
   def tx(name) do
-    dets = :persistent_term.get({@dets_suffix, name})
+    dets = :persistent_term.get({@dets_suffix, name}, nil)
     tx(dets, name)
   end
 
@@ -439,9 +449,35 @@ defmodule DetsPlux do
     :persistent_term.erase({@txs_suffix, name})
   end
 
+  @spec transaction(pid(), fun()) :: term()
+  def transaction(pid, fun) do
+    call(pid, {:run, fun})
+  end
+
+  @spec run(pid(), fun()) :: :ok
+  def run(pid, fun) do
+    GenServer.cast(pid, {:run, fun})
+  end
+
   @spec put(transaction(), key(), value()) :: true
   def put(tx, key, value) do
-    :ets.insert(tx, {key, {key, value}})
+    :ets.insert(tx, {key, value})
+    # :ets.insert(tx, {key, {key, value}})
+  end
+
+  @spec put(transaction(), key(), value(), value()) :: true
+  def put(tx, key, v1, v2) do
+    :ets.insert(tx, {key, v1, v2})
+  end
+
+  @spec update_counter(transaction(), key(), term()) :: term()
+  def update_counter(tx, key, updateOp) do
+    :ets.update_counter(tx, key, updateOp)
+  end
+
+  @spec update_counter(transaction(), key(), term(), term()) :: term()
+  def update_counter(tx, key, updateOp, default) do
+    :ets.update_counter(tx, key, updateOp, default)
   end
 
   @spec put_new(db(), transaction(), key(), value()) :: boolean()
@@ -570,7 +606,16 @@ defmodule DetsPlux do
   end
 
   def handle_call({:tx, name}, _from, state) do
-    {:reply, begin(name), state}
+    tid =
+      :ets.new(name, [
+        @ets_type,
+        :public,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+
+    :persistent_term.put({@txs_suffix, name}, tid)
+    {:reply, tid, state}
   end
 
   def handle_call({:handle, ets}, _from, %{filename: filename, sync_fallback: fallback} = state) do
@@ -696,6 +741,10 @@ defmodule DetsPlux do
     {:reply, info, state}
   end
 
+  def handle_call({:run, fun}, _from, state) do
+    {:reply, fun.(), state}
+  end
+
   def handle_call(:sync, _from, state = %State{sync: nil}) do
     {:reply, :ok, state}
   end
@@ -806,7 +855,8 @@ defmodule DetsPlux do
     case :ets.lookup(ets_fallback, key) do
       [] -> file_lookup(state, key, hash)
       [{_key, :delete}] -> {:halt, nil}
-      [{_key, {_, object}}] -> {:halt, object}
+      [{_key, object}] -> {:halt, object}
+      [{_key, o1, o2}] -> {:halt, {o1, o2}}
     end
   end
 
@@ -868,6 +918,12 @@ defmodule DetsPlux do
         {:sync_complete, _tx_name, _ets, _sync_pid, _new_filename, _new_state},
         state
       ) do
+    {:noreply, state}
+  end
+
+  def handle_cast({:run, fun}, state) do
+    fun.()
+
     {:noreply, state}
   end
 
@@ -984,8 +1040,16 @@ defmodule DetsPlux do
       result = parallel_hash(b, tasks * 2)
       :lists.merge(Task.await(task, :infinity), result)
     else
-      Enum.map(new_dataset, fn {key, object} ->
-        {{key_hash(key), key}, object}
+      Enum.map(new_dataset, fn
+        {key, :delete} ->
+          {{key_hash(key), key}, :delete}
+
+        {key, object} ->
+          # {{key_hash(key), key}, object}
+          {{key_hash(key), key}, {key, object}}
+
+        {key, o1, o2} ->
+          {{key_hash(key), key}, {key, {o1, o2}}}
       end)
       |> :lists.sort()
     end
@@ -997,6 +1061,12 @@ defmodule DetsPlux do
   The second transaction is delete
   """
   @spec merge_tx(transaction(), transaction()) :: transaction()
+  def merge_tx(nil, nil), do: nil
+
+  def merge_tx(nil, ets2), do: ets2
+
+  def merge_tx(ets1, nil), do: ets1
+
   def merge_tx(ets1, ets2) do
     do_merge_tables(:ets.first(ets2), ets1, ets2)
   end
@@ -1525,7 +1595,7 @@ end
 
 defimpl Enumerable, for: DetsPlux do
   alias DetsPlux.FileReader
-  import DetsPlux, only: [decode: 1]
+  import DetsPlux, only: [merge_tx: 2, decode: 1]
 
   @suffixId "DEX+"
   @start_offset byte_size(@suffixId)
@@ -1533,24 +1603,12 @@ defimpl Enumerable, for: DetsPlux do
   def member?(_pid, _key), do: {:error, __MODULE__}
   def slice(_pid), do: {:error, __MODULE__}
 
-  # defp tables_to_map([]), do: %{}
-
-  # defp tables_to_map(tables) do
-  #   Enum.reduce(tables, [], fn ets, acc ->
-  #     acc ++ :ets.tab2list(ets)
-  #   end)
-  #   |> Enum.reduce(%{}, fn {key, object}, map -> Map.put(map, key, object) end)
-  # end
-
-  defp ets_to_map(nil), do: %{}
-
-  defp ets_to_map(ets) do
-    :ets.tab2list(ets)
-    |> Enum.reduce(%{}, fn {key, object}, map -> Map.put(map, key, object) end)
-  end
-
   def reduce(%DetsPlux{ets: ets, filename: filename, sync_fallback: fallback}, acc, fun) do
-    new_data = Map.merge(ets_to_map(ets), ets_to_map(fallback))
+    new_data =
+      case merge_tx(ets, fallback) do
+        nil -> []
+        tid -> :ets.tab2list(tid)
+      end
 
     opts = [page_size: 1_000_000, max_pages: 1000]
 
@@ -1564,12 +1622,19 @@ defimpl Enumerable, for: DetsPlux do
       end
 
     # Ensuring hash function sort order
-    new_dataset = DetsPlux.parallel_hash(Map.to_list(new_data))
+    new_dataset = DetsPlux.parallel_hash(new_data)
 
     ret =
       DetsPlux.iterate(acc, new_dataset, old_file, fn acc, _entry_hash, entry_blob, entry ->
         if entry != :delete do
-          fun.(entry || decode(entry_blob), acc)
+          fun.(
+            entry ||
+              case decode(entry_blob) do
+                {key, {x, y}} -> {key, x, y}
+                x -> x
+              end,
+            acc
+          )
         else
           {:cont, acc}
         end

@@ -112,7 +112,9 @@ defmodule MinerWorker do
   defp run_miner(round_id, block_id, validator, transactions, pg_conn) do
     nonce_dets = DetsPlux.get(:nonce)
     nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
-    counter_ref = :counters.new(1, [])
+    dtx = :ets.whereis(:dtx)
+    dtmp = :ets.new(:tmp, [:set])
+    cref = :counters.new(1, [])
 
     Enum.each(transactions, fn
       [hash, type, from, nonce, args, size] ->
@@ -126,7 +128,7 @@ defmodule MinerWorker do
           end
 
         if @master do
-          ix = :counters.get(counter_ref, 1)
+          ix = :counters.get(cref, 1)
 
           PgStore.insert_tx(pg_conn, [
             ix,
@@ -141,9 +143,9 @@ defmodule MinerWorker do
             @json.encode!(args)
           ])
           |> IO.inspect()
-
-          :counters.add(counter_ref, 1, 1)
         end
+
+        :counters.add(cref, 1, 1)
 
       [hash, type, arg_key, from, nonce, args, size] ->
         result =
@@ -152,11 +154,11 @@ defmodule MinerWorker do
               :error
 
             _number ->
-              TxHandler.insert_deferred()
+              TxHandler.insert_deferred(dtx, dtmp)
           end
 
         if @master do
-          ix = :counters.get(counter_ref, 1)
+          ix = :counters.get(cref, 1)
 
           PgStore.insert_tx(pg_conn, [
             ix,
@@ -171,9 +173,9 @@ defmodule MinerWorker do
             @json.encode!(args)
           ])
           |> IO.inspect()
-
-          :counters.add(counter_ref, 1, 1)
         end
+
+        :counters.add(cref, 1, 1)
     end)
   end
 
