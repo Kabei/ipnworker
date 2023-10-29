@@ -15,7 +15,7 @@ defmodule BalanceTrace do
 
   def requires!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token, value) do
     key = DetsPlux.tuple(from, token)
-    {balance, _lock} = DetsPlux.get_tx(db, tx, key, {0, 0})
+    {balance, _lock} = DetsPlux.get_cache(db, tx, key, {0, 0})
     result = balance - value
 
     case result > 0 do
@@ -23,7 +23,7 @@ defmodule BalanceTrace do
         raise IppanError, "Insufficient balance"
 
       true ->
-        DetsPlux.put(tx, key, result)
+        DetsPlux.update_counter(tx, key, {2, -value})
         put_out(bt, key, value)
     end
   end
