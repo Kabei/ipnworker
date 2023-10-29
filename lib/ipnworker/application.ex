@@ -13,9 +13,9 @@ defmodule Ipnworker.Application do
 
     children = [
       MemTables,
+      DetsSup,
       MainStore,
       NetStore,
-      DetsSup,
       PgStore,
       Ipnworker.Repo,
       :poolboy.child_spec(:minerpool, miner_config()),
