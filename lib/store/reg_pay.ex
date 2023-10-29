@@ -72,7 +72,7 @@ defmodule RegPay do
     def unlock(_, _, _, _), do: :ok
   end
 
-  def commit(nil), do: nil
+  def commit(nil, _), do: nil
 
   def commit(pg_conn, round_id) do
     tid = :persistent_term.get(:payment)
