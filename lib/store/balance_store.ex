@@ -74,7 +74,7 @@ defmodule BalanceStore do
         DetsPlux.update_counter(var!(tx), validator_key, {2, fees})
         RegPay.fees(var!(source), var!(from), var!(vOwner), var!(token_id), fees)
       else
-        BalanceStore.delete(var!(from), var!(token_id), var!(remove))
+        BalanceStore.burn(var!(from), token, remove)
       end
     end
   end
@@ -86,17 +86,6 @@ defmodule BalanceStore do
       DetsPlux.update_counter(var!(tx), key, {2, value})
 
       RegPay.coinbase(var!(source), account, token, value)
-    end
-  end
-
-  defmacro delete(account, token, amount) do
-    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
-      key = DetsPlux.tuple(account, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, 0})
-      DetsPlux.update_counter(var!(tx), key, {2, -amount})
-      TokenSupply.subtract(var!(supply), amount)
-
-      RegPay.delete(var!(source), account, token, amount)
     end
   end
 
@@ -181,7 +170,7 @@ defmodule BalanceStore do
         supply = TokenSupply.new(token)
         TokenSupply.subtract(supply, value)
 
-        RegPay.delete(var!(source), from, token, value)
+        RegPay.burn(var!(source), from, token, value)
       else
         :error
       end

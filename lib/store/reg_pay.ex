@@ -6,7 +6,6 @@ defmodule RegPay do
   # 100. Pay
   # 101. Refund
   # 200. Fees
-  # 201. Delete
   # 300. Burn
   # 301. lock
   # 302. unlock
@@ -34,7 +33,7 @@ defmodule RegPay do
 
     def refund(source, from, to, token, amount) do
       %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 1, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 101, token, amount})
     end
 
     def payment(source, from, to, token, amount) do
@@ -45,11 +44,6 @@ defmodule RegPay do
     def fees(source, from, to, token, amount) do
       %{block: block, nonce: nonce} = source
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 200, token, amount})
-    end
-
-    def delete(source, from, token, amount) do
-      %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, block, 201, token, amount})
     end
 
     def burn(source, from, token, amount) do
