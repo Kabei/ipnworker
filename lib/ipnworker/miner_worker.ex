@@ -131,13 +131,13 @@ defmodule MinerWorker do
           ix = :counters.get(cref, 1)
 
           PgStore.insert_tx(pg_conn, [
+            from,
+            nonce,
             ix,
             block_id,
             hash,
             type,
-            from,
             tx_status(result),
-            nonce,
             size,
             json_type(),
             @json.encode!(args)
@@ -161,13 +161,13 @@ defmodule MinerWorker do
 
         if @history do
           PgStore.insert_tx(pg_conn, [
+            from,
+            nonce,
             ix,
             block_id,
             hash,
             type,
-            from,
             tx_status(result),
-            nonce,
             size,
             json_type(),
             @json.encode!(args)

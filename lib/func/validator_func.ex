@@ -1,6 +1,6 @@
 defmodule Ippan.Func.Validator do
   import Guards
-  alias Ippan.Validator
+  alias Ippan.{Utils, Validator}
   require Validator
   require Sqlite
   require BalanceStore
@@ -8,6 +8,7 @@ defmodule Ippan.Func.Validator do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @max_validators Application.compile_env(@app, :max_validators)
+  @max_fees 1_000_000_000
 
   def new(
         %{id: account_id},
@@ -17,12 +18,13 @@ defmodule Ippan.Func.Validator do
         name,
         pubkey,
         net_pubkey,
-        fee_type,
-        fee,
+        fa \\ 1,
+        fb \\ 0,
         opts \\ %{}
       )
-      when byte_size(name) <= 20 and between_size(hostname, 4, 50) and fee_type in 0..2 and
-             fee > 0 and is_float(fee) and check_port(port) do
+      when byte_size(name) <= 20 and between_size(hostname, 4, 50) and is_integer(fa) and
+             is_integer(fb) and
+             check_port(port) do
     map_filter = Map.take(opts, Validator.optionals())
     pubkey = Fast64.decode64(pubkey)
     net_pubkey = Fast64.decode64(net_pubkey)
@@ -30,11 +32,8 @@ defmodule Ippan.Func.Validator do
     next_id = Validator.next_id()
 
     cond do
-      fee_type == 0 and fee < 1 ->
-        raise IppanError, "Invalid fee config"
-
-      fee_type == 2 and fee < 1 ->
-        raise IppanError, "Invalid fee config"
+      fa < 0 or fa > @max_fees or fb < 0 or fb > @max_fees ->
+        raise IppanError, "Invalid fees config"
 
       byte_size(net_pubkey) > 1278 ->
         raise IppanError, "Invalid net_pubkey size #{byte_size(net_pubkey)}"
@@ -69,10 +68,17 @@ defmodule Ippan.Func.Validator do
     end
   end
 
-  def update(%{id: account_id}, id, opts \\ %{}) do
+  def update(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        opts \\ %{}
+      ) do
     map_filter = Map.take(opts, Validator.editable())
     db_ref = :persistent_term.get(:main_conn)
-    fees = EnvStore.fees()
 
     cond do
       opts == %{} ->
@@ -85,6 +91,8 @@ defmodule Ippan.Func.Validator do
         raise IppanError, "Invalid owner"
 
       true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
         bt =
           BalanceTrace.new(account_id)
           |> BalanceTrace.requires!(@token, fees)
@@ -93,8 +101,8 @@ defmodule Ippan.Func.Validator do
         |> MapUtil.validate_hostname(:hostname)
         |> MapUtil.validate_length_range(:name, 1..20)
         |> MapUtil.validate_url(:url)
-        |> MapUtil.validate_value(:fee, :gt, 0)
-        |> MapUtil.validate_range(:fee_type, 0..2)
+        |> MapUtil.validate_value(:fa, :gte, 0)
+        |> MapUtil.validate_value(:fb, :gte, 0)
         |> MapUtil.transform(:pubkey, fn x ->
           case Fast64.decode64(x) do
             j when byte_size(j) > 897 ->

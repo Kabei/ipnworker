@@ -143,15 +143,19 @@ defmodule BalanceStore do
           to_key = DetsPlux.tuple(to, token)
           DetsPlux.get_cache(var!(dets), var!(tx), to_key, {0, 0})
 
-          DetsPlux.update_counter(var!(tx), key, {2, -value})
-          DetsPlux.update_counter(var!(tx), to_key, {2, value})
+          burn = ceil(value * 0.3)
+          fees = value - burn
 
-          RegPay.fees(var!(source), from, to, token, value)
+          DetsPlux.update_counter(var!(tx), key, {2, -value})
+          DetsPlux.update_counter(var!(tx), to_key, {2, fees})
+
+          RegPay.fees(var!(source), from, to, token, fees)
+          RegPay.burn(var!(source), from, token, burn)
         else
           :error
         end
       else
-        BalanceStore.pay_burn(from, value)
+        BalanceStore.pay_burn(from, ceil(value * 0.3))
       end
     end
   end

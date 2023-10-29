@@ -47,17 +47,17 @@ CREATE TABLE IF NOT EXISTS history.blocks(
 );
 
 CREATE TABLE IF NOT EXISTS history.txs(
+  "from" BYTEA,
+  "nonce" BIGINT,
   "ix" integer,
   "block" BIGINT,
   "hash" BYTEA NOT NULL,
   "type" INTEGER NOT NULL,
-  "from" BYTEA,
   "status" INTEGER,
-  "nonce" BIGINT,
   "size" INTEGER,
   "ctype" INTEGER,
   "args" BYTEA,
-  PRIMARY KEY("ix", "block")
+  PRIMARY KEY("from", "nonce")
 );
 
 CREATE TABLE IF NOT EXISTS history.balance(
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS history.payments(
   "from" BYTEA,
   "nonce" INTEGER,
   "to" BYTEA,
-  "block" BIGINT,
+  "round" BIGINT,
   "type" INTEGER,
   "token" BYTEA,
   "amount" BIGINT
@@ -80,11 +80,9 @@ CREATE TABLE IF NOT EXISTS history.payments(
 
 CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
 
-CREATE INDEX IF NOT EXISTS payments_from_idx ON history.payments("from", "nonce" DESC);
+CREATE INDEX IF NOT EXISTS payments_from_idx ON history.payments("from") WHERE "from" IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS payments_to_idx ON history.payments("to", "block" DESC);
-
-CREATE INDEX IF NOT EXISTS payments_block_idx ON history.payments("block");
+CREATE INDEX IF NOT EXISTS payments_to_idx ON history.payments("to") WHERE "to" IS NOT NULL;
 
 DO $$
 BEGIN
@@ -94,6 +92,9 @@ SELECT create_hypertable('history.jackpot', 'round_id', chunk_time_interval => 6
 SELECT create_hypertable('history.snapshot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
 SELECT create_hypertable('history.blocks', 'id', chunk_time_interval => 7560000, if_not_exists => TRUE);
 SELECT create_hypertable('history.txs', 'block', chunk_time_interval => 7560000, if_not_exists => TRUE);
-SELECT create_hypertable('history.payments', 'block', chunk_time_interval => 7560000, if_not_exists => TRUE);
+SELECT create_hypertable('history.payments', 'round', chunk_time_interval => 7560000, if_not_exists => TRUE);
+ELSE
+CREATE INDEX IF NOT EXISTS txs_block_idx ON history.txs("block", "ix" ASC);
+CREATE INDEX IF NOT EXISTS payments_round_idx ON history.payments("round");
 END IF;
 END$$;

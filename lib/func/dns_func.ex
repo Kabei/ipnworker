@@ -1,5 +1,5 @@
 defmodule Ippan.Func.Dns do
-  alias Ippan.{Domain, DNS}
+  alias Ippan.{Domain, DNS, Utils}
   require Sqlite
   require DNS
   require Domain
@@ -12,7 +12,7 @@ defmodule Ippan.Func.Dns do
   @data_range 1..255
   @ttl_range 0..2_147_483_648
 
-  def new(%{id: account_id, size: size}, fullname, type, data, ttl)
+  def new(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, fullname, type, data, ttl)
       when byte_size(fullname) <= @fullname_max_size and
              type in @type_range and
              byte_size(data) in @data_range and
@@ -35,20 +35,25 @@ defmodule Ippan.Func.Dns do
         raise IppanError, "Invalid owner"
 
       true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
         BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(@token, size)
+        |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
   end
 
-  def update(%{id: account_id}, fullname, dns_hash16, params) do
+  def update(
+        %{id: account_id, size: size, validator: %{fa: fa, fb: fb}},
+        fullname,
+        dns_hash16,
+        params
+      ) do
     map_filter = Map.take(params, DNS.editable())
 
     {_subdomain, domain} = Domain.split(fullname)
 
     dns_hash = Base.decode16!(dns_hash16, case: :mixed)
-
-    fees = EnvStore.fees()
 
     db_ref = :persistent_term.get(:main_conn)
 
@@ -72,6 +77,8 @@ defmodule Ippan.Func.Dns do
         raise ArgumentError, "DNS resource format error"
 
       true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
         bt =
           BalanceTrace.new(account_id)
           |> BalanceTrace.requires!(@token, fees)

@@ -1,5 +1,5 @@
 defmodule Ippan.Func.Token do
-  alias Ippan.Token
+  alias Ippan.{Token, Utils}
   require BalanceStore
   require Sqlite
   require Token
@@ -56,11 +56,18 @@ defmodule Ippan.Func.Token do
     end
   end
 
-  def update(%{id: account_id}, id, opts \\ %{})
+  def update(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        opts \\ %{}
+      )
       when byte_size(id) <= 10 do
     map_filter = Map.take(opts, Token.editable())
     db_ref = :persistent_term.get(:main_conn)
-    fees = EnvStore.fees()
 
     cond do
       opts == %{} ->
@@ -73,6 +80,8 @@ defmodule Ippan.Func.Token do
         raise IppanError, "Invalid owner"
 
       true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
         bt =
           BalanceTrace.new(account_id)
           |> BalanceTrace.requires!(@token, fees)

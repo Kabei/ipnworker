@@ -27,38 +27,38 @@ defmodule RegPay do
     end
 
     def coinbase(source, to, token, amount) do
-      %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {nil, nonce, to, block, 0, token, amount})
+      %{nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {nil, nonce, to, 0, token, amount})
     end
 
     def refund(source, from, to, token, amount) do
-      %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 101, token, amount})
+      %{nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
     def payment(source, from, to, token, amount) do
-      %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 100, token, amount})
+      %{nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 100, token, amount})
     end
 
     def fees(source, from, to, token, amount) do
-      %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 200, token, amount})
+      %{nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
     end
 
     def burn(source, from, token, amount) do
-      %{block: block, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, block, 300, token, amount})
+      %{nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 300, token, amount})
     end
 
     def lock(source, to, token, amount) do
-      %{block: block, id: from, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 301, token, amount})
+      %{id: from, nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 301, token, amount})
     end
 
     def unlock(source, to, token, amount) do
-      %{block: block, id: from, nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, block, 302, token, amount})
+      %{id: from, nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 302, token, amount})
     end
   else
     def init, do: :ok
@@ -74,12 +74,12 @@ defmodule RegPay do
 
   def commit(nil), do: nil
 
-  def commit(pg_conn) do
+  def commit(pg_conn, round_id) do
     tid = :persistent_term.get(:payment)
 
     :ets.tab2list(tid)
-    |> Enum.each(fn {from, nonce, to, block, type, token, amount} ->
-      PgStore.insert_pay(pg_conn, [from, nonce, to, block, type, token, amount])
+    |> Enum.each(fn {from, nonce, to, type, token, amount} ->
+      PgStore.insert_pay(pg_conn, [from, nonce, to, type, round_id, token, amount])
     end)
 
     :ets.delete_all_objects(tid)

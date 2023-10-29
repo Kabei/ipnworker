@@ -13,7 +13,7 @@ defmodule Ippan.Funx.Coin do
   def send(
         source = %{
           id: from,
-          validator: %{fee: vfee, fee_type: fee_type, owner: vOwner},
+          validator: %{fa: fa, fb: fb, owner: vOwner},
           size: size
         },
         to,
@@ -24,7 +24,7 @@ defmodule Ippan.Funx.Coin do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
-    tfees = Utils.calc_fees!(fee_type, vfee, amount, size)
+    tfees = Utils.calc_fees(fa, fb, size)
     remove = ceil(tfees * 0.3)
 
     BalanceStore.send(amount)
@@ -63,10 +63,21 @@ defmodule Ippan.Funx.Coin do
     ])
   end
 
-  def coinbase(source, token_id, outputs) do
+  def coinbase(
+        source = %{
+          id: from,
+          validator: %{fa: fa, fb: fb, owner: vOwner},
+          size: size
+        },
+        token_id,
+        outputs
+      ) do
+    is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
+    tfees = Utils.calc_fees(fa, fb, size)
+    remove = ceil(tfees * 0.3)
 
     total =
       for [account, value] <- outputs do
@@ -76,12 +87,19 @@ defmodule Ippan.Funx.Coin do
       |> Enum.sum()
 
     TokenSupply.add(supply, total)
+
+    if is_validator do
+      BalanceStore.burn(from, @token, remove)
+    else
+      fees = tfees - remove
+      BalanceStore.fees(fees, remove)
+    end
   end
 
   def multisend(
         source = %{
           id: from,
-          validator: %{fee: vfee, fee_type: fee_type, owner: vOwner},
+          validator: %{fa: fa, fb: fb, owner: vOwner},
           size: size
         },
         token_id,
@@ -92,13 +110,11 @@ defmodule Ippan.Funx.Coin do
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
 
-    total =
-      Enum.reduce(outputs, 0, fn [to, amount], acc ->
-        BalanceStore.send(amount)
-        acc + amount
-      end)
+    Enum.each(outputs, fn [to, amount] ->
+      BalanceStore.send(amount)
+    end)
 
-    tfees = Utils.calc_fees!(fee_type, vfee, total, size)
+    tfees = Utils.calc_fees(fa, fb, size)
     remove = ceil(tfees * 0.3)
 
     if is_validator do

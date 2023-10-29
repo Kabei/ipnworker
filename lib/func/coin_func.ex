@@ -14,7 +14,7 @@ defmodule Ippan.Func.Coin do
         %{
           id: account_id,
           size: size,
-          validator: %{fee: vfee, fee_type: fee_type}
+          validator: %{fa: fa, fb: fb}
         },
         to,
         token_id,
@@ -23,7 +23,7 @@ defmodule Ippan.Func.Coin do
       when is_integer(amount) and amount <= @max_tx_amount and
              account_id != to do
     bt = BalanceTrace.new(account_id)
-    fees = Utils.calc_fees!(fee_type, vfee, amount, size)
+    fees = Utils.calc_fees(fa, fb, size)
 
     case token_id == @token do
       true ->
@@ -43,7 +43,15 @@ defmodule Ippan.Func.Coin do
     send(source, to, token_id, amount)
   end
 
-  def coinbase(%{id: account_id}, token_id, outputs)
+  def coinbase(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        token_id,
+        outputs
+      )
       when length(outputs) > 0 do
     db_ref = :persistent_term.get(:main_conn)
     %{max_supply: max_supply} = token = Token.get(token_id)
@@ -80,11 +88,17 @@ defmodule Ippan.Func.Coin do
             raise IppanError, "max supply exceeded"
           end
         end
+
+        bt = BalanceTrace.new(account_id)
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.requires!(bt, @token, fees)
+        |> BalanceTrace.output()
     end
   end
 
   def multisend(
-        %{id: from, validator: %{fee: vfee, fee_type: fee_type}, size: size},
+        %{id: from, validator: %{fa: fa, fb: fb}, size: size},
         token_id,
         outputs,
         note \\ ""
@@ -110,7 +124,7 @@ defmodule Ippan.Func.Coin do
         end
       end)
 
-    fees = Utils.calc_fees!(fee_type, vfee, total, size)
+    fees = Utils.calc_fees(fa, fb, size)
 
     BalanceTrace.new(from)
     |> BalanceTrace.requires!(token_id, total + fees)

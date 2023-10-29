@@ -32,8 +32,8 @@ defmodule Ippan.Ecto.Tx do
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
-  def one(block, ix) do
-    from(tx in Tx, where: tx.ix == ^ix and tx.block == ^block, limit: 1)
+  def one(from, nonce) do
+    from(tx in Tx, where: tx.from == ^from and tx.nonce == ^nonce, limit: 1)
     |> filter_select()
     |> Repo.one()
     |> case do

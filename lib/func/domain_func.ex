@@ -1,6 +1,5 @@
 defmodule Ippan.Func.Domain do
-  alias Ippan.Domain
-  alias Ippan.Utils
+  alias Ippan.{Domain, Utils}
   require Domain
   require Sqlite
   require BalanceStore
@@ -13,7 +12,7 @@ defmodule Ippan.Func.Domain do
         %{
           id: account_id,
           size: size,
-          validator: validator
+          validator: %{fa: fa, fb: fb}
         },
         name,
         owner,
@@ -44,15 +43,23 @@ defmodule Ippan.Func.Domain do
         |> MapUtil.validate_email(:email)
 
         amount = Domain.price(name, days)
-        fee_amount = Utils.calc_fees!(validator.fee_type, validator.fee, amount, size)
+        fees = Utils.calc_fees(fa, fb, size)
 
         BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(@token, amount + fee_amount)
+        |> BalanceTrace.requires!(@token, amount + fees)
         |> BalanceTrace.output()
     end
   end
 
-  def update(%{id: account_id}, name, opts \\ %{}) do
+  def update(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        name,
+        opts \\ %{}
+      ) do
     map_filter = Map.take(opts, Domain.editable())
     db_ref = :persistent_term.get(:main_conn)
 
@@ -72,8 +79,10 @@ defmodule Ippan.Func.Domain do
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_email(:email)
 
+        fees = Utils.calc_fees(fa, fb, size)
+
         BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(@token, EnvStore.fees())
+        |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
   end
