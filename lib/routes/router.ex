@@ -20,16 +20,24 @@ defmodule Ipnworker.Router do
       case get_req_header(conn, "auth") do
         [sig64] ->
           hash = Blake3.hash(body)
+          signature = Fast64.decode64(sig64)
+          size = byte_size(body) + byte_size(signature)
+          [type, nonce, from | args] = @json.decode!(body)
+          from_nonce = {from, nonce}
 
-          case :ets.member(:hash, hash) do
-            false ->
-              signature = Fast64.decode64(sig64)
-              size = byte_size(body) + byte_size(signature)
+          case :ets.insert_new(:hash, {from_nonce, nil}) do
+            true ->
               %{id: vid} = validator = :persistent_term.get(:validator)
-              [type, nonce, from | args] = @json.decode!(body)
 
               handle_result =
-                [deferred, msg, _return] = TxHandler.decode!()
+                [deferred, msg, _return] =
+                try do
+                  TxHandler.decode!()
+                rescue
+                  e ->
+                    :ets.delete(:hash, from_nonce)
+                    reraise e, e.message
+                end
 
               dtx_key =
                 if deferred do
@@ -40,6 +48,7 @@ defmodule Ipnworker.Router do
                       {type, key}
 
                     false ->
+                      :ets.delete(:hash, from_nonce)
                       raise IppanError, "Deferred transaction already exists"
                   end
                 end
@@ -48,8 +57,6 @@ defmodule Ipnworker.Router do
 
               case ClusterNodes.call(miner_id, "new_msg", handle_result) do
                 {:ok, %{"height" => height}} ->
-                  :ets.insert(:hash, {hash, height})
-
                   # Update nonce
                   cache_nonce_tx = DetsPlux.tx(:nonce, :cache_nonce)
                   DetsPlux.put(cache_nonce_tx, from, nonce)
@@ -60,8 +67,11 @@ defmodule Ipnworker.Router do
                   })
 
                 {:error, message} ->
-                  :ets.delete(:hash, hash)
-                  :ets.delete(:dhash, dtx_key)
+                  :ets.delete(:hash, from_nonce)
+
+                  if dtx_key do
+                    :ets.delete(:dhash, dtx_key)
+                  end
 
                   case message do
                     message when is_binary(message) ->
@@ -72,7 +82,7 @@ defmodule Ipnworker.Router do
                   end
               end
 
-            true ->
+            false ->
               send_resp(conn, 400, "Transaction already exists")
           end
 
