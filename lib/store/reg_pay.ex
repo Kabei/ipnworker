@@ -79,7 +79,7 @@ defmodule RegPay do
 
     :ets.tab2list(tid)
     |> Enum.each(fn {from, nonce, to, type, token, amount} ->
-      PgStore.insert_pay(pg_conn, [from, nonce, to, type, round_id, token, amount])
+      PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
     end)
 
     :ets.delete_all_objects(tid)
