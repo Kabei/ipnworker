@@ -196,24 +196,4 @@ defmodule BalanceStore do
       DetsPlux.update_counter(tx, key, {2, value})
     end
   end
-
-  # defmacro subtract(dets, tx, key, value) do
-  #   quote bind_quoted: [dets: dets, tx: tx, key: key, value: value], location: :keep do
-  #     {balance, lock_amount} = DetsPlux.get_tx(dets, tx, key, {0, 0})
-
-  #     case balance >= value do
-  #       true ->
-  #         DetsPlux.put(tx, key, {balance - value, lock_amount})
-
-  #       false ->
-  #         false
-  #     end
-  #   end
-  # end
-
-  # defmacro reset(tx, key) do
-  #   quote bind_quoted: [tx: tx, key: key], location: :keep do
-  #     DetsPlux.drop(tx, key)
-  #   end
-  # end
 end
