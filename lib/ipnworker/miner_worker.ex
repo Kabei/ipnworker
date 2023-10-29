@@ -148,6 +148,8 @@ defmodule MinerWorker do
         :counters.add(cref, 1, 1)
 
       [hash, type, arg_key, from, nonce, args, size] ->
+        ix = :counters.get(cref, 1)
+
         result =
           case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
             :error ->
@@ -158,8 +160,6 @@ defmodule MinerWorker do
           end
 
         if @history do
-          ix = :counters.get(cref, 1)
-
           PgStore.insert_tx(pg_conn, [
             ix,
             block_id,
