@@ -10,13 +10,13 @@ defmodule Ippan.Ecto.Payments do
     field(:from, :binary)
     field(:nonce, :integer)
     field(:to, :binary)
-    field(:block, :integer)
+    field(:round, :integer)
     field(:type, :integer)
     field(:token, :binary)
     field(:amount, :integer)
   end
 
-  @select ~w(from nonce to block type token amount)a
+  @select ~w(from nonce to round type token amount)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -41,11 +41,11 @@ defmodule Ippan.Ecto.Payments do
   end
 
   defp filter_below(query, %{"below" => id}) do
-    where(query, [p], p.block < ^id)
+    where(query, [p], p.round < ^id)
   end
 
   defp filter_below(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.block)
-  defp sort(query, _), do: order_by(query, [p], desc: p.block)
+  defp sort(query, _), do: order_by(query, [p], desc: p.round)
 end
