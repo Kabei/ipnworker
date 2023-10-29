@@ -36,7 +36,7 @@ defmodule Ipnworker.Router do
                 rescue
                   e ->
                     :ets.delete(:hash, from_nonce)
-                    reraise e, e.message
+                    reraise e, __STACKTRACE__
                 end
 
               dtx_key =
