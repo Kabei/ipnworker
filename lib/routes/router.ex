@@ -35,6 +35,7 @@ defmodule Ipnworker.Router do
                   TxHandler.decode!()
                 rescue
                   e ->
+                    Logger.debug(Exception.format(:error, e, __STACKTRACE__))
                     :ets.delete(:hash, from_nonce)
                     reraise e, __STACKTRACE__
                 end
