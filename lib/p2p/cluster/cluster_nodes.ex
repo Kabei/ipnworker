@@ -267,7 +267,7 @@ defmodule Ippan.ClusterNodes do
 
   defp run_save_balances(balance_tx, pg_conn) do
     :ets.tab2list(balance_tx)
-    |> Enum.each(fn {_key, {key, {balance, lock}}} ->
+    |> Enum.each(fn {_key, {key, balance, lock}} ->
       [id, token] = String.split(key, "|", parts: 2)
       PgStore.upsert_balance(pg_conn, [id, token, balance, lock])
     end)
