@@ -206,26 +206,18 @@ defmodule Ippan.TxHandler do
   defmacro insert_deferred(table, tmp_table) do
     quote bind_quoted: [table: table, tmp: tmp_table], location: :keep do
       key = {var!(type), var!(arg_key)}
-
-      body = [
-        var!(hash),
-        var!(type),
-        var!(from),
-        var!(validator),
-        var!(nonce),
-        var!(args),
-        var!(size)
-      ]
+      order = {var!(block_id), var!(ix)}
+      body = [var!(hash), var!(type), var!(from), var!(validator), var!(nonce), var!(args), var!(size)]
 
       case :ets.lookup(tmp, key) do
         [] ->
           :ets.insert(tmp, {key, var!(hash), var!(block_id)})
+          :ets.insert(table, {order, body})
 
         [{_msg_key, xhash, xblock_id}] ->
           if var!(hash) < xhash or (var!(hash) == xhash and var!(block_id) < xblock_id) do
-            order = {var!(block_id), var!(ix)}
-            :ets.insert(tmp, {key, body})
-            :ets.insert(table, {order, var!(hash), var!(block_id)})
+            :ets.insert(tmp, {key, var!(hash), var!(block_id)})
+            :ets.insert(table, {order, body})
           else
             false
           end
