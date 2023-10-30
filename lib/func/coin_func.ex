@@ -67,11 +67,8 @@ defmodule Ippan.Func.Coin do
         total =
           Enum.reduce(outputs, 0, fn [account, amount], acc ->
             cond do
-              amount <= 0 ->
-                raise ArgumentError, "Amount must be positive number"
-
-              amount > @max_tx_amount ->
-                raise ArgumentError, "Amount exceeded max value"
+              not is_integer(amount) or amount < 0 or amount > @max_tx_amount ->
+                raise ArgumentError, "Invalid amount"
 
               not Match.account?(account) ->
                 raise ArgumentError, "Account ID invalid"
@@ -107,11 +104,8 @@ defmodule Ippan.Func.Coin do
     total =
       Enum.reduce(outputs, 0, fn [to, amount], acc ->
         cond do
-          amount <= 0 ->
+          not is_integer(amount) or amount < 0 or amount > @max_tx_amount ->
             raise ArgumentError, "Amount must be positive number"
-
-          amount > @max_tx_amount ->
-            raise ArgumentError, "Amount exceeded max value"
 
           not Match.account?(to) ->
             raise ArgumentError, "Account ID invalid"

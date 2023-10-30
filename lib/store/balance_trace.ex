@@ -18,13 +18,13 @@ defmodule BalanceTrace do
     {balance, _lock} = DetsPlux.get_cache(db, tx, key, {0, 0})
     result = balance - value
 
-    case result > 0 do
-      false ->
-        raise IppanError, "Insufficient balance"
-
+    case result >= 0 do
       true ->
         DetsPlux.update_counter(tx, key, {2, -value})
         put_out(bt, key, value)
+
+      false ->
+        raise IppanError, "Insufficient balance"
     end
   end
 
