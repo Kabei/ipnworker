@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.DNS do
   require DNS
 
   @table "dns"
-  @select ~w(domain hash name type data ttl)a
+  @select ~w(domain name type data ttl hash)a
 
   def one(domain, hash16) do
     db_ref = :persistent_term.get(:main_ro)
@@ -33,7 +33,6 @@ defmodule Ippan.Ecto.DNS do
 
     case Sqlite.query(db_ro, sql, args) do
       {:ok, results} ->
-        IO.inspect(results)
         Enum.map(results, &(DNS.list_to_map(&1) |> fun()))
 
       _ ->
