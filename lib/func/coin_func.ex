@@ -200,6 +200,7 @@ defmodule Ippan.Func.Coin do
       true ->
         BalanceTrace.new(account_id)
         |> BalanceTrace.requires!(token_id, amount)
+        |> BalanceTrace.output()
     end
   end
 end
