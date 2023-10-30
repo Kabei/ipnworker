@@ -65,7 +65,7 @@ defmodule Ippan.Ecto.Tx do
     from(Tx)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_where(params)
+    |> filter_address(params)
     |> filter_type(params)
     |> filter_attach(params)
     |> filter_select()
@@ -84,19 +84,19 @@ defmodule Ippan.Ecto.Tx do
 
   defp filter_attach(query, _), do: query
 
-  defp filter_where(query, %{"activity" => address}) do
+  defp filter_address(query, %{"activity" => address}) do
     where(query, [tx], tx.from == ^address or tx.to == ^address)
   end
 
-  defp filter_where(query, %{"from" => address}) do
+  defp filter_address(query, %{"from" => address}) do
     where(query, [tx], tx.from == ^address)
   end
 
-  defp filter_where(query, %{"to" => address}) do
+  defp filter_address(query, %{"to" => address}) do
     where(query, [tx], tx.to == ^address)
   end
 
-  defp filter_where(query, _), do: query
+  defp filter_address(query, _), do: query
 
   defp filter_type(query, %{"type" => type}) do
     where(query, [tx], tx.type == ^type)

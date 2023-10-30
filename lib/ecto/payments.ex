@@ -48,8 +48,16 @@ defmodule Ippan.Ecto.Payments do
 
   defp filter_attach(query, _), do: query
 
-  defp filter_address(query, %{"address" => address}) do
-    where(query, [p], p.address == ^address)
+  defp filter_address(query, %{"activity" => address}) do
+    where(query, [p], p.from == ^address or p.to == ^address)
+  end
+
+  defp filter_address(query, %{"from" => address}) do
+    where(query, [p], p.from == ^address)
+  end
+
+  defp filter_address(query, %{"to" => address}) do
+    where(query, [p], p.to == ^address)
   end
 
   defp filter_address(query, _), do: query
