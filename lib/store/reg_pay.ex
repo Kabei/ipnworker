@@ -31,14 +31,14 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {nil, nonce, to, 0, token, amount})
     end
 
-    def refund(source, from, to, token, amount) do
-      %{nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
-    end
-
     def payment(source, from, to, token, amount) do
       %{nonce: nonce} = source
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 100, token, amount})
+    end
+
+    def refund(source, from, to, token, amount) do
+      %{nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
     def fees(source, from, to, token, amount) do
@@ -63,10 +63,9 @@ defmodule RegPay do
   else
     def init, do: :ok
     def coinbase(_, _, _, _), do: :ok
-    def refund(_, _, _, _, _), do: :ok
     def payment(_, _, _, _, _), do: :ok
+    def refund(_, _, _, _, _), do: :ok
     def fees(_, _, _, _, _), do: :ok
-    def delete(_, _, _, _), do: :ok
     def burn(_, _, _, _), do: :ok
     def lock(_, _, _, _), do: :ok
     def unlock(_, _, _, _), do: :ok
