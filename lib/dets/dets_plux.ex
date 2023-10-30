@@ -66,8 +66,8 @@ defmodule DetsPlux do
   @compile {:inline,
             get: 1,
             get: 2,
+            put: 2,
             put: 3,
-            put: 4,
             key_fun: 1,
             tuple: 2,
             tuple: 3,
@@ -185,7 +185,7 @@ defmodule DetsPlux do
   defmacro decode(bin) do
     quote location: :keep do
       # :erlang.binary_to_term(unquote(bin))
-      CBOR.Decoder.decode(unquote(bin)) |> elem(0)
+      :erlang.element(1, CBOR.Decoder.decode(unquote(bin)))
     end
   end
 
@@ -204,9 +204,6 @@ defmodule DetsPlux do
       key
     end
   end
-
-  # defp key_fun([key, _]), do: key
-  # defp key_fun({key, _}), do: key
 
   @spec tuple(binary, binary) :: binary
   def tuple(k1, k2) do
@@ -356,11 +353,11 @@ defmodule DetsPlux do
       [{_key, :delete}] ->
         nil
 
-      [{_key, value}] ->
-        value
+      [{_key, x}] ->
+        x
 
-      [{_key, v1, v2}] ->
-        {v1, v2}
+      [tuple] ->
+        :erlang.delete_element(1, tuple)
 
       [] ->
         call(pid, {:lookup, key, key_hash(key)}) || default
@@ -377,20 +374,20 @@ defmodule DetsPlux do
       [{_key, :delete}] ->
         nil
 
-      [{_key, value}] ->
-        value
+      [{_key, x}] ->
+        x
 
-      [{_key, v1, v2}] ->
-        {v1, v2}
+      [tuple] ->
+        :erlang.delete_element(1, tuple)
 
       [] ->
         case call(pid, {:lookup, key, key_hash(key)}) do
           nil ->
             nil
 
-          z = {x, y} ->
-            :ets.insert(tx, {key, x, y})
-            z
+          # z = {x, y} ->
+          #   :ets.insert(tx, {key, x, y})
+          #   z
 
           ret ->
             # :ets.insert(tx, {key, {key, ret}})
@@ -406,11 +403,11 @@ defmodule DetsPlux do
       [{_key, :delete}] ->
         nil
 
-      [{_key, value}] ->
-        value
+      [{_key, x}] ->
+        x
 
-      [{_key, v1, v2}] ->
-        {v1, v2}
+      [tuple] ->
+        :erlang.delete_element(1, tuple)
 
       [] ->
         case call(pid, {:lookup, key, key_hash(key)}) do
@@ -422,9 +419,9 @@ defmodule DetsPlux do
 
             default
 
-          z = {x, y} ->
-            :ets.insert(tx, {key, x, y})
-            z
+          ret when is_tuple(ret) ->
+            :ets.insert(tx, :erlang.insert_element(1, ret, key))
+            ret
 
           ret ->
             # :ets.insert(tx, {key, {key, ret}})
@@ -496,15 +493,15 @@ defmodule DetsPlux do
     GenServer.cast(pid, {:run, fun})
   end
 
+  @spec put(transaction(), tuple() | [tuple()]) :: true
+  def put(tx, tuple) do
+    :ets.insert(tx, tuple)
+  end
+
   @spec put(transaction(), key(), value()) :: true
   def put(tx, key, value) do
     :ets.insert(tx, {key, value})
     # :ets.insert(tx, {key, {key, value}})
-  end
-
-  @spec put(transaction(), key(), value(), value()) :: true
-  def put(tx, key, v1, v2) do
-    :ets.insert(tx, {key, v1, v2})
   end
 
   @spec update_element(transaction(), key(), pos_integer(), value()) :: true
@@ -897,8 +894,8 @@ defmodule DetsPlux do
     case :ets.lookup(ets_fallback, key) do
       [] -> file_lookup(state, key, hash)
       [{_key, :delete}] -> {:halt, nil}
-      [{_key, object}] -> {:halt, object}
-      [{_key, o1, o2}] -> {:halt, {o1, o2}}
+      [{_key, x}] -> {:halt, x}
+      [tuple] -> {:halt, :erlang.delete_element(1, tuple)}
     end
   end
 
@@ -1090,8 +1087,9 @@ defmodule DetsPlux do
           # {{key_hash(key), key}, object}
           {{key_hash(key), key}, {key, object}}
 
-        {key, o1, o2} ->
-          {{key_hash(key), key}, {key, {o1, o2}}}
+        tuple ->
+          key = :erlang.element(1, tuple)
+          {{key_hash(key), key}, {key, :erlang.delete_element(1, tuple)}}
       end)
       |> :lists.sort()
     end
@@ -1672,7 +1670,7 @@ defimpl Enumerable, for: DetsPlux do
           fun.(
             entry ||
               case decode(entry_blob) do
-                {key, {x, y}} -> {key, x, y}
+                {key, tuple} when is_tuple(tuple) -> :erlang.insert_element(1, tuple, key)
                 x -> x
               end,
             acc
