@@ -48,17 +48,17 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro refund(amount) do
-    quote bind_quoted: [amount: amount], location: :keep do
-      balance_key = DetsPlux.tuple(var!(from), var!(token_id))
-      to_balance_key = DetsPlux.tuple(var!(to), var!(token_id))
+  defmacro refund(from, old_sender, token, amount) do
+    quote bind_quoted: [from: from, to: old_sender, token: token, amount: amount], location: :keep do
+      balance_key = DetsPlux.tuple(from, token)
+      to_balance_key = DetsPlux.tuple(to, token)
       DetsPlux.get_cache(var!(dets), var!(tx), balance_key, {0, 0})
       DetsPlux.get_cache(var!(dets), var!(tx), to_balance_key, {0, 0})
 
       DetsPlux.update_counter(var!(tx), balance_key, {2, -amount})
       DetsPlux.update_counter(var!(tx), to_balance_key, {2, amount})
 
-      RegPay.refund(var!(source), var!(from), var!(to), var!(token_id), amount)
+      RegPay.refund(var!(source), from, to, token, amount)
     end
   end
 
