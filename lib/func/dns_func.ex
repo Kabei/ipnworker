@@ -49,7 +49,7 @@ defmodule Ippan.Func.Dns do
         dns_hash16,
         params
       ) do
-    map_filter = Map.take(params, DNS.editable())
+    opts = Map.take(params, DNS.editable())
 
     {_subdomain, domain} = Domain.split(fullname)
 
@@ -57,14 +57,11 @@ defmodule Ippan.Func.Dns do
 
     db_ref = :persistent_term.get(:main_conn)
 
-    dns =
+    [_, _, type, data, ttl, _hash] =
       DNS.get(domain, dns_hash)
 
     cond do
-      map_filter == %{} ->
-        raise IppanError, "Invalid optional arguments"
-
-      map_filter != params ->
+      map_size(opts) == 0 or opts != params ->
         raise IppanError, "Invalid optional arguments"
 
       not Domain.owner?(domain, account_id) ->
@@ -72,7 +69,9 @@ defmodule Ippan.Func.Dns do
 
       not match?(
         {_, _, _, _, _value},
-        :dnslib.resource(~c"#{fullname} IN #{dns.ttl} #{dns.type} #{dns.data}")
+        :dnslib.resource(
+          ~c"#{fullname} IN #{Map.get(opts, "ttl", ttl)} #{type} #{Map.get(opts, "data", data)}"
+        )
       ) ->
         raise ArgumentError, "DNS resource format error"
 
@@ -83,7 +82,7 @@ defmodule Ippan.Func.Dns do
           BalanceTrace.new(account_id)
           |> BalanceTrace.requires!(@token, fees)
 
-        MapUtil.to_atoms(map_filter)
+        MapUtil.to_atoms(opts)
         |> MapUtil.validate_range(:ttl, @ttl_range)
         |> MapUtil.validate_bytes_range(:data, @data_range)
 

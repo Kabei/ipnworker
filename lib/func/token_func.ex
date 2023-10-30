@@ -70,10 +70,7 @@ defmodule Ippan.Func.Token do
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
-      opts == %{} ->
-        raise IppanError, "options is empty"
-
-      map_filter != opts ->
+      map_size(opts) == 0 or map_filter != opts ->
         raise IppanError, "Invalid option field"
 
       not Token.owner?(id, account_id) ->

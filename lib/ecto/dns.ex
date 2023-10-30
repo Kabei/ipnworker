@@ -13,8 +13,14 @@ defmodule Ippan.Ecto.DNS do
     db_ref = :persistent_term.get(:main_ro)
     hash = Base.decode16(hash16, case: :mixed)
 
-    DNS.get(domain, hash)
-    |> fun()
+    case DNS.get(domain, hash) do
+      nil ->
+        nil
+
+      dns ->
+        DNS.list_to_map(dns)
+        |> fun()
+    end
   end
 
   def all(domain, params) do
@@ -22,7 +28,7 @@ defmodule Ippan.Ecto.DNS do
       from(d in @table, where: d.domain == ^domain)
       |> filter_offset(params)
       |> filter_limit(params)
-      |> filter_type(params)
+      |> filter_where(params)
       |> filter_search(params)
       |> filter_select()
 
@@ -46,18 +52,24 @@ defmodule Ippan.Ecto.DNS do
 
   defp filter_search(query, %{"q" => q}) do
     q = "%#{q}%"
-    where(query, [t], like(t.name, ^q))
+    where(query, [x], like(x.name, ^q))
   end
 
   defp filter_search(query, _), do: query
 
-  defp filter_type(query, %{"type" => type}) do
-    where(query, [t], like(t.type, ^type))
+  defp filter_where(query, %{"name" => name, "type" => type}) do
+    where(query, [x], x.name == ^name and x.type == ^type)
   end
 
-  defp filter_type(query, _), do: query
+  defp filter_where(query, %{"name" => name}) do
+    where(query, [x], x.name == ^name)
+  end
 
-  defp fun(nil), do: nil
+  defp filter_where(query, %{"type" => type}) do
+    where(query, [x], x.type == ^type)
+  end
+
+  defp filter_where(query, _), do: query
 
   defp fun(x = %{hash: hash}) do
     %{x | hash: Utils.encode16(hash)}

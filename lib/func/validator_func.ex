@@ -81,10 +81,7 @@ defmodule Ippan.Func.Validator do
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
-      opts == %{} ->
-        raise IppanError, "Options is empty"
-
-      map_filter != opts ->
+      map_size(opts) == 0 or map_filter != opts ->
         raise IppanError, "Invalid option field"
 
       not Validator.owner?(id, account_id) ->

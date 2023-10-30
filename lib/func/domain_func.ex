@@ -64,7 +64,7 @@ defmodule Ippan.Func.Domain do
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
-      opts == %{} ->
+      map_size(opts) == 0 ->
         raise IppanError, "options is empty"
 
       map_filter != opts ->
