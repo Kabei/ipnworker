@@ -36,7 +36,7 @@ config :ipnworker, :http,
 config :ipnworker, :cluster,
   handler_module: Ippan.ClusterServer,
   transport_module: ThousandIsland.Transports.TCP,
-  num_acceptors: max(cpus, 10),
+  num_acceptors: 100,
   port: cluster_port,
   transport_options: [
     backlog: 1024,
