@@ -33,6 +33,7 @@ defmodule Ippan.Ecto.DNS do
 
     case Sqlite.query(db_ro, sql, args) do
       {:ok, results} ->
+        IO.inspect(results)
         Enum.map(results, &(DNS.list_to_map(&1) |> fun()))
 
       _ ->
