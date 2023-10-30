@@ -11,7 +11,7 @@ defmodule Ippan.Ecto.DNS do
 
   def one(domain, hash16) do
     db_ref = :persistent_term.get(:main_ro)
-    hash = Base.decode16(hash16, case: :mixed)
+    hash = Base.decode16!(hash16, case: :mixed)
 
     case DNS.get(domain, hash) do
       nil ->
