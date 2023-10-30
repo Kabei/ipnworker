@@ -70,7 +70,7 @@ defmodule Ippan.Func.Dns do
       not match?(
         {_, _, _, _, _value},
         :dnslib.resource(
-          ~c"#{fullname} IN #{Map.get(opts, "ttl", ttl)} #{type} #{Map.get(opts, "data", data)}"
+          ~c"#{fullname} IN #{Map.get(opts, "ttl", ttl)} #{DNS.type_to_alpha(type)} #{Map.get(opts, "data", data)}"
         )
       ) ->
         raise ArgumentError, "DNS resource format error"
