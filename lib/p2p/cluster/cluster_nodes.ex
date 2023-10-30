@@ -200,7 +200,7 @@ defmodule Ippan.ClusterNodes do
         Validator.get(round_creator_id)
 
       run_reward(round, round_creator, balance_pid, balance_tx)
-      run_jackpot(round, db_ref, pg_conn)
+      run_jackpot(round, balance_pid, balance_tx, db_ref, pg_conn)
 
       if status > 0 do
         Validator.delete(round_creator_id)
@@ -242,10 +242,17 @@ defmodule Ippan.ClusterNodes do
 
   defp run_reward(_, _, _, _), do: :ok
 
-  defp run_jackpot(%{id: round_id, jackpot: {winner, amount}}, db_ref, pg_conn)
+  defp run_jackpot(
+         %{id: round_id, jackpot: {winner, amount}},
+         dets,
+         tx,
+         db_ref,
+         pg_conn
+       )
        when amount > 0 do
     data = [round_id, winner, amount]
     :done = Sqlite.step("insert_jackpot", data)
+    BalanceStore.income(dets, tx, winner, @token, amount)
     supply = TokenSupply.new(@token)
     TokenSupply.add(supply, amount)
 
@@ -261,7 +268,7 @@ defmodule Ippan.ClusterNodes do
     })
   end
 
-  defp run_jackpot(_, _, _), do: :ok
+  defp run_jackpot(_, _, _, _, _), do: :ok
 
   defp run_save_balances(_tx, nil), do: nil
 
