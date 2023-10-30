@@ -33,7 +33,7 @@ defmodule Ippan.Func.Validator do
 
     cond do
       fa < 0 or fa > @max_fees or fb < 0 or fb > @max_fees ->
-        raise IppanError, "Invalid fees config"
+        raise IppanError, "Invalid fees"
 
       byte_size(net_pubkey) > 1278 ->
         raise IppanError, "Invalid net_pubkey size #{byte_size(net_pubkey)}"
