@@ -53,7 +53,7 @@ defmodule Ippan.Ecto.Block do
     from(Block)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_below(params)
+    |> filter_attach(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -64,11 +64,11 @@ defmodule Ippan.Ecto.Block do
     select(query, [b], map(b, @select))
   end
 
-  defp filter_below(query, %{"below" => id}) do
-    where(query, [b], b.id < ^id)
+  defp filter_attach(query, %{"attach" => id}) do
+    where(query, [b], b.id <= ^id)
   end
 
-  defp filter_below(query, _), do: query
+  defp filter_attach(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [b], asc: b.id)
   defp sort(query, _), do: order_by(query, [b], desc: b.id)

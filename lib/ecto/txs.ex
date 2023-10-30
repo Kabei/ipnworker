@@ -65,7 +65,9 @@ defmodule Ippan.Ecto.Tx do
     from(Tx)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_below(params)
+    |> filter_where(params)
+    |> filter_type(params)
+    |> filter_attach(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -76,11 +78,31 @@ defmodule Ippan.Ecto.Tx do
     select(query, [tx], map(tx, @select))
   end
 
-  defp filter_below(query, %{"below" => id}) do
-    where(query, [tx], tx.block < ^id)
+  defp filter_attach(query, %{"attach" => id}) do
+    where(query, [tx], tx.block <= ^id)
   end
 
-  defp filter_below(query, _), do: query
+  defp filter_attach(query, _), do: query
+
+  defp filter_where(query, %{"activity" => address}) do
+    where(query, [tx], tx.from == ^address or tx.to == ^address)
+  end
+
+  defp filter_where(query, %{"from" => address}) do
+    where(query, [tx], tx.from == ^address)
+  end
+
+  defp filter_where(query, %{"to" => address}) do
+    where(query, [tx], tx.to == ^address)
+  end
+
+  defp filter_where(query, _), do: query
+
+  defp filter_type(query, %{"type" => type}) do
+    where(query, [tx], tx.type == ^type)
+  end
+
+  defp filter_type(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block)
   defp sort(query, _), do: order_by(query, [tx], desc: tx.block)

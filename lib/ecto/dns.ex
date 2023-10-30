@@ -1,7 +1,7 @@
 defmodule Ippan.Ecto.DNS do
   alias Ippan.{DNS, Utils}
   alias Ipnworker.Repo
-  import Ecto.Query, only: [from: 2, order_by: 3, select: 3, where: 3]
+  import Ecto.Query, only: [from: 2, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
   require DNS
@@ -25,7 +25,6 @@ defmodule Ippan.Ecto.DNS do
       |> filter_type(params)
       |> filter_search(params)
       |> filter_select()
-      |> sort(params)
 
     {sql, args} =
       Repo.to_sql(:all, q)
@@ -57,8 +56,6 @@ defmodule Ippan.Ecto.DNS do
   end
 
   defp filter_type(query, _), do: query
-  defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
-  defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
 
   defp fun(nil), do: nil
 
