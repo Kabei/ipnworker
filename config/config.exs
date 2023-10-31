@@ -9,6 +9,8 @@ role = System.get_env("ROLE", "worker")
 
 # Node setup
 config :ipnworker, :history, true
+# Cluster API (Remote control)
+config :ipnworker, :remote, true
 
 # Folders setup
 config :ipnworker, :data_dir, data_dir

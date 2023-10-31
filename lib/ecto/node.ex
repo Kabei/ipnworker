@@ -1,10 +1,11 @@
 defmodule Ippan.Ecto.Node do
-  alias Ippan.Node
+  alias Ippan.{ClusterNodes, Node}
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Node
   require Sqlite
+  require Logger
 
   @table "node"
   @select ~w(id hostname port role pubkey net_pubkey avatar created_at)a
@@ -14,6 +15,58 @@ defmodule Ippan.Ecto.Node do
 
     Node.get(id)
   end
+
+  def trigger("node.join", params) do
+    timestamp = :erlang.system_time(:millisecond)
+
+    result =
+      params
+      |> MapUtil.require(~w(id hostname port role))
+      |> MapUtil.validate_hostname("hostname")
+      |> MapUtil.validate_range("port", 1000..65535)
+      |> MapUtil.validate_bytes_range("id", 0..255)
+      |> MapUtil.validate_bytes_range("avatar", 0..255)
+      |> MapUtil.transform("role", fn x ->
+        String.split(x, " ", trim: true)
+      end)
+      |> Map.put(:created_at, timestamp)
+      |> Map.put(:updated_at, timestamp)
+      |> MapUtil.to_atoms()
+
+    db_ref = :persistent_term.get(:net_conn)
+
+    result
+    |> Node.to_list()
+    |> Node.insert()
+    |> case do
+      :done ->
+        miner = :persistent_term.get(:miner)
+        ClusterNodes.cast(miner, "node.join", result)
+        :ok
+
+      _ ->
+        Logger.error("Node could not be recorded | #{inspect(result)}")
+    end
+  end
+
+  def trigger("node.update", _params) do
+    :ok
+  end
+
+  def trigger("node.leave", %{"id" => id}) do
+    db_ref = :persistent_term.get(:net_conn)
+
+    case Node.delete(id) do
+      :done ->
+        miner = :persistent_term.get(:miner)
+        ClusterNodes.cast(miner, "node.leave", id)
+
+      _ ->
+        Logger.error("Node could not be deleted | #{inspect(id)}")
+    end
+  end
+
+  def trigger(_, _), do: :undefined
 
   def all(params) do
     q =
@@ -36,6 +89,11 @@ defmodule Ippan.Ecto.Node do
       _ ->
         []
     end
+  end
+
+  def total do
+    db_ref = :persistent_term.get(:net_conn)
+    Node.total()
   end
 
   defp filter_select(query) do

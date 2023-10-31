@@ -9,7 +9,8 @@ defmodule Ippan.Node do
           pubkey: binary,
           net_pubkey: binary,
           avatar: binary | nil,
-          created_at: integer()
+          created_at: integer(),
+          updated_at: integer()
         }
 
   defstruct [
@@ -20,8 +21,19 @@ defmodule Ippan.Node do
     :pubkey,
     :net_pubkey,
     :avatar,
-    :created_at
+    :created_at,
+    :updated_at
   ]
+
+  # @fields __MODULE__.__struct__() |> Map.keys() |> Enum.map(&to_string(&1)) |> IO.inspect()
+  # @spec fields :: [binary()]
+  # def fields, do: @fields
+
+  @impl true
+  def editable, do: ~w(hostname port role avatar)
+
+  @impl true
+  def optionals, do: ~w(avatar)
 
   @impl true
   def to_list(x) do
@@ -33,7 +45,8 @@ defmodule Ippan.Node do
       x.pubkey,
       x.net_pubkey,
       x.avatar,
-      x.created_at
+      x.created_at,
+      x.updated_at
     ]
   end
 
@@ -56,7 +69,8 @@ defmodule Ippan.Node do
         pubkey,
         net_pubkey,
         avatar,
-        created_at
+        created_at,
+        updated_at
       ]) do
     %{
       id: id,
@@ -66,7 +80,8 @@ defmodule Ippan.Node do
       pubkey: pubkey,
       net_pubkey: net_pubkey,
       avatar: avatar,
-      created_at: created_at
+      created_at: created_at,
+      updated_at: updated_at
     }
   end
 

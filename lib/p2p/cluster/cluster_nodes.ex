@@ -234,13 +234,14 @@ defmodule Ippan.ClusterNodes do
     end
   end
 
-  defp run_reward(%{reward: amount}, creator, dets, tx) when amount > 0 do
-    BalanceStore.income(dets, tx, creator.owner, @token, amount)
+  defp run_reward(%{reward: amount}, %{owner: winner}, dets, tx) when amount > 0 do
+    BalanceStore.income(dets, tx, winner, @token, amount)
     supply = TokenSupply.new(@token)
     TokenSupply.add(supply, amount)
+    RegPay.reward(winner, @token, amount)
   end
 
-  defp run_reward(_, _, _, _), do: :ok
+  defp run_reward(_, _creator, _, _), do: :ok
 
   defp run_jackpot(
          %{id: round_id, jackpot: {winner, amount}},
@@ -255,6 +256,7 @@ defmodule Ippan.ClusterNodes do
     BalanceStore.income(dets, tx, winner, @token, amount)
     supply = TokenSupply.new(@token)
     TokenSupply.add(supply, amount)
+    RegPay.jackpot(winner, @token, amount)
 
     if pg_conn do
       PgStore.insert_jackpot(pg_conn, data)

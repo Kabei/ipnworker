@@ -29,30 +29,21 @@ defmodule Ipnworker.Application do
   end
 
   defp start_node do
-    vid = System.get_env("VID")
-    name = System.get_env("NAME")
-    miner = System.get_env("MINER")
+    vid =
+      System.get_env("VID") || raise IppanStartUpError, "variable VID (ValidatorID) is missing"
 
-    cond do
-      is_nil(vid) ->
-        raise IppanStartUpError, "variable VID (ValidatorID) is missing"
+    name = System.get_env("NAME") || raise IppanStartUpError, "variable NAME is missing"
+    miner = System.get_env("MINER") || raise IppanStartUpError, "variable MINER is missing"
 
-      is_nil(name) ->
-        raise IppanStartUpError, "variable NAME is missing"
-
-      is_nil(miner) ->
-        raise IppanStartUpError, "variable MINER is missing"
-
-      true ->
-        :persistent_term.put(:vid, String.to_integer(vid))
-        :persistent_term.put(:name, name)
-        :persistent_term.put(:miner, miner)
-    end
+    :persistent_term.put(:vid, String.to_integer(vid))
+    :persistent_term.put(:name, name)
+    :persistent_term.put(:miner, miner)
   end
 
   defp load_keys do
     seed_kem = System.get_env("CLUSTER_KEY") |> Fast64.decode64()
     seed = System.get_env("SECRET_KEY") |> Fast64.decode64()
+    auth = System.get_env("AUTH") || raise RuntimeError, "variable AUTH is missing"
 
     {:ok, net_pubkey, net_privkey} = NtruKem.gen_key_pair_from_seed(seed_kem)
     {:ok, {pubkey, privkey}} = Cafezinho.Impl.keypair_from_seed(seed)
@@ -61,6 +52,7 @@ defmodule Ipnworker.Application do
     :persistent_term.put(:privkey, privkey)
     :persistent_term.put(:net_pubkey, net_pubkey)
     :persistent_term.put(:net_privkey, net_privkey)
+    :persistent_term.put(:auth, auth)
   end
 
   defp make_folders do

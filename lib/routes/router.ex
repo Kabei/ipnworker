@@ -132,11 +132,11 @@ defmodule Ipnworker.Router do
   forward("/v1/event", to: Ipnworker.EventRoutes)
   # forward "/v1/snap", to: Ipnworker.SnapRoutes
 
+  if Application.compile_env(@app, :remote) do
+    forward("/v1/cluster", to: Ipnworker.ClusterRoutes)
+  end
+
   match _ do
     send_resp(conn, 404, "")
   end
-
-  # defp handle_errors(conn, %{kind: _kind, reason: _reason, stack: _stack}) do
-  #   send_resp(conn, conn.status, "Something went wrong")
-  # end
 end

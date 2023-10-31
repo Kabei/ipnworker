@@ -145,7 +145,7 @@ defmodule MapUtil do
     map
   end
 
-  def require_only(map, keys) do
+  def require(map, keys) do
     result = Enum.all?(Map.keys(map), fn x -> x in keys end)
 
     if not result, do: throw("Error check require values")

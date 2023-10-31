@@ -86,6 +86,8 @@ defmodule Ippan.Funx.Coin do
       end
       |> Enum.sum()
 
+
+
     TokenSupply.add(supply, total)
 
     supply = TokenSupply.new(@token)

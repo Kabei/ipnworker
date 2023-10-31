@@ -1,7 +1,7 @@
 defmodule RegPay do
   # Event Transf
   # 0. Coinbase
-  # 1. Reward
+  # 1. Round Reward
   # 2. Jackpot
   # 100. Pay
   # 101. Refund
@@ -41,6 +41,8 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
+    def fees(_source, _from, _to, _token, 0), do: :ok
+
     def fees(source, from, to, token, amount) do
       %{nonce: nonce} = source
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
@@ -60,6 +62,14 @@ defmodule RegPay do
       %{id: from, nonce: nonce} = source
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 302, token, amount})
     end
+
+    def reward(to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {nil, nil, to, 1, token, amount})
+    end
+
+    def jackpot(to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {nil, nil, to, 2, token, amount})
+    end
   else
     def init, do: :ok
     def coinbase(_, _, _, _), do: :ok
@@ -69,6 +79,8 @@ defmodule RegPay do
     def burn(_, _, _, _), do: :ok
     def lock(_, _, _, _), do: :ok
     def unlock(_, _, _, _), do: :ok
+    def reward(_, _, _, _), do: :ok
+    def jackpot(_, _, _, _), do: :ok
   end
 
   def commit(nil, _), do: nil
