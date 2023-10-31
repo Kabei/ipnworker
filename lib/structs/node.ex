@@ -8,7 +8,8 @@ defmodule Ippan.Node do
           role: [binary] | nil,
           pubkey: binary,
           net_pubkey: binary,
-          avatar: binary | nil
+          avatar: binary | nil,
+          created_at: integer()
         }
 
   defstruct [
@@ -18,7 +19,8 @@ defmodule Ippan.Node do
     :role,
     :pubkey,
     :net_pubkey,
-    :avatar
+    :avatar,
+    :created_at
   ]
 
   @impl true
@@ -30,7 +32,8 @@ defmodule Ippan.Node do
       CBOR.encode(x.role),
       x.pubkey,
       x.net_pubkey,
-      x.avatar
+      x.avatar,
+      x.created_at
     ]
   end
 
@@ -52,7 +55,8 @@ defmodule Ippan.Node do
         role,
         pubkey,
         net_pubkey,
-        avatar
+        avatar,
+        created_at
       ]) do
     %{
       id: id,
@@ -61,7 +65,8 @@ defmodule Ippan.Node do
       role: :erlang.element(1, CBOR.Decoder.decode(role)),
       pubkey: pubkey,
       net_pubkey: net_pubkey,
-      avatar: avatar
+      avatar: avatar,
+      created_at: created_at
     }
   end
 
@@ -87,6 +92,18 @@ defmodule Ippan.Node do
   defmacro fetch(id) do
     quote location: :keep do
       Sqlite.fetch("get_node", [unquote(id)])
+    end
+  end
+
+  defmacro total do
+    quote location: :keep do
+      Sqlite.one("total_nodes", [])
+    end
+  end
+
+  defmacro delete(id) do
+    quote location: :keep do
+      Sqlite.step("delete_node", [unquote(id)])
     end
   end
 

@@ -32,7 +32,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_limit(params)
     |> filter_address(params)
     |> filter_type(params)
-    |> filter_attach(params)
+    |> filter_round(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -42,11 +42,15 @@ defmodule Ippan.Ecto.Payments do
     select(query, [p], map(p, @select))
   end
 
-  defp filter_attach(query, %{"attach" => id}) do
+  defp filter_round(query, %{"round" => id}) do
+    where(query, [p], p.round == ^id)
+  end
+
+  defp filter_round(query, %{"attach" => id}) do
     where(query, [p], p.round <= ^id)
   end
 
-  defp filter_attach(query, _), do: query
+  defp filter_round(query, _), do: query
 
   defp filter_address(query, %{"activity" => address}) do
     where(query, [p], p.from == ^address or p.to == ^address)
@@ -68,6 +72,7 @@ defmodule Ippan.Ecto.Payments do
 
   defp filter_type(query, _), do: query
 
-  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.block)
+  defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.round)
+  defp sort(query, %{"sort" => "from"}), do: order_by(query, [p], desc: p.round, asc: p.from, asc: p.nonce)
   defp sort(query, _), do: order_by(query, [p], desc: p.round)
 end
