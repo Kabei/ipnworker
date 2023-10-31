@@ -145,7 +145,7 @@ defmodule BalanceStore do
           to_key = DetsPlux.tuple(to, token)
           DetsPlux.get_cache(var!(dets), var!(tx), to_key, {0, 0})
 
-          burn = ceil(value * 0.3)
+          burn = Ippan.Utils.calc_burn(value)
           fees = value - burn
 
           DetsPlux.update_counter(var!(tx), key, {2, -value})
@@ -157,7 +157,7 @@ defmodule BalanceStore do
           :error
         end
       else
-        BalanceStore.pay_burn(from, ceil(value * 0.3))
+        BalanceStore.pay_burn(from, Ippan.Utils.calc_burn(value))
       end
     end
   end
