@@ -33,8 +33,6 @@ defmodule Ippan.ClusterNodes do
     db_ref = :persistent_term.get(:net_conn)
     default_port = Application.get_env(@app, :cluster)[:port]
 
-    Node.delete_all()
-
     # register nodes from env_file Nodes argument
     String.split(nodes, ",", trim: true)
     |> Enum.reduce([], fn x, acc ->

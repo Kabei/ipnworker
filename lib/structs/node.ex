@@ -41,7 +41,7 @@ defmodule Ippan.Node do
       x.id,
       x.hostname,
       x.port,
-      CBOR.encode(x.role),
+      role_encode(x.role),
       x.pubkey,
       x.net_pubkey,
       x.avatar,
@@ -76,7 +76,7 @@ defmodule Ippan.Node do
       id: id,
       hostname: hostname,
       port: port,
-      role: :erlang.element(1, CBOR.Decoder.decode(role)),
+      role: role_decode(role),
       pubkey: pubkey,
       net_pubkey: net_pubkey,
       avatar: avatar,
@@ -87,6 +87,18 @@ defmodule Ippan.Node do
 
   @impl true
   def to_map({_id, x}), do: x
+
+  def role_encode(nil), do: nil
+
+  def role_encode(roles) do
+    Enum.join(roles, " ")
+  end
+
+  def role_decode(nil), do: nil
+
+  def role_decode(roles) do
+    String.split(roles, " ", trim: true)
+  end
 
   defmacro insert(node) do
     quote do
@@ -113,6 +125,12 @@ defmodule Ippan.Node do
   defmacro total do
     quote location: :keep do
       Sqlite.one("total_nodes", [])
+    end
+  end
+
+  defmacro update(map_fields, id) do
+    quote location: :keep do
+      Sqlite.update("nodes", unquote(map_fields), id: unquote(id))
     end
   end
 

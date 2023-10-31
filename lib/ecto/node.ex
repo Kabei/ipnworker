@@ -27,7 +27,7 @@ defmodule Ippan.Ecto.Node do
       |> MapUtil.validate_bytes_range("id", 0..255)
       |> MapUtil.validate_bytes_range("avatar", 0..255)
       |> MapUtil.transform("role", fn x ->
-        String.split(x, " ", trim: true)
+        Node.role_decode(x)
       end)
       |> Map.put(:created_at, timestamp)
       |> Map.put(:updated_at, timestamp)
@@ -49,20 +49,35 @@ defmodule Ippan.Ecto.Node do
     end
   end
 
-  def trigger("node.update", _params) do
-    :ok
+  def trigger(event = "node.update", %{"id" => id, "data" => params}) do
+    db_ref = :persistent_term.get(:net_conn)
+
+    map =
+      params
+      |> Map.take(Node.optionals())
+      |> MapUtil.validate_hostname("hostname")
+      |> MapUtil.validate_range("port", 1000..65535)
+      |> MapUtil.transform("role", fn x ->
+        Node.role_decode(x)
+      end)
+      |> MapUtil.to_atoms()
+
+    if Node.update(map, id) == :done do
+      miner = :persistent_term.get(:miner)
+      ClusterNodes.cast(miner, event, %{"id" => id, "data" => map})
+    else
+      Logger.error("Node could not be updated | #{inspect(id)}")
+    end
   end
 
   def trigger("node.leave", %{"id" => id}) do
     db_ref = :persistent_term.get(:net_conn)
 
-    case Node.delete(id) do
-      :done ->
-        miner = :persistent_term.get(:miner)
-        ClusterNodes.cast(miner, "node.leave", id)
-
-      _ ->
-        Logger.error("Node could not be deleted | #{inspect(id)}")
+    if Node.delete(id) == :done do
+      miner = :persistent_term.get(:miner)
+      ClusterNodes.cast(miner, "node.leave", id)
+    else
+      Logger.error("Node could not be deleted | #{inspect(id)}")
     end
   end
 
