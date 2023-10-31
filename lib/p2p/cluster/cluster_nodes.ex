@@ -21,50 +21,50 @@ defmodule Ippan.ClusterNodes do
     sup: Ippan.ClusterSup
 
   def on_init(_) do
-    nodes = System.get_env("NODES")
+    load_nodes()
+    connect_to_miner()
+  end
 
-    if is_nil(nodes) do
-      IO.puts(IO.ANSI.red() <> "ERROR: variable NODES is missing" <> IO.ANSI.reset())
-      System.halt(1)
-    end
-
-    pk = :persistent_term.get(:pubkey)
-    net_pk = :persistent_term.get(:net_pubkey)
+  defp load_nodes do
     db_ref = :persistent_term.get(:net_conn)
-    default_port = Application.get_env(@app, :cluster)[:port]
 
-    # register nodes from env_file Nodes argument
-    String.split(nodes, ",", trim: true)
-    |> Enum.reduce([], fn x, acc ->
-      acc ++ [x |> String.trim() |> String.split("@", parts: 2)]
-    end)
-    |> Enum.each(fn [name_id, hostname] ->
-      node =
-        %Node{
-          id: name_id,
-          hostname: hostname,
-          port: default_port,
-          pubkey: pk,
-          net_pubkey: net_pk
-        }
-        |> Node.to_list()
+    if Node.total() == 0 do
+      nodes = System.get_env("NODES")
 
-      Node.insert(node)
-    end)
+      if is_nil(nodes) do
+        IO.puts(IO.ANSI.red() <> "ERROR: variable NODES is missing" <> IO.ANSI.reset())
+        System.halt(1)
+      end
 
-    Sqlite.sync(db_ref)
-    next_init()
-    connect_to_miner(db_ref)
+      pk = :persistent_term.get(:pubkey)
+      net_pk = :persistent_term.get(:net_pubkey)
+      default_port = Application.get_env(@app, :cluster)[:port]
+
+      # registry cluster nodes
+      String.split(nodes, ",", trim: true)
+      |> Enum.reduce([], fn x, acc ->
+        acc ++ [String.split(x, "@", parts: 2)]
+      end)
+      |> Enum.each(fn [name_id, hostname] ->
+        data =
+          %Node{
+            id: name_id,
+            hostname: hostname,
+            port: default_port,
+            pubkey: pk,
+            net_pubkey: net_pk
+          }
+          |> Node.to_list()
+
+        Node.insert(data)
+      end)
+
+      Sqlite.sync(db_ref)
+    end
   end
 
-  defp next_init do
+  defp connect_to_miner do
     db_ref = :persistent_term.get(:main_conn)
-    vid = :persistent_term.get(:vid)
-    v = Validator.get(vid)
-    :persistent_term.put(:validator, v)
-  end
-
-  defp connect_to_miner(db_ref) do
     test = System.get_env("test")
 
     if is_nil(test) do
