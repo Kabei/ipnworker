@@ -23,7 +23,7 @@ defmodule Ipnworker.TokenRoutes do
   end
 
   get "/:id/supply" do
-    supply = TokenSupply.cache(id)
+    supply = TokenSupply.new(id)
     amount = TokenSupply.get(supply)
     send_resp(conn, 200, Integer.to_string(amount))
   end

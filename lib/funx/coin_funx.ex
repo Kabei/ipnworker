@@ -23,17 +23,17 @@ defmodule Ippan.Funx.Coin do
     is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
-    supply = TokenSupply.new(token_id)
+    supply = TokenSupply.new(@token)
     tfees = Utils.calc_fees(fa, fb, size)
-    remove = ceil(tfees * 0.3)
+    burn = ceil(tfees * 0.3)
 
     BalanceStore.send(amount)
 
     if is_validator do
-      BalanceStore.burn(from, @token, remove)
+      BalanceStore.burn(from, @token, burn)
     else
-      fees = tfees - remove
-      BalanceStore.fees(fees, remove)
+      fees = tfees - burn
+      BalanceStore.fees(fees, burn)
     end
   end
 
@@ -75,9 +75,9 @@ defmodule Ippan.Funx.Coin do
     is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
-    supply = TokenSupply.new(token_id)
+    supply = TokenSupply.new(@token)
     tfees = Utils.calc_fees(fa, fb, size)
-    remove = ceil(tfees * 0.3)
+    burn = ceil(tfees * 0.3)
 
     total =
       for [account, value] <- outputs do
@@ -89,10 +89,10 @@ defmodule Ippan.Funx.Coin do
     TokenSupply.add(supply, total)
 
     if is_validator do
-      BalanceStore.burn(from, @token, remove)
+      BalanceStore.burn(from, @token, burn)
     else
-      fees = tfees - remove
-      BalanceStore.fees(fees, remove)
+      fees = tfees - burn
+      BalanceStore.fees(fees, burn)
     end
   end
 
@@ -108,20 +108,20 @@ defmodule Ippan.Funx.Coin do
     is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
-    supply = TokenSupply.new(token_id)
+    supply = TokenSupply.new(@token)
 
     Enum.each(outputs, fn [to, amount] ->
       BalanceStore.send(amount)
     end)
 
     tfees = Utils.calc_fees(fa, fb, size)
-    remove = ceil(tfees * 0.3)
+    burn = ceil(tfees * 0.3)
 
     if is_validator do
-      BalanceStore.burn(from, @token, remove)
+      BalanceStore.burn(from, @token, burn)
     else
-      fees = tfees - remove
-      BalanceStore.fees(fees, remove)
+      fees = tfees - burn
+      BalanceStore.fees(fees, burn)
     end
   end
 

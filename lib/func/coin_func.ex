@@ -79,7 +79,7 @@ defmodule Ippan.Func.Coin do
           end)
 
         if max_supply != 0 do
-          current_supply = TokenSupply.cache(token_id) |> TokenSupply.get()
+          current_supply = TokenSupply.new(token_id) |> TokenSupply.get()
 
           if current_supply + total > max_supply do
             raise IppanError, "max supply exceeded"

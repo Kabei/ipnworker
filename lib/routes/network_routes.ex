@@ -42,8 +42,7 @@ defmodule Ipnworker.NetworkRoutes do
     tokens = Token.total()
     dets = DetsPlux.get(:wallet)
     accounts = DetsPlux.info(dets, nil, :size)
-    dets2 = DetsPlux.get(:stats)
-    supply = DetsPlux.get(dets2, DetsPlux.tuple(@token, "supply"), 0)
+    supply = TokenSupply.new(@token)
 
     %{
       "accounts" => accounts,
@@ -51,7 +50,7 @@ defmodule Ipnworker.NetworkRoutes do
       "env" => EnvStore.all(db_ref),
       "hash" => Utils.encode16(hash),
       "id" => id,
-      "supply" => supply,
+      "supply" => TokenSupply.get(supply),
       "token" => @token,
       "tokens" => tokens,
       "validators" => validators
