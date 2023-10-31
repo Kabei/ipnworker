@@ -1,4 +1,5 @@
 defmodule TokenSupply do
+  require DetsPlux
   @db :stats
   @tx :supply
   # @cache_tx :cache_supply
@@ -47,5 +48,10 @@ defmodule TokenSupply do
   @spec subtract(map, number()) :: number()
   def subtract(%{tx: tx, key: key}, amount) do
     DetsPlux.update_counter(tx, key, -amount)
+  end
+
+  @spec delete(map) :: true
+  def delete(%{tx: tx, key: key}) do
+    DetsPlux.delete(tx, key)
   end
 end
