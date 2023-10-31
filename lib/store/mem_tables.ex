@@ -23,8 +23,7 @@ defmodule MemTables do
     dtx: @ordered_named_opts,
     # cache
     validator: @set_named_concurrent_opts,
-    token: @set_named_concurrent_opts,
-    env: @set_named_concurrent_opts
+    token: @set_named_concurrent_opts
   }
 
   def child_spec(args) do
