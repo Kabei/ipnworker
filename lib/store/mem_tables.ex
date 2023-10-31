@@ -49,6 +49,5 @@ defmodule MemTables do
     :ets.delete_all_objects(:dtx)
     :ets.delete_all_objects(:validator)
     :ets.delete_all_objects(:token)
-    :ets.delete_all_objects(:env)
   end
 end
