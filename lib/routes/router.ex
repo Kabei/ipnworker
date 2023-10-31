@@ -132,7 +132,7 @@ defmodule Ipnworker.Router do
   forward("/v1/event", to: Ipnworker.EventRoutes)
   # forward "/v1/snap", to: Ipnworker.SnapRoutes
 
-  if Application.compile_env(@app, :remote) do
+  if Application.compile_env(@app, :remote, false) do
     forward("/v1/cluster", to: Ipnworker.ClusterRoutes)
   end
 

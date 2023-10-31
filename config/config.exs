@@ -7,11 +7,6 @@ falcon_dir = System.get_env("FALCON_DIR", "priv/falcon.key")
 key_dir = System.get_env("KEY_DIR", "priv/secret.key")
 role = System.get_env("ROLE", "worker")
 
-# Node setup
-config :ipnworker, :history, true
-# Cluster API (Remote control)
-config :ipnworker, :remote, true
-
 # Folders setup
 config :ipnworker, :data_dir, data_dir
 
@@ -71,3 +66,5 @@ config :ipnworker, :p2p_client, [
 
 config :ipnworker, json: Jason
 config :blake3, rayon: true
+
+import_config "options.exs"

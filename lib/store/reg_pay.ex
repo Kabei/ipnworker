@@ -79,8 +79,8 @@ defmodule RegPay do
     def burn(_, _, _, _), do: :ok
     def lock(_, _, _, _), do: :ok
     def unlock(_, _, _, _), do: :ok
-    def reward(_, _, _, _), do: :ok
-    def jackpot(_, _, _, _), do: :ok
+    def reward(_, _, _), do: :ok
+    def jackpot(_, _, _), do: :ok
   end
 
   def commit(nil, _), do: nil
