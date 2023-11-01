@@ -80,10 +80,7 @@ defmodule Ippan.Func.Coin do
 
         if max_supply != 0 do
           supply = TokenSupply.cache(token_id)
-
-          if TokenSupply.exceeded?(supply, total, max_supply) do
-            raise IppanError, "max supply exceeded"
-          end
+          TokenSupply.exceeded!(supply, total, max_supply)
         end
 
         bt = BalanceTrace.new(account_id)
@@ -121,7 +118,7 @@ defmodule Ippan.Func.Coin do
     fees = Utils.calc_fees(fa, fb, size)
 
     BalanceTrace.new(from)
-    |> BalanceTrace.requires!(token_id, total + fees)
+    |> BalanceTrace.multi_requires!([{token_id, total}, {@token, fees}])
     |> BalanceTrace.output()
   end
 
