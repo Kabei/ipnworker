@@ -1,6 +1,5 @@
 defmodule Ippan.TxHandler do
-  alias Ippan.{Funcs, Wallet}
-  alias Ippan.TxHandler
+  alias Ippan.{Funcs, Wallet, TxHandler}
 
   defmacro get_public_key!(dets, tx, type, vid) do
     quote location: :keep, bind_quoted: [dets: dets, tx: tx, type: type, vid: vid] do
@@ -66,7 +65,7 @@ defmodule Ippan.TxHandler do
 
       wallet_dets = DetsPlux.get(:wallet)
       wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
-      IO.inspect("check pk #{type_of_verification} #{var!(vid)}")
+      IO.inspect("check pk #{type_of_verification} #{var!(vid)} #{var!(from)}")
 
       wallet_pk =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
