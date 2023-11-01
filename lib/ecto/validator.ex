@@ -1,61 +1,177 @@
-defmodule Ippan.Ecto.Validator do
-  alias Ippan.{Validator, Utils}
-  alias Ipnworker.Repo
-  import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
-  import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
-  require Sqlite
-  require Validator
+defmodule Ippan.Validator do
+  require BigNumber
+  alias Ippan.Utils
+  @behaviour Ippan.Struct
+  @type t :: %__MODULE__{
+          id: non_neg_integer(),
+          hostname: String.t(),
+          port: integer(),
+          name: String.t(),
+          owner: binary(),
+          pubkey: binary(),
+          net_pubkey: binary(),
+          avatar: String.t() | nil,
+          fa: integer(),
+          fb: integer(),
+          stake: non_neg_integer(),
+          failures: integer(),
+          created_at: non_neg_integer(),
+          updated_at: non_neg_integer()
+        }
 
-  @table "validator"
-  @select ~w(id hostname port name owner pubkey net_pubkey avatar fa fb stake failures created_at updated_at)a
+  defstruct [
+    :id,
+    :hostname,
+    :port,
+    :name,
+    :owner,
+    :pubkey,
+    :net_pubkey,
+    :avatar,
+    :fa,
+    :fb,
+    :stake,
+    :created_at,
+    :updated_at,
+    failures: 0
+  ]
 
-  def one(id) do
-    db_ref = :persistent_term.get(:main_ro)
+  @impl true
+  def editable, do: ~w(hostname port name avatar pubkey net_pubkey fa fb owner)
+  @impl true
+  def optionals, do: ~w(avatar)
 
-    Validator.get(id)
-    |> fun()
+  @impl true
+  def to_list(x) do
+    [
+      x.id,
+      x.hostname,
+      x.port,
+      x.name,
+      x.owner,
+      x.pubkey,
+      x.net_pubkey,
+      x.avatar,
+      BigNumber.to_bin(x.fa),
+      BigNumber.to_bin(x.fb),
+      x.stake,
+      x.failures,
+      x.created_at,
+      x.updated_at
+    ]
   end
 
-  def all(params) do
-    q =
-      from(@table)
-      |> filter_offset(params)
-      |> filter_limit(params)
-      |> filter_search(params)
-      |> filter_select()
-      |> sort(params)
+  @impl true
+  def list_to_tuple([id | _] = x) do
+    {id, list_to_map(x)}
+  end
 
-    {sql, args} =
-      Repo.to_sql(:all, q)
+  @impl true
+  def to_tuple(x) do
+    {x.id, x}
+  end
 
-    db_ro = :persistent_term.get(:main_ro)
+  @impl true
+  def list_to_map([
+        id,
+        hostname,
+        port,
+        name,
+        owner,
+        pubkey,
+        net_pubkey,
+        avatar,
+        fa,
+        fb,
+        stake,
+        failures,
+        created_at,
+        updated_at
+      ]) do
+    %{
+      id: id,
+      hostname: hostname,
+      port: port,
+      name: name,
+      owner: owner,
+      avatar: avatar,
+      pubkey: pubkey,
+      net_pubkey: net_pubkey,
+      fb: BigNumber.to_int(fb),
+      fa: BigNumber.to_int(fa),
+      stake: stake,
+      failures: failures,
+      created_at: created_at,
+      updated_at: updated_at
+    }
+  end
 
-    case Sqlite.query(db_ro, sql, args) do
-      {:ok, results} ->
-        Enum.map(results, &(Validator.list_to_map(&1) |> fun()))
+  @impl true
+  def to_map({_id, x}) do
+    x
+  end
 
-      _ ->
-        []
+  def to_text(x = %{pubkey: pk, net_pubkey: npk}) do
+    %{x | pubkey: Utils.encode64(pk), net_pubkey: Utils.encode64(npk)}
+  end
+
+  def calc_price(next_id), do: (next_id + 1) * EnvStore.validator_price()
+
+  require Sqlite
+
+  defmacro insert(args) do
+    quote location: :keep do
+      Sqlite.step("insert_validator", unquote(args))
     end
   end
 
-  defp filter_select(query) do
-    select(query, [t], map(t, @select))
+  defmacro get(id) do
+    quote location: :keep do
+      Sqlite.get(:validator, "get_validator", unquote(id), Ippan.Validator)
+    end
   end
 
-  defp filter_search(query, %{"q" => q}) do
-    q = "%#{q}%"
-    where(query, [t], like(t.name, ^q))
+  defmacro next_id do
+    quote location: :keep do
+      Sqlite.one("next_id_validator")
+    end
   end
 
-  defp filter_search(query, _), do: query
+  defmacro exists?(id) do
+    quote location: :keep do
+      Sqlite.exists?("exists_validator", [unquote(id)])
+    end
+  end
 
-  defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
-  defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
+  defmacro exists_host?(hostname) do
+    quote location: :keep do
+      Sqlite.exists?("exists_host_validator", [unquote(hostname)])
+    end
+  end
 
-  defp fun(nil), do: nil
+  defmacro owner?(id, owner) do
+    quote bind_quoted: [id: id, owner: owner], location: :keep do
+      Sqlite.exists?("owner_validator", [id, owner])
+    end
+  end
 
-  defp fun(x = %{pubkey: pk, net_pubkey: npk}) do
-    %{x | pubkey: Utils.encode64(pk), net_pubkey: Utils.encode64(npk)}
+  defmacro total do
+    quote location: :keep do
+      Sqlite.one("total_validators", [], 0)
+    end
+  end
+
+  defmacro update(map, id) do
+    quote bind_quoted: [map: map, id: id], location: :keep do
+      :ets.delete(:validator, id)
+      Sqlite.update("blockchain.validator", map, id: id)
+    end
+  end
+
+  defmacro delete(id) do
+    quote bind_quoted: [id: id], location: :keep do
+      :ets.delete(:validator, id)
+      Sqlite.step("delete_validator", [id])
+    end
   end
 end
