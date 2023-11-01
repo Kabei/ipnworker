@@ -17,12 +17,10 @@ defmodule BalanceTrace do
     key = DetsPlux.tuple(from, token)
     DetsPlux.get_cache(db, tx, key, {0, 0})
 
-    case DetsPlux.update_counter(tx, key, {2, -value}) < 0 do
-      true ->
-        put_out(bt, key, value)
-
-      false ->
-        raise IppanError, "Insufficient balance"
+    if DetsPlux.update_counter(tx, key, {2, -value}) < 0 do
+      raise IppanError, "Insufficient balance"
+    else
+      put_out(bt, key, value)
     end
   end
 
