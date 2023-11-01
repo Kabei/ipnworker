@@ -54,9 +54,12 @@ defmodule Ippan.Func.Coin do
       )
       when length(outputs) > 0 do
     db_ref = :persistent_term.get(:main_conn)
-    %{max_supply: max_supply} = token = Token.get(token_id)
+    token = Token.get(token_id)
 
     cond do
+      is_nil(token) ->
+        raise IppanError, "Token not exists"
+
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
@@ -80,7 +83,7 @@ defmodule Ippan.Func.Coin do
 
         if max_supply != 0 do
           supply = TokenSupply.cache(token_id)
-          TokenSupply.exceeded!(supply, total, max_supply)
+          TokenSupply.exceeded!(supply, total, token.max_supply)
         end
 
         bt = BalanceTrace.new(account_id)
