@@ -39,10 +39,6 @@ defmodule BalanceTrace do
     output
   end
 
-  def merge_and_output(bt, bt2) do
-    Map.merge(bt.output, bt2.output)
-  end
-
   defp put_out(bm = %{output: output}, key, value) do
     %{bm | output: Map.put(output, key, value)}
   end

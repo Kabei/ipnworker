@@ -58,6 +58,10 @@ defmodule Ipnworker.Router do
 
               case ClusterNodes.call(miner_id, "new_msg", handle_result) do
                 {:ok, %{"height" => height}} ->
+                  nonce_dets = DetsPlux.get(:nonce)
+                  nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
+                  DetsPlux.put(nonce_dets, nonce_tx, nonce)
+
                   json(%{
                     "hash" => Base.encode16(hash, case: :lower),
                     "height" => height
@@ -65,8 +69,6 @@ defmodule Ipnworker.Router do
 
                 {:error, message} ->
                   :ets.delete(:hash, from_nonce)
-                  # Revert nonce
-                  revert_nonce(from)
 
                   if dtx_key do
                     :ets.delete(:dhash, dtx_key)
