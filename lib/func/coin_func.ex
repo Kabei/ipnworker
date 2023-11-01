@@ -81,9 +81,11 @@ defmodule Ippan.Func.Coin do
             end
           end)
 
+        %{max_supply: max_supply} = token
+
         if max_supply != 0 do
           supply = TokenSupply.cache(token_id)
-          TokenSupply.exceeded!(supply, total, token.max_supply)
+          TokenSupply.exceeded!(supply, total, max_supply)
         end
 
         bt = BalanceTrace.new(account_id)
