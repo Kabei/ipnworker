@@ -31,6 +31,8 @@ defmodule BalanceStore do
             DetsPlux.update_counter(tx, key, {2, value})
           end)
 
+          raise IppanError, "Insufficient balance"
+
         _ ->
           :ok
       end
