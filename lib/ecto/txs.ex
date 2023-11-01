@@ -84,16 +84,8 @@ defmodule Ippan.Ecto.Tx do
 
   defp filter_attach(query, _), do: query
 
-  defp filter_address(query, %{"activity" => address}) do
-    where(query, [tx], tx.from == ^address or tx.to == ^address)
-  end
-
   defp filter_address(query, %{"from" => address}) do
     where(query, [tx], tx.from == ^address)
-  end
-
-  defp filter_address(query, %{"to" => address}) do
-    where(query, [tx], tx.to == ^address)
   end
 
   defp filter_address(query, _), do: query

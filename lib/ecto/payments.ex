@@ -52,7 +52,7 @@ defmodule Ippan.Ecto.Payments do
 
   defp filter_round(query, _), do: query
 
-  defp filter_address(query, %{"activity" => address}) do
+  defp filter_address(query, %{"target" => address}) do
     where(query, [p], p.from == ^address or p.to == ^address)
   end
 
