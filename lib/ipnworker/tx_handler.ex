@@ -65,16 +65,13 @@ defmodule Ippan.TxHandler do
 
       wallet_dets = DetsPlux.get(:wallet)
       wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
-      IO.inspect("check pk #{type_of_verification} #{var!(vid)} #{var!(from)}")
 
       wallet_pk =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
 
-      IO.inspect("pk #{wallet_pk} | #{var!(from)}")
-
       [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
-      IO.inspect("check nonce")
+
       # Check nonce
       nonce_dets = DetsPlux.get(:nonce)
       cache_nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
@@ -89,11 +86,7 @@ defmodule Ippan.TxHandler do
         validator: var!(validator)
       }
 
-      IO.inspect("check fun")
-
       return = apply(mod, fun, [source | var!(args)])
-
-      IO.inspect("check ret")
 
       case deferred do
         false ->
