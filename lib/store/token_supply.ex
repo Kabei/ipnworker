@@ -28,7 +28,7 @@ defmodule TokenSupply do
 
   def cache(id) do
     db = DetsPlux.get(@db)
-    tx = DetsPlux.tx(db, @tx)
+    tx = DetsPlux.tx(db, @cache_tx)
     key = key(id)
     DetsPlux.get_cache(db, tx, key, 0)
 

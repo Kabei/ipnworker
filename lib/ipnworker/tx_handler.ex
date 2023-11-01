@@ -66,7 +66,7 @@ defmodule Ippan.TxHandler do
 
       wallet_dets = DetsPlux.get(:wallet)
       wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
-      IO.inspect("check pk")
+      IO.inspect("check pk #{type_of_verification} #{var!(vid)}")
 
       wallet_pk =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
