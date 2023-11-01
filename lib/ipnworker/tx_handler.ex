@@ -71,6 +71,8 @@ defmodule Ippan.TxHandler do
       wallet_pk =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
 
+      IO.inspect("pk #{wallet_pk} | #{var!(from)}")
+
       [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
       IO.inspect("check nonce")
