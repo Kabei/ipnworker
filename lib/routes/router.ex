@@ -49,6 +49,7 @@ defmodule Ipnworker.Router do
 
                     false ->
                       :ets.delete(:hash, from_nonce)
+                      revert_nonce(from)
                       raise IppanError, "Deferred transaction already exists"
                   end
                 end
@@ -57,10 +58,6 @@ defmodule Ipnworker.Router do
 
               case ClusterNodes.call(miner_id, "new_msg", handle_result) do
                 {:ok, %{"height" => height}} ->
-                  # Update nonce
-                  cache_nonce_tx = DetsPlux.tx(:nonce, :cache_nonce)
-                  DetsPlux.put(cache_nonce_tx, from, nonce)
-
                   json(%{
                     "hash" => Base.encode16(hash, case: :lower),
                     "height" => height
@@ -68,6 +65,8 @@ defmodule Ipnworker.Router do
 
                 {:error, message} ->
                   :ets.delete(:hash, from_nonce)
+                  # Revert nonce
+                  revert_nonce(from)
 
                   if dtx_key do
                     :ets.delete(:dhash, dtx_key)
@@ -115,6 +114,11 @@ defmodule Ipnworker.Router do
         Logger.debug(Exception.format(:error, e, __STACKTRACE__))
         send_resp(conn, 400, "Invalid operation")
     end
+  end
+
+  defp revert_nonce(from) do
+    cache_nonce_tx = DetsPlux.tx(:nonce, :cache_nonce)
+    DetsPlux.update_counter(cache_nonce_tx, from, -1)
   end
 
   forward("/v1/dl", to: Ipnworker.FileRoutes)
