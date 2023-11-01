@@ -2,7 +2,7 @@ defmodule TokenSupply do
   require DetsPlux
   @db :stats
   @tx :supply
-  # @cache_tx :cache_supply
+  @cache_tx :cache_supply
   @word "supply"
 
   defstruct db: nil, tx: nil, key: nil
@@ -14,6 +14,19 @@ defmodule TokenSupply do
   end
 
   def new(id) do
+    db = DetsPlux.get(@db)
+    tx = DetsPlux.tx(db, @tx)
+    key = key(id)
+    DetsPlux.get_cache(db, tx, key, 0)
+
+    %__MODULE__{
+      db: db,
+      tx: tx,
+      key: key
+    }
+  end
+
+  def cache(id) do
     db = DetsPlux.get(@db)
     tx = DetsPlux.tx(db, @tx)
     key = key(id)
@@ -48,6 +61,11 @@ defmodule TokenSupply do
   @spec subtract(map, number()) :: number()
   def subtract(%{tx: tx, key: key}, amount) do
     DetsPlux.update_counter(tx, key, -amount)
+  end
+
+  @spec exceeded?(map, number(), number()) :: boolean()
+  def exceeded?(%{tx: tx, key: key}, amount, max_supply) do
+    DetsPlux.update_counter(tx, key, amount) > max_supply
   end
 
   @spec delete(map) :: true

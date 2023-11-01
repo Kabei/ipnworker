@@ -94,7 +94,7 @@ defmodule Ippan.Func.Token do
 
   def delete(%{id: account_id}, id) when byte_size(id) <= 10 do
     db_ref = :persistent_term.get(:main_conn)
-    supply = TokenSupply.new(id)
+    supply = TokenSupply.cache(id)
 
     cond do
       TokenSupply.get(supply) != 0 ->
