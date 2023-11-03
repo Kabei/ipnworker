@@ -88,13 +88,13 @@ defmodule Ippan.BlockHandler do
               result =
                 TxHandler.decode_from_file!()
 
-              case :ets.insert_new(ets, {hash, nil}) do
+              case :ets.insert_new(ets, {{from, nonce}, nil}) do
                 true ->
                   [result | acc]
 
                 false ->
                   :ets.delete(ets)
-                  raise IppanError, "Invalid block messages duplicated"
+                  raise IppanError, "Invalid block transaction duplicated"
               end
             end)
             |> Enum.reverse()
@@ -102,6 +102,8 @@ defmodule Ippan.BlockHandler do
           if count != Enum.count(values) do
             raise IppanError, "Invalid block messages count"
           end
+
+          :ets.delete(ets)
 
           export_path =
             Path.join(:persistent_term.get(:decode_dir), Block.decode_path(creator_id, height))
