@@ -30,6 +30,10 @@ defmodule Ipnworker.EventRoutes do
     SSE.stream(conn, @pubsub, "round:#{id}", timeout: 20_000)
   end
 
+  get "/mempool" do
+    SSE.stream(conn, @pubsub, "mempool", timeout: 20_000)
+  end
+
   get "/block/:id" do
     SSE.stream(conn, @pubsub, "block:#{id}", timeout: 20_000)
   end

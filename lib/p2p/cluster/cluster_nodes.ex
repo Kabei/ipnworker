@@ -102,6 +102,10 @@ defmodule Ippan.ClusterNodes do
     end
   end
 
+  def handle_message("mempool", data, _state) do
+    PubSub.broadcast(@pubsub, "mempool", data)
+  end
+
   def handle_message(_event, _data, _state), do: :ok
 
   def build_round(
