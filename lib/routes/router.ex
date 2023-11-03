@@ -57,14 +57,14 @@ defmodule Ipnworker.Router do
               miner_id = :persistent_term.get(:miner)
 
               case ClusterNodes.call(miner_id, "new_msg", handle_result) do
-                {:ok, %{"height" => height}} ->
+                {:ok, %{"index" => index}} ->
                   nonce_dets = DetsPlux.get(:nonce)
                   nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
                   DetsPlux.put(nonce_tx, from, nonce)
 
                   json(%{
                     "hash" => Base.encode16(hash, case: :lower),
-                    "height" => height
+                    "index" => index
                   })
 
                 {:error, message} ->
