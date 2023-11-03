@@ -1,7 +1,7 @@
 defmodule BalanceTrace do
   import BalanceStore, only: [multi_requires!: 3]
 
-  defstruct db: nil, from: nil, output: %{}, tx: nil
+  defstruct db: nil, from: nil, output: [], tx: nil
 
   def new(from) do
     db = DetsPlux.get(:balance)
@@ -36,10 +36,10 @@ defmodule BalanceTrace do
   end
 
   def output(%BalanceTrace{output: output}) do
-    output
+    %{output: output}
   end
 
   defp put_out(bm = %{output: output}, key, value) do
-    %{bm | output: Map.put(output, key, value)}
+    %{bm | output: [{key, value} | output]}
   end
 end

@@ -83,16 +83,16 @@ defmodule Ippan.Func.Coin do
 
         %{max_supply: max_supply} = token
 
-        if max_supply != 0 do
-          supply = TokenSupply.cache(token_id)
-          TokenSupply.exceeded!(supply, total, max_supply)
-        end
+        supply =
+          TokenSupply.cache(token_id)
+          |> TokenSupply.requires!(total, max_supply)
 
-        bt = BalanceTrace.new(account_id)
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.requires!(bt, @token, fees)
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
+        |> Map.put(:supply, TokenSupply.output(supply))
     end
   end
 
