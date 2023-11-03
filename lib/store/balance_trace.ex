@@ -29,15 +29,15 @@ defmodule BalanceTrace do
         bt = %BalanceTrace{db: db, from: from, output: outputs, tx: tx},
         token_value_list
       ) do
-    key_value_list =
+    kw =
       Enum.reduce(token_value_list, [], fn {token, value}, acc ->
         key = DetsPlux.tuple(from, token)
 
         [{key, value} | acc]
       end)
 
-    multi_requires!(db, tx, key_value_list)
-    %{bt | output: [key_value_list | outputs]}
+    multi_requires!(db, tx, kw)
+    %{bt | output: :lists.merge(kw, outputs)}
   end
 
   def output(%BalanceTrace{output: output}) do
