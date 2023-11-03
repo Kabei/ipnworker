@@ -18,21 +18,26 @@ defmodule BalanceTrace do
     DetsPlux.get_cache(db, tx, key, {0, 0})
 
     if DetsPlux.update_counter(tx, key, {2, -value}) < 0 do
+      DetsPlux.update_counter(tx, key, {2, value})
       raise IppanError, "Insufficient balance"
     else
       put_out(bt, key, value)
     end
   end
 
-  def multi_requires!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token_value_list) do
-    {bt, key_value_list} =
-      Enum.reduce(token_value_list, {bt, []}, fn {token, value}, {bt, key_values} ->
+  def multi_requires!(
+        bt = %BalanceTrace{db: db, from: from, output: outputs, tx: tx},
+        token_value_list
+      ) do
+    key_value_list =
+      Enum.reduce(token_value_list, [], fn {token, value}, acc ->
         key = DetsPlux.tuple(from, token)
-        {put_out(bt, key, value), [{key, value} | key_values]}
+
+        [{key, value} | acc]
       end)
 
     multi_requires!(db, tx, key_value_list)
-    bt
+    %{bt | output: [key_value_list | outputs]}
   end
 
   def output(%BalanceTrace{output: output}) do
