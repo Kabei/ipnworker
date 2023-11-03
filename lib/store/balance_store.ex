@@ -34,7 +34,7 @@ defmodule BalanceStore do
           raise IppanError, "Insufficient balance"
 
         _ ->
-          :ok
+          true
       end
     end
   end

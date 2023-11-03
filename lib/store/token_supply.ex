@@ -5,7 +5,7 @@ defmodule TokenSupply do
   @cache_tx :cache_supply
   @word "supply"
 
-  defstruct db: nil, id: nil, tx: nil, key: nil, output: []
+  defstruct db: nil, id: nil, key: nil, tx: nil, output: []
 
   defmacrop key(token_id) do
     quote do
@@ -78,17 +78,25 @@ defmodule TokenSupply do
     db = DetsPlux.get(@db)
     tx = DetsPlux.tx(db, @cache_tx)
 
-    Enum.reduce(outputs, [], fn {key, amount, max_supply}, acc ->
+    Enum.reduce_while(outputs, [], fn {key, amount, max_supply}, acc ->
       if DetsPlux.update_counter(tx, key, amount) > max_supply do
         DetsPlux.update_counter(tx, key, -amount)
-        raise IppanError, "max supply exceeded"
+        {:halt, {:error, acc}}
       else
-        [{key, amount} | acc]
+        {:cont, [{key, amount} | acc]}
       end
     end)
-    |> Enum.each(fn {key, amount} ->
-      DetsPlux.update_counter(tx, key, -amount)
-    end)
+    |> case do
+      {:error, supplies} ->
+        Enum.each(supplies, fn {key, amount} ->
+          DetsPlux.update_counter(tx, key, -amount)
+        end)
+
+        raise IppanError, "Wrong supply"
+
+      _ ->
+        true
+    end
   end
 
   @spec delete(map) :: true
