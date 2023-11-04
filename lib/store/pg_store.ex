@@ -186,7 +186,7 @@ defmodule PgStore do
           "NULL"
 
         is_binary(value) ->
-          case String.valid?(value) do
+          case Match.text?(value) do
             false ->
               bytea(value)
 
