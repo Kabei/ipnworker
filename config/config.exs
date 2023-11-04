@@ -50,7 +50,7 @@ config :ipnworker, :message_max_size, 8192
 config :ipnworker, :version, 0
 config :ipnworker, :block_max_size, 10_485_760
 config :ipnworker, :block_data_max_size, 10_000_000
-config :ipnworker, :timeout, :timer.seconds(20)
+config :ipnworker, :round_timeout, :timer.seconds(20)
 config :ipnworker, :block_extension, "blo"
 config :ipnworker, :decode_extension, "dec"
 config :ipnworker, :note_max_size, 255
