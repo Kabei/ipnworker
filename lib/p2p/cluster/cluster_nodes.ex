@@ -27,6 +27,7 @@ defmodule Ippan.ClusterNodes do
   defp connect_to_miner do
     db_ref = :persistent_term.get(:main_conn)
     test = System.get_env("test")
+    {local_round_id, _hash} = Round.last({-1, nil})
 
     if is_nil(test) do
       IO.inspect("here go")
@@ -38,11 +39,13 @@ defmodule Ippan.ClusterNodes do
           :ok
 
         node ->
-          connect(Node.list_to_map(node))
+          spawn(fn ->
+            connect(Node.list_to_map(node))
 
-          if @history do
-            NodeSync.start_link(nil)
-          end
+            if @history do
+              NodeSync.start_link(local_round_id)
+            end
+          end)
       end
     end
   end

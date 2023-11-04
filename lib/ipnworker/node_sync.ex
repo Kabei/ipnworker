@@ -1,8 +1,6 @@
 defmodule Ipnworker.NodeSync do
   use GenServer
-  alias Ippan.Round
-  alias Ippan.Node
-  alias Ippan.ClusterNodes
+  alias Ippan.{Node, ClusterNodes}
   require Ippan.{Node, Round}
   require Sqlite
   require Logger
@@ -23,11 +21,10 @@ defmodule Ipnworker.NodeSync do
   end
 
   @impl true
-  def init(_args) do
+  def init(local_round_id) do
     IO.inspect("nodeSync: init")
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:net_conn)
-    {local_round_id, _hash} = Round.last({-1, nil})
     node = Node.get(miner)
 
     if is_nil(node) do
@@ -97,7 +94,8 @@ defmodule Ipnworker.NodeSync do
         {:stop, :normal, state}
       end
     else
-      {:noreply, %{state | offset: offset + @offset, round: round_id + @offset}, {:continue, :init}}
+      {:noreply, %{state | offset: offset + @offset, round: round_id + @offset},
+       {:continue, :init}}
     end
   end
 
