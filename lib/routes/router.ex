@@ -27,7 +27,9 @@ defmodule Ipnworker.Router do
 
           case :ets.insert_new(:hash, {from_nonce, nil}) do
             true ->
-              %{id: vid} = validator = :persistent_term.get(:validator)
+              %{id: vid} =
+                validator =
+                :persistent_term.get(:validator) || raise IppanError, "Node is not available yet"
 
               handle_result =
                 [deferred, msg, _return] =
