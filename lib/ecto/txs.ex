@@ -16,19 +16,19 @@ defmodule Ippan.Ecto.Tx do
   @primary_key false
   @schema_prefix "history"
   schema "txs" do
+    field(:nonce, :integer)
+    field(:from, :binary)
     field(:ix, :integer)
     field(:block, :integer)
     field(:hash, :binary)
     field(:type, :integer)
-    field(:from, :binary)
     field(:status, :integer)
-    field(:nonce, :integer)
     field(:size, :integer)
     field(:ctype, :integer)
     field(:args, :binary)
   end
 
-  @select ~w(ix block hash type from status nonce size ctype args)a
+  @select ~w(from nonce ix block hash type status size ctype args)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
