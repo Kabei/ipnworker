@@ -12,6 +12,7 @@ defmodule Ipnworker.NetworkRoutes do
     "app_version" => Ipnworker.MixProject.version(),
     "block_data_max_size" => Application.compile_env(@app, :block_data_max_size),
     "block_extension" => Application.compile_env(@app, :block_extension),
+    "burn" => Application.compile_env(@app, :burn),
     "round_timeout" => Application.compile_env(@app, :round_timeout),
     "block_max_size" => Application.compile_env(@app, :block_max_size),
     "blockchain_version" => Application.compile_env(@app, :version),

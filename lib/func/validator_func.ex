@@ -18,11 +18,11 @@ defmodule Ippan.Func.Validator do
         name,
         pubkey,
         net_pubkey,
-        fa \\ 1,
-        fb \\ 0,
+        fa \\ 0,
+        fb \\ 1,
         opts \\ %{}
       )
-      when byte_size(name) <= 20 and between_size(hostname, 4, 50) and is_integer(fa) and
+      when byte_size(name) <= 20 and between_size(hostname, 4, 100) and is_integer(fa) and
              is_integer(fb) and
              check_port(port) do
     map_filter = Map.take(opts, Validator.optionals())
@@ -32,7 +32,7 @@ defmodule Ippan.Func.Validator do
     next_id = Validator.next_id()
 
     cond do
-      fa < 0 or fa > @max_fees or fb < 0 or fb > @max_fees ->
+      fa < 0 or fa > @max_fees or fb < 1 or fb > @max_fees ->
         raise IppanError, "Invalid fees"
 
       byte_size(net_pubkey) > 1278 ->
@@ -99,7 +99,7 @@ defmodule Ippan.Func.Validator do
         |> MapUtil.validate_length_range(:name, 1..20)
         |> MapUtil.validate_url(:url)
         |> MapUtil.validate_value(:fa, :gte, 0)
-        |> MapUtil.validate_value(:fb, :gte, 0)
+        |> MapUtil.validate_value(:fb, :gte, 1)
         |> MapUtil.transform(:pubkey, fn x ->
           case Fast64.decode64(x) do
             j when byte_size(j) > 897 ->
