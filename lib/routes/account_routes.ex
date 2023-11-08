@@ -30,8 +30,8 @@ defmodule Ipnworker.AccountRoutes do
     tx = DetsPlux.tx(dets, :cache_wallet)
 
     case DetsPlux.get_cache(dets, tx, id) do
-      {pk, v} ->
-        %{"pubkey" => Utils.encode64(pk), "validator" => v} |> json
+      {pk, v, sig_type} ->
+        %{"pubkey" => Utils.encode64(pk), "validator" => v, "sig_type" => sig_type} |> json
 
       _ ->
         send_resp(conn, 204, "")

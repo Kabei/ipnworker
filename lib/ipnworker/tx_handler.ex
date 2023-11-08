@@ -6,31 +6,32 @@ defmodule Ippan.TxHandler do
       case type do
         # check from variable
         0 ->
-          {pk, v} =
+          {pk, v, sig_type} =
             DetsPlux.get_cache(dets, tx, var!(from))
 
           if vid != v do
             raise IppanRedirectError, "#{v}"
           end
 
-          pk
+          {pk, sig_type}
 
-        # get first argument and not check (wallet.new)
+        # get from argument and not check (wallet.new)
         1 ->
-          Fast64.decode64(hd(var!(args)))
+          [pk, _, sig_type | _rest] = var!(args)
+          {Fast64.decode64(pk), sig_type}
 
         # check first argument
         2 ->
           key = hd(var!(args))
 
-          {pk, v} =
+          {pk, v, sig_type} =
             DetsPlux.get_tx(dets, tx, key)
 
           if v != vid do
             raise IppanRedirectError, "#{v}"
           end
 
-          pk
+          {pk, sig_type}
       end
     end
   end
@@ -66,10 +67,10 @@ defmodule Ippan.TxHandler do
       wallet_dets = DetsPlux.get(:wallet)
       wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
-      wallet_pk =
+      {wallet_pk, sig_type} =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
 
-      [sig_type, _] = String.split(var!(from), "x", parts: 2)
+      # [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
 
       # Check nonce

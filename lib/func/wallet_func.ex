@@ -1,7 +1,11 @@
 defmodule Ippan.Func.Wallet do
+  alias Ippan.Utils
   alias Ippan.{Address, Validator}
   require Validator
   require Sqlite
+
+  @app Mix.Project.config()[:app]
+  @token Application.compile_env(@app, :token)
 
   def new(
         %{id: account_id, validator: validator},
@@ -35,13 +39,20 @@ defmodule Ippan.Func.Wallet do
     end
   end
 
-  def subscribe(%{validator: validator}, validator_id) do
+  def subscribe(
+        %{id: account_id, validator: %{id: vid, fa: fa, fb: fb}, size: size},
+        validator_id
+      ) do
     cond do
-      validator_id == validator.id ->
+      validator_id == vid ->
         raise IppanError, "Already subscribe"
 
       true ->
-        :ok
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
     end
   end
 end
