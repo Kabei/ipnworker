@@ -6,21 +6,27 @@ defmodule Ippan.Func.Env do
       byte_size(name) >= 256 ->
         raise IppanError, "Name is too long"
 
-      :persistent_term.get(:owner) == account_id and byte_size(bin) <= 4096 ->
-        :ok
+      byte_size(bin) > 4096 ->
+        raise IppanError, "Value is too long"
+
+      :persistent_term.get(:owner) != account_id ->
+        raise IppanError, "Unauthorized"
 
       true ->
-        raise IppanError, "Invalid operation"
+        :ok
     end
   end
 
   def delete(%{id: account_id}, name) do
     cond do
-      byte_size(name) <= 256 and :persistent_term.get(:owner) == account_id ->
-        :ok
+      byte_size(name) >= 256 ->
+        raise IppanError, "Name is too long"
+
+      :persistent_term.get(:owner) != account_id ->
+        raise IppanError, "Unauthorized"
 
       true ->
-        raise IppanError, "Invalid operation"
+        :ok
     end
   end
 end
