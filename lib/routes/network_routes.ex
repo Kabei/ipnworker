@@ -7,6 +7,7 @@ defmodule Ipnworker.NetworkRoutes do
 
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
+  @name Application.compile_env(@app, :name)
 
   @options %{
     "app_version" => Ipnworker.MixProject.version(),
@@ -23,7 +24,7 @@ defmodule Ipnworker.NetworkRoutes do
     "message_timeout" => Application.compile_env(@app, :message_timeout),
     "max_validators" => Application.compile_env(@app, :max_validators),
     "max_tokens" => Application.compile_env(@app, :max_tokens),
-    "name" => Application.compile_env(@app, :name),
+    "name" => @name,
     "timeout_refund" => Application.compile_env(@app, :timeout_refund),
     "token" => @token
   }
@@ -47,10 +48,11 @@ defmodule Ipnworker.NetworkRoutes do
 
     %{
       "accounts" => accounts,
-      "block_id" => block_id,
+      "blocks" => block_id + 1,
       "env" => EnvStore.all(db_ref),
       "hash" => Utils.encode16(hash),
       "id" => id,
+      "name" => @name,
       "supply" => TokenSupply.get(supply),
       "token" => @token,
       "tokens" => tokens,
