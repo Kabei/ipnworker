@@ -66,7 +66,7 @@ defmodule Ippan.Ecto.Block do
   end
 
   defp filter_round(query, %{"round" => round_id}) do
-    where(query, [b], b.round <= ^round_id)
+    where(query, [b], b.round == ^round_id)
   end
 
   defp filter_round(query, _), do: query
