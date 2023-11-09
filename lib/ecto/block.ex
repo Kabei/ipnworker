@@ -53,6 +53,7 @@ defmodule Ippan.Ecto.Block do
     from(Block)
     |> filter_offset(params)
     |> filter_limit(params)
+    |> filter_round(params)
     |> filter_attach(params)
     |> filter_select()
     |> sort(params)
@@ -63,6 +64,12 @@ defmodule Ippan.Ecto.Block do
   defp filter_select(query) do
     select(query, [b], map(b, @select))
   end
+
+  defp filter_round(query, %{"round" => round_id}) do
+    where(query, [b], b.round <= ^round_id)
+  end
+
+  defp filter_round(query, _), do: query
 
   defp filter_attach(query, %{"attach" => id}) do
     where(query, [b], b.id <= ^id)
