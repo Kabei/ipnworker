@@ -37,7 +37,10 @@ defmodule MapUtil do
   end
 
   def drop_nils(map) do
-    for {k, v} when v <- map != nil, into: %{}, do: {k, v}
+    Map.filter(map, fn
+      {_, nil} -> false
+      _ -> true
+    end)
   end
 
   ## Validation functions
