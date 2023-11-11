@@ -34,8 +34,8 @@ defmodule Ippan.Ecto.Balance do
       token = Token.get(x.token)
       map = Map.take(token, ~w(avatar decimal max_supply symbol)a)
 
-      MapUtil.drop_nils(x)
-      |> Map.merge(map)
+      Map.merge(x, map)
+      |> MapUtil.drop_nils()
     end)
   end
 
