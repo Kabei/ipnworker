@@ -67,7 +67,7 @@ defmodule Ippan.Ecto.Tx do
     |> filter_limit(params)
     |> filter_address(params)
     |> filter_type(params)
-    |> filter_attach(params)
+    |> filter_block(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -78,11 +78,15 @@ defmodule Ippan.Ecto.Tx do
     select(query, [tx], map(tx, @select))
   end
 
-  defp filter_attach(query, %{"attach" => id}) do
+  defp filter_block(query, %{"block" => id}) do
+    where(query, [tx], tx.block == ^id)
+  end
+
+  defp filter_block(query, %{"attach" => id}) do
     where(query, [tx], tx.block <= ^id)
   end
 
-  defp filter_attach(query, _), do: query
+  defp filter_block(query, _), do: query
 
   defp filter_address(query, %{"from" => address}) do
     where(query, [tx], tx.from == ^address)
