@@ -21,6 +21,7 @@ defmodule Ippan.Ecto.Domain do
       |> filter_offset(params)
       |> filter_limit(params)
       |> filter_search(params)
+      |> filter_while(params)
       |> filter_select()
       |> sort(params)
 
@@ -53,6 +54,12 @@ defmodule Ippan.Ecto.Domain do
   end
 
   defp filter_search(query, _), do: query
+
+  defp filter_while(query, %{"last_updated" => time}) do
+    where(query, [t], t.updated_at > ^time)
+  end
+
+  defp filter_while(query, _), do: query
 
   defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
   defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
