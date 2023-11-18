@@ -1,6 +1,7 @@
 defmodule Ippan.Ecto.Payments do
   use Ecto.Schema
-  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
+  import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3, join: 5]
+  alias Ippan.{Round, Utils}
   alias Ipnworker.Repo
   alias __MODULE__
 
@@ -27,7 +28,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_while(params)
     |> filter_type(params)
     |> filter_token(params)
-    |> filter_round(params)
+    |> filter_range(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -37,15 +38,45 @@ defmodule Ippan.Ecto.Payments do
     select(query, [p], map(p, @select))
   end
 
-  defp filter_round(query, %{"round" => id}) do
+  defp filter_range(query, %{"round" => id}) do
     where(query, [p], p.round == ^id)
   end
 
-  defp filter_round(query, %{"attach" => id}) do
+  defp filter_range(query, %{"roundEnd" => fin, "roundStart" => start}) do
+    where(query, [p], p.round >= ^start and p.round <= ^fin)
+  end
+
+  defp filter_range(query, %{"roundStart" => id}) do
+    where(query, [p], p.round >= ^id)
+  end
+
+  defp filter_range(query, %{"roundEnd" => id}) do
     where(query, [p], p.round <= ^id)
   end
 
-  defp filter_round(query, _), do: query
+  defp filter_range(query, %{"dateEnd" => fin, "dateStart" => start}) do
+    start = Utils.date_start_to_time(start)
+    fin = Utils.date_end_to_time(fin)
+
+    join(query, :inner, [p], r in Round, on: p.round == r.id)
+    |> where([_p, r], r.timestamp >= ^start and r.timestamp <= ^fin)
+  end
+
+  defp filter_range(query, %{"dateEnd" => fin}) do
+    fin = Utils.date_end_to_time(fin)
+
+    join(query, :inner, [p], r in Round, on: p.round == r.id)
+    |> where([_p, r], r.timestamp <= ^fin)
+  end
+
+  defp filter_range(query, %{"dateStart" => start}) do
+    start = Utils.date_start_to_time(start)
+
+    join(query, :inner, [p], r in Round, on: p.round == r.id)
+    |> where([_p, r], r.timestamp >= ^start)
+  end
+
+  defp filter_range(query, _), do: query
 
   defp filter_while(query, %{"target" => address}) do
     where(query, [p], p.from == ^address or p.to == ^address)
@@ -82,6 +113,9 @@ defmodule Ippan.Ecto.Payments do
   defp filter_token(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.round)
-  defp sort(query, %{"sort" => "from"}), do: order_by(query, [p], desc: p.round, asc: p.from, asc: p.nonce)
+
+  defp sort(query, %{"sort" => "from"}),
+    do: order_by(query, [p], desc: p.round, asc: p.from, asc: p.nonce)
+
   defp sort(query, _), do: order_by(query, [p], desc: p.round)
 end

@@ -30,14 +30,14 @@ defmodule Ippan.Ecto.Filters do
     limit(query, ^default)
   end
 
-  def filter_offset(query, %{"start" => num_offset}) when is_integer(num_offset) do
+  def filter_offset(query, %{"starts" => num_offset}) when is_integer(num_offset) do
     offset(query, ^num_offset)
   end
 
-  def filter_offset(query, %{"start" => num_offset}) do
+  def filter_offset(query, %{"starts" => num_offset}) do
     try do
       x = String.to_integer(num_offset)
-      filter_offset(query, %{"start" => x})
+      filter_offset(query, %{"starts" => x})
     catch
       _error ->
         offset(query, 0)

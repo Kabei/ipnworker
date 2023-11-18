@@ -32,7 +32,7 @@ defmodule Ippan.Ecto.Snapshot do
     from(Snapshot)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_attach(params)
+    |> filter_range(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -43,11 +43,19 @@ defmodule Ippan.Ecto.Snapshot do
     select(query, [s], map(s, @select))
   end
 
-  defp filter_attach(query, %{"attach" => id}) do
+  defp filter_range(query, %{"end" => fin, "start" => start}) do
+    where(query, [s], s.round_id >= ^start and s.round_id <= ^fin)
+  end
+
+  defp filter_range(query, %{"end" => id}) do
     where(query, [s], s.round_id <= ^id)
   end
 
-  defp filter_attach(query, _), do: query
+  defp filter_range(query, %{"start" => id}) do
+    where(query, [s], s.round_id >= ^id)
+  end
+
+  defp filter_range(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [s], asc: s.round_id)
   defp sort(query, _), do: order_by(query, [s], desc: s.round_id)

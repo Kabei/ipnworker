@@ -82,8 +82,16 @@ defmodule Ippan.Ecto.Tx do
     where(query, [tx], tx.block == ^id)
   end
 
-  defp filter_block(query, %{"attach" => id}) do
+  defp filter_block(query, %{"blockEnd" => fin, "blockStart" => start}) do
+    where(query, [tx], tx.block >= ^start and tx.block >= ^fin)
+  end
+
+  defp filter_block(query, %{"blockEnd" => id}) do
     where(query, [tx], tx.block <= ^id)
+  end
+
+  defp filter_block(query, %{"blockStart" => id}) do
+    where(query, [tx], tx.block >= ^id)
   end
 
   defp filter_block(query, _), do: query

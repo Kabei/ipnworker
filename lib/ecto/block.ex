@@ -54,7 +54,7 @@ defmodule Ippan.Ecto.Block do
     |> filter_offset(params)
     |> filter_limit(params)
     |> filter_round(params)
-    |> filter_attach(params)
+    |> filter_range(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -71,11 +71,38 @@ defmodule Ippan.Ecto.Block do
 
   defp filter_round(query, _), do: query
 
-  defp filter_attach(query, %{"attach" => id}) do
+  defp filter_range(query, %{"end" => fin, "start" => start}) do
+    where(query, [b], b.id >= ^start and b.id <= ^fin)
+  end
+
+  defp filter_range(query, %{"end" => id}) do
     where(query, [b], b.id <= ^id)
   end
 
-  defp filter_attach(query, _), do: query
+  defp filter_range(query, %{"start" => id}) do
+    where(query, [b], b.id >= ^id)
+  end
+
+  defp filter_range(query, %{"dateEnd" => fin, "dateStart" => start}) do
+    start = Utils.date_start_to_time(start)
+    fin = Utils.date_end_to_time(fin)
+
+    where(query, [b], b.timestamp >= ^start and b.timestamp <= ^fin)
+  end
+
+  defp filter_range(query, %{"dateEnd" => fin}) do
+    fin = Utils.date_end_to_time(fin)
+
+    where(query, [b], b.timestamp <= ^fin)
+  end
+
+  defp filter_range(query, %{"dateStart" => start}) do
+    start = Utils.date_end_to_time(start)
+
+    where(query, [b], b.timestamp >= ^start)
+  end
+
+  defp filter_range(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [b], asc: b.id)
   defp sort(query, _), do: order_by(query, [b], desc: b.id)
