@@ -30,7 +30,7 @@ defmodule Ippan.Ecto.Payments do
     from(Payments)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_address(params)
+    |> filter_while(params)
     |> filter_type(params)
     |> filter_round(params)
     |> filter_select()
@@ -52,19 +52,27 @@ defmodule Ippan.Ecto.Payments do
 
   defp filter_round(query, _), do: query
 
-  defp filter_address(query, %{"target" => address}) do
+  defp filter_while(query, %{"target" => address}) do
     where(query, [p], p.from == ^address or p.to == ^address)
   end
 
-  defp filter_address(query, %{"from" => address}) do
+  defp filter_while(query, %{"from" => address, "nonce" => nonce}) do
+    where(query, [p], p.from == ^address and p.nonce == ^nonce)
+  end
+
+  defp filter_while(query, %{"from" => address}) do
     where(query, [p], p.from == ^address)
   end
 
-  defp filter_address(query, %{"to" => address}) do
+  defp filter_while(query, %{"to" => address, "nonce" => nonce}) do
+    where(query, [p], p.to == ^address and p.nonce == ^nonce)
+  end
+
+  defp filter_while(query, %{"to" => address}) do
     where(query, [p], p.to == ^address)
   end
 
-  defp filter_address(query, _), do: query
+  defp filter_while(query, _), do: query
 
   defp filter_type(query, %{"type" => type}) do
     where(query, [p], p.type == ^type)
