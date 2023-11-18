@@ -20,11 +20,12 @@ defmodule Ippan.Ecto.Round do
     field(:tx_count, :integer)
     field(:size, :integer)
     field(:status, :integer)
+    field(:timestamp, :integer)
     field(:blocks, :binary)
     field(:extras, :binary)
   end
 
-  @select ~w(id hash prev creator signature coinbase reward count tx_count size status)a
+  @select ~w(id hash prev creator signature coinbase reward count tx_count size status timestamp)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 

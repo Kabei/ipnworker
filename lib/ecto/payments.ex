@@ -20,12 +20,6 @@ defmodule Ippan.Ecto.Payments do
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
-  def by(address, nonce) do
-    from(p in Payments, where: p.from == ^address and p.nonce == ^nonce)
-    |> filter_select()
-    |> Repo.all()
-  end
-
   def all(params) do
     from(Payments)
     |> filter_offset(params)

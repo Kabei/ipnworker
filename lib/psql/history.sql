@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "tx_count" BIGINT,
   "size" BIGINT,
   "status" INTEGER,
+  "timestamp" BIGINT,
   "blocks" BYTEA,
   "extras" BYTEA
 );

@@ -16,11 +16,6 @@ defmodule Ipnworker.PaymentsRoutes do
     |> send_json()
   end
 
-  get "/:block/:ix" do
-    Payments.by(block, ix)
-    |> send_json()
-  end
-
   match _ do
     send_resp(conn, 404, "Not found")
   end
