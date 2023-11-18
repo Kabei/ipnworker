@@ -7,6 +7,9 @@ defmodule Ippan.Ecto.Balance do
   require Sqlite
   alias __MODULE__
 
+  @app Mix.Project.config()[:app]
+  @token Application.compile_env(@app, :token)
+
   @primary_key false
   @schema_prefix "history"
 
@@ -30,6 +33,10 @@ defmodule Ippan.Ecto.Balance do
     |> filter_select()
     |> sort(params)
     |> Repo.all()
+    |> then(fn
+      [] -> [%{balance: 0, lock: 0, token: @token}]
+      x -> x
+    end)
     |> Enum.map(fn x ->
       token = Token.get(x.token)
       map = Map.take(token, ~w(avatar decimal max_supply symbol)a)
