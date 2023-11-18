@@ -21,6 +21,7 @@ defmodule Ippan.Ecto.Balance do
   end
 
   @select ~w(token balance lock)a
+  @token_fields ~w(avatar decimal max_supply symbol)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -39,7 +40,7 @@ defmodule Ippan.Ecto.Balance do
     end)
     |> Enum.map(fn x ->
       token = Token.get(x.token)
-      map = Map.take(token, ~w(avatar decimal max_supply symbol)a)
+      map = Map.take(token, @token_fields)
 
       Map.merge(x, map)
       |> MapUtil.drop_nils()

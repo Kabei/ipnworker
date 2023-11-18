@@ -32,6 +32,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_limit(params)
     |> filter_while(params)
     |> filter_type(params)
+    |> filter_token(params)
     |> filter_round(params)
     |> filter_select()
     |> sort(params)
@@ -79,6 +80,12 @@ defmodule Ippan.Ecto.Payments do
   end
 
   defp filter_type(query, _), do: query
+
+  defp filter_token(query, %{"token" => token}) do
+    where(query, [p], p.token == ^token)
+  end
+
+  defp filter_token(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [p], asc: p.round)
   defp sort(query, %{"sort" => "from"}), do: order_by(query, [p], desc: p.round, asc: p.from, asc: p.nonce)
