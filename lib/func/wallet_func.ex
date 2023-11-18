@@ -25,10 +25,12 @@ defmodule Ippan.Func.Wallet do
       validator_id != validator.id ->
         raise IppanError, "Invalid validator"
 
-      sig_type not in 0..1 ->
+      sig_type not in 0..2 ->
         raise IppanError, "Invalid signature type"
 
-      byte_size(pubkey) > 897 ->
+      (sig_type == 0 and byte_size(pubkey) != 32) or
+        (sig_type == 1 and (byte_size(pubkey) == 33 or byte_size(pubkey) == 65)) or
+          (sig_type == 2 and byte_size(pubkey) != 897) ->
         raise IppanError, "Invalid pubkey size"
 
       DetsPlux.member_tx?(dets, tx, id) ->

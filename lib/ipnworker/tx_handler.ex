@@ -47,6 +47,10 @@ defmodule Ippan.TxHandler do
             do: raise(IppanError, "Invalid signature verify")
 
         "1" ->
+          # verify secp256k1 signature
+          ExSecp256k1.Impl.verify(var!(hash), var!(signature), pk)
+
+        "2" ->
           # verify falcon-512 signature
           if Falcon.verify(var!(hash), var!(signature), pk) != :ok,
             do: raise(IppanError, "Invalid signature verify")

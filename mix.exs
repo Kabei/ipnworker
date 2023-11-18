@@ -46,6 +46,7 @@ defmodule Ipnworker.MixProject do
       {:dnslib, git: "https://github.com/lateio/dnslib", branch: "master", override: true},
       {:phoenix_pubsub, "~> 2.1"},
       {:cafezinho, "~> 0.4.0"},
+      {:ex_secp256k1, "~> 0.7.2"},
       {:blake3, git: "https://kabei@github.com/kabei/blake3.git", branch: "master"},
       {:exqlite, git: "https://kabei@github.com/kabei/exqlite.git", branch: "main"},
       {:falcon, git: "https://kabei@github.com/kabei/falcon.git", branch: "master"},
