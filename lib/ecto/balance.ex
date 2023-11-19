@@ -34,17 +34,7 @@ defmodule Ippan.Ecto.Balance do
     |> filter_select()
     |> sort(params)
     |> Repo.all()
-    |> then(fn
-      [] -> [%{balance: 0, lock: 0, token: @token}]
-      x -> x
-    end)
-    |> Enum.map(fn x ->
-      token = Token.get(x.token)
-      map = Map.take(token, @token_fields)
-
-      Map.merge(x, map)
-      |> MapUtil.drop_nils()
-    end)
+    |> data(params)
   end
 
   defp filter_select(query) do
@@ -53,4 +43,20 @@ defmodule Ippan.Ecto.Balance do
 
   defp sort(query, %{"sort" => "most_value"}), do: order_by(query, [x], desc: x.balance)
   defp sort(query, _), do: order_by(query, [x], desc: x.balance)
+
+  defp data([], %{"zero" => "0"}) do
+
+  end
+
+  defp data(results, %{"extra" => _}) do
+    Enum.map(results, fn x ->
+      token = Token.get(x.token)
+      map = Map.take(token, @token_fields)
+
+      Map.merge(x, map)
+      |> MapUtil.drop_nils()
+    end)
+  end
+
+  defp data(results, _data), do: results
 end
