@@ -136,7 +136,7 @@ defmodule Ippan.TxHandler do
       %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} =
         Funcs.lookup(var!(type))
 
-      wallet_pk =
+      {wallet_pk, sig_type} =
         TxHandler.get_public_key!(
           var!(wallet_dets),
           var!(wallet_tx),
@@ -144,7 +144,7 @@ defmodule Ippan.TxHandler do
           var!(creator_id)
         )
 
-      [sig_type, _] = String.split(var!(from), "x", parts: 2)
+      # [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
 
       Wallet.gte_nonce!(var!(nonce_dets), var!(nonce_tx), var!(from), var!(nonce))
