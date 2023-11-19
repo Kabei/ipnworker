@@ -26,8 +26,6 @@ defmodule Ippan.Ecto.Balance do
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
   def all(params, id) do
-    db_ref = :persistent_term.get(:main_conn)
-
     from(b in Balance, where: b.id == ^id)
     |> filter_offset(params)
     |> filter_limit(params)
@@ -45,10 +43,11 @@ defmodule Ippan.Ecto.Balance do
   defp sort(query, _), do: order_by(query, [x], desc: x.balance)
 
   defp data([], %{"zero" => "0"}) do
-
   end
 
   defp data(results, %{"extra" => _}) do
+    db_ref = :persistent_term.get(:main_conn)
+
     Enum.map(results, fn x ->
       token = Token.get(x.token)
       map = Map.take(token, @token_fields)
