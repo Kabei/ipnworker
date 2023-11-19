@@ -21,7 +21,7 @@ defmodule Ippan.Ecto.Balance do
   end
 
   @select ~w(token balance lock)a
-  @token_fields ~w(avatar decimal max_supply symbol)a
+  @token_fields ~w(avatar decimal symbol)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
