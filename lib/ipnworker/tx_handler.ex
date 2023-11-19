@@ -41,23 +41,23 @@ defmodule Ippan.TxHandler do
     quote location: :keep,
           bind_quoted: [pk: pk, sig_type: sig_type] do
       case sig_type do
-        "0" ->
+        0 ->
           # verify ed25519 signature
           if Cafezinho.Impl.verify(var!(signature), var!(hash), pk) != :ok,
             do: raise(IppanError, "Invalid signature verify")
 
-        "1" ->
+        1 ->
           # verify secp256k1 signature
           if ExSecp256k1.Impl.verify(var!(hash), var!(signature), pk) != :ok,
             do: raise(IppanError, "Invalid signature verify")
 
-        "2" ->
+        2 ->
           # verify falcon-512 signature
           if Falcon.verify(var!(hash), var!(signature), pk) != :ok,
             do: raise(IppanError, "Invalid signature verify")
 
         _ ->
-          raise(IppanError, "Signature type not supported")
+          raise(IppanError, "Signature type: #{sig_type} is not supported")
       end
     end
   end
