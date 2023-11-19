@@ -7,9 +7,6 @@ defmodule Ippan.Ecto.Balance do
   require Sqlite
   alias __MODULE__
 
-  @app Mix.Project.config()[:app]
-  @token Application.compile_env(@app, :token)
-
   @primary_key false
   @schema_prefix "history"
 
