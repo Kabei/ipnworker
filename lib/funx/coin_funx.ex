@@ -88,6 +88,13 @@ defmodule Ippan.Funx.Coin do
 
     TokenSupply.add(supply, total)
 
+    supply =
+      if token_id == @token do
+        supply
+      else
+        TokenSupply.new(@token)
+      end
+
     if is_validator do
       BalanceStore.burn(from, @token, burn)
     else
