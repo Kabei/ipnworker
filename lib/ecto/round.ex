@@ -54,11 +54,22 @@ defmodule Ippan.Ecto.Round do
     |> filter_offset(params)
     |> filter_limit(params)
     |> filter_range(params)
+    |> filter_search(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
     |> Enum.map(&fun(&1))
   end
+
+  defp filter_search(query, %{"q" => q}) when byte_size(q) == 64 do
+    where(query, [r], r.hash == ^Base.decode16!(q, case: :mixed))
+  end
+
+  defp filter_search(query, %{"q" => q}) do
+    where(query, [r], r.id == ^q)
+  end
+
+  defp filter_search(query, _), do: query
 
   defp filter_select(query) do
     select(query, [r], map(r, @select))
