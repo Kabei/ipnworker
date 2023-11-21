@@ -1,7 +1,7 @@
 defmodule Ippan.Ecto.Payments do
   use Ecto.Schema
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3, join: 5]
-  alias Ippan.{Round, Utils}
+  alias Ippan.{Ecto.Round, Utils}
   alias Ipnworker.Repo
   alias __MODULE__
 
