@@ -132,7 +132,7 @@ defmodule Ippan.Utils do
   end
 
   def date_start_to_time(date, unit_time \\ :millisecond) do
-    d = DateTime.from_iso8601(date <> "T00:00:00Z")
+    d = DateTime.from_iso8601(date)
 
     case d do
       {:error, _} -> 0
@@ -141,7 +141,7 @@ defmodule Ippan.Utils do
   end
 
   def date_end_to_time(date, unit_time \\ :millisecond) do
-    d = DateTime.from_iso8601(date <> "T23:59:59Z")
+    d = DateTime.from_iso8601(date)
 
     case d do
       {:error, _} -> 0
