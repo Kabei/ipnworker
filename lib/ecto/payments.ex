@@ -38,7 +38,7 @@ defmodule Ippan.Ecto.Payments do
     join(query, :inner, [p], r in Round, on: p.round == r.id)
     |> select([p, r], %{
       amount: p.amount,
-      form: p.from,
+      from: p.from,
       nonce: p.nonce,
       to: p.to,
       round: p.round,
