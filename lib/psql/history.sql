@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS history.txs(
   "size" INTEGER,
   "ctype" INTEGER,
   "args" BYTEA,
-  "signature" BYTEA
+  "signature" BYTEA,
   PRIMARY KEY("from", "nonce")
 );
 
