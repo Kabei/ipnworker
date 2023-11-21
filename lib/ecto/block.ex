@@ -54,12 +54,23 @@ defmodule Ippan.Ecto.Block do
     |> filter_offset(params)
     |> filter_limit(params)
     |> filter_round(params)
+    |> filter_search(params)
     |> filter_range(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
     |> Enum.map(&fun(&1))
   end
+
+  defp filter_search(query, %{"q" => q}) when byte_size(q) == 64 do
+    where(query, [b], b.hash == ^Base.decode16!(q, case: :mixed))
+  end
+
+  defp filter_search(query, %{"q" => q}) do
+    where(query, [b], b.id == ^q)
+  end
+
+  defp filter_search(query, _), do: query
 
   defp filter_select(query) do
     select(query, [b], map(b, @select))
