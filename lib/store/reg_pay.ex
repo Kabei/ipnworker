@@ -27,8 +27,8 @@ defmodule RegPay do
     end
 
     def coinbase(source, to, token, amount) do
-      %{nonce: nonce} = source
-      :ets.insert(:persistent_term.get(:payment), {nil, nonce, to, 0, token, amount})
+      %{id: from, nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 0, token, amount})
     end
 
     def payment(source, from, to, token, amount) do
