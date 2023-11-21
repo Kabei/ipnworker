@@ -29,12 +29,25 @@ defmodule Ippan.Ecto.Payments do
     |> filter_type(params)
     |> filter_token(params)
     |> filter_range(params)
-    |> filter_select()
+    |> filter_select(params)
     |> sort(params)
     |> Repo.all()
   end
 
-  defp filter_select(query) do
+  defp filter_select(query, %{"time" => _}) do
+    join(query, :inner, [p], r in Round, on: p.round == r.id)
+    |> select([p, r], %{
+      form: p.from,
+      nonce: p.nonce,
+      to: p.to,
+      round: p.round,
+      type: p.type,
+      timsetamp: r.timestamp,
+      token: p.token
+    })
+  end
+
+  defp filter_select(query, _) do
     select(query, [p], map(p, @select))
   end
 
