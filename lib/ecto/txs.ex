@@ -26,9 +26,10 @@ defmodule Ippan.Ecto.Tx do
     field(:size, :integer)
     field(:ctype, :integer)
     field(:args, :binary)
+    field(:signature, :binary)
   end
 
-  @select ~w(from nonce ix block hash type status size ctype args)a
+  @select ~w(from nonce ix block hash type status size ctype args signature)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -71,7 +72,7 @@ defmodule Ippan.Ecto.Tx do
     |> filter_select()
     |> sort(params)
     |> Repo.all()
-    |> Enum.map(&fun(&1))
+    |> Enum.map(&fun(&1, params))
   end
 
   defp filter_select(query) do
@@ -111,51 +112,45 @@ defmodule Ippan.Ecto.Tx do
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [tx], asc: tx.block)
   defp sort(query, _), do: order_by(query, [tx], desc: tx.block)
 
-  defp fun(x = %{args: nil, hash: hash, ctype: ctype}) do
-    %{x | hash: Utils.encode16(hash), ctype: ctype(ctype)}
+  defp fun(x = %{args: nil, hash: hash, ctype: ctype, signature: signature}) do
+    %{x | ctype: content_type(ctype), hash: Utils.encode16(hash), signature: Utils.encode64(signature)}
   end
 
-  defp fun(x = %{args: args, ctype: 0, hash: hash}) do
-    %{x | hash: Utils.encode16(hash), ctype: @craw, args: args}
-  end
-
-  defp fun(x = %{args: args, ctype: 1, hash: hash}) do
+  defp fun(x = %{args: args, ctype: ctype, hash: hash, signature: signature}, %{"args" => "raw"}) do
     %{
       x
-      | hash: Utils.encode16(hash),
+      | args: args,
+        ctype: content_type(ctype),
+        hash: Utils.encode16(hash),
+        signature: Utils.encode64(signature)
+    }
+  end
+
+  defp fun(x = %{args: args, ctype: 0, hash: hash, signature: signature}, _params) do
+    %{x | args: args, ctype: @craw, hash: Utils.encode16(hash), signature: Utils.encode64(signature)}
+  end
+
+  defp fun(x = %{args: args, ctype: 1, hash: hash, signature: signature}, _params) do
+    %{
+      x
+      | args: @json.decode!(args),
         ctype: @cjson,
-        args: @json.decode!(args)
+        hash: Utils.encode16(hash),
+        signature: Utils.encode64(signature)
     }
   end
 
-  defp fun(x = %{args: args, ctype: 2, hash: hash}) do
+  defp fun(x = %{args: args, ctype: 2, hash: hash, signature: signature}, _params) do
     %{
       x
-      | hash: Utils.encode16(hash),
+      | args: CBOR.Decoder.decode(args) |> elem(0),
         ctype: @ccbor,
-        args: CBOR.Decoder.decode(args) |> elem(0)
+        hash: Utils.encode16(hash),
+        signature: Utils.encode64(signature)
     }
   end
 
-  defp ctype(0), do: @craw
-  defp ctype(1), do: @cjson
-  defp ctype(2), do: @ccbor
-
-  defmacro binary_type do
-    quote do
-      0
-    end
-  end
-
-  defmacro json_type do
-    quote do
-      1
-    end
-  end
-
-  defmacro cbor_type do
-    quote do
-      2
-    end
-  end
+  def content_type(1), do: @cjson
+  def content_type(2), do: @ccbor
+  def content_type(_), do: @craw
 end

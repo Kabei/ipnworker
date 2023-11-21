@@ -1,6 +1,5 @@
 defmodule MinerWorker do
   use GenServer
-  import Ippan.Ecto.Tx, only: [json_type: 0]
   require RegPay
   alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
@@ -15,6 +14,7 @@ defmodule MinerWorker do
   @version Application.compile_env(@app, :version)
   @json Application.compile_env(@app, :json)
   @history Application.compile_env(@app, :history)
+  @cjson Ippan.Ecto.Tx.content_type(1)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)
@@ -139,8 +139,9 @@ defmodule MinerWorker do
             type,
             tx_status(result),
             size,
-            json_type(),
-            @json.encode!(args)
+            @cjson,
+            @json.encode!(args),
+            nil
           ])
           |> IO.inspect()
         end
@@ -169,8 +170,9 @@ defmodule MinerWorker do
             type,
             tx_status(result),
             size,
-            json_type(),
-            @json.encode!(args)
+            @cjson,
+            @json.encode!(args),
+            nil
           ])
           |> IO.inspect()
         end
