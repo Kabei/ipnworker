@@ -43,7 +43,7 @@ defmodule Ippan.Ecto.Payments do
       to: p.to,
       round: p.round,
       type: p.type,
-      timsetamp: r.timestamp,
+      timestamp: r.timestamp,
       token: p.token
     })
   end
