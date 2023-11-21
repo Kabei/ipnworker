@@ -34,7 +34,7 @@ defmodule Ippan.Ecto.Payments do
     |> Repo.all()
   end
 
-  defp filter_select(query, %{"time" => _}) do
+  defp filter_select(query, %{"times" => _}) do
     join(query, :inner, [p], r in Round, on: p.round == r.id)
     |> select([p, r], %{
       form: p.from,
