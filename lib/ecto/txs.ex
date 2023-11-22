@@ -43,24 +43,22 @@ defmodule Ippan.Ecto.Tx do
     end
   end
 
-  # def one(vid, height, hash16) do
-  #   hash = Base.decode16!(hash16, case: :mixed)
-
-  #   from(b in Block,
-  #     join: tx in Tx,
-  #     on: tx.block == b.id,
-  #     where:
-  #       b.creator == ^vid and b.height == ^height and
-  #         tx.hash == ^hash,
-  #     select: map(tx, @select),
-  #     limit: 1
-  #   )
-  #   |> Repo.one()
-  #   |> case do
-  #     nil -> nil
-  #     x -> fun(x)
-  #   end
-  # end
+  def one(vid, height, ix) do
+    from(b in Block,
+      join: tx in Tx,
+      on: tx.block == b.id,
+      where:
+        b.creator == ^vid and b.height == ^height and
+          tx.ix == ^ix,
+      limit: 1
+    )
+    |> filter_select()
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      x -> fun(x)
+    end
+  end
 
   def all(params) do
     from(Tx)
@@ -72,7 +70,7 @@ defmodule Ippan.Ecto.Tx do
     |> filter_select()
     |> sort(params)
     |> Repo.all()
-    |> Enum.map(&fun(&1, params))
+    |> Enum.map(&fun(&1))
   end
 
   defp filter_select(query) do
@@ -116,21 +114,11 @@ defmodule Ippan.Ecto.Tx do
     %{x | ctype: content_type(ctype), hash: Utils.encode16(hash), signature: Utils.encode64(signature)}
   end
 
-  defp fun(x = %{args: args, ctype: ctype, hash: hash, signature: signature}, %{"args" => "raw"}) do
-    %{
-      x
-      | args: args,
-        ctype: content_type(ctype),
-        hash: Utils.encode16(hash),
-        signature: Utils.encode64(signature)
-    }
-  end
-
-  defp fun(x = %{args: args, ctype: 0, hash: hash, signature: signature}, _params) do
+  defp fun(x = %{args: args, ctype: 0, hash: hash, signature: signature}) do
     %{x | args: args, ctype: @craw, hash: Utils.encode16(hash), signature: Utils.encode64(signature)}
   end
 
-  defp fun(x = %{args: args, ctype: 1, hash: hash, signature: signature}, _params) do
+  defp fun(x = %{args: args, ctype: 1, hash: hash, signature: signature}) do
     %{
       x
       | args: @json.decode!(args),
@@ -140,7 +128,7 @@ defmodule Ippan.Ecto.Tx do
     }
   end
 
-  defp fun(x = %{args: args, ctype: 2, hash: hash, signature: signature}, _params) do
+  defp fun(x = %{args: args, ctype: 2, hash: hash, signature: signature}) do
     %{
       x
       | args: CBOR.Decoder.decode(args) |> elem(0),
