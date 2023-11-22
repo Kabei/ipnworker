@@ -8,7 +8,7 @@ defmodule Ippan.Func.Validator do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @max_validators Application.compile_env(@app, :max_validators)
-  @max_fees 1_000_000_000
+  @max_fees 1_000_000_000_000
 
   def new(
         %{id: account_id},
