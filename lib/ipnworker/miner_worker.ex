@@ -14,7 +14,7 @@ defmodule MinerWorker do
   @version Application.compile_env(@app, :version)
   @json Application.compile_env(@app, :json)
   @history Application.compile_env(@app, :history)
-  @cjson Ippan.Ecto.Tx.content_type(1)
+  @cjson Ippan.Ecto.Tx.cjson()
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, hibernate_after: 10_000)

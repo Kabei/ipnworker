@@ -153,4 +153,8 @@ defmodule Ippan.Ecto.Tx do
   def content_type(1), do: @cjson
   def content_type(2), do: @ccbor
   def content_type(_), do: @craw
+
+  def craw, do: 0
+  def cjson, do: 1
+  def ccbor, do: 2
 end
