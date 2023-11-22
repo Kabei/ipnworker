@@ -21,10 +21,10 @@ defmodule Ipnworker.TxRoutes do
     |> send_json()
   end
 
-  get "/:creator/:height/:hash" do
-    Tx.one(creator, height, hash)
-    |> send_json()
-  end
+  # get "/:creator/:height/:hash" do
+  #   Tx.one(creator, height, hash)
+  #   |> send_json()
+  # end
 
   match _ do
     send_resp(conn, 404, "Not found")

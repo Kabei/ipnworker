@@ -43,24 +43,24 @@ defmodule Ippan.Ecto.Tx do
     end
   end
 
-  def one(vid, height, hash16) do
-    hash = Base.decode16!(hash16, case: :mixed)
+  # def one(vid, height, hash16) do
+  #   hash = Base.decode16!(hash16, case: :mixed)
 
-    from(b in Block,
-      join: tx in Tx,
-      on: tx.block == b.id,
-      where:
-        b.creator == ^vid and b.height == ^height and
-          tx.hash == ^hash,
-      select: map(tx, @select),
-      limit: 1
-    )
-    |> Repo.one()
-    |> case do
-      nil -> nil
-      x -> fun(x)
-    end
-  end
+  #   from(b in Block,
+  #     join: tx in Tx,
+  #     on: tx.block == b.id,
+  #     where:
+  #       b.creator == ^vid and b.height == ^height and
+  #         tx.hash == ^hash,
+  #     select: map(tx, @select),
+  #     limit: 1
+  #   )
+  #   |> Repo.one()
+  #   |> case do
+  #     nil -> nil
+  #     x -> fun(x)
+  #   end
+  # end
 
   def all(params) do
     from(Tx)
