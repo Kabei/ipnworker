@@ -39,7 +39,7 @@ defmodule Ipnworker.NetworkRoutes do
   get "/status" do
     db_ref = :persistent_term.get(:main_conn)
     {id, hash} = Round.last()
-    block_id = Block.last_id()
+    blocks = Block.total()
     validators = Validator.total()
     tokens = Token.total()
     dets = DetsPlux.get(:wallet)
@@ -48,7 +48,7 @@ defmodule Ipnworker.NetworkRoutes do
 
     %{
       "accounts" => accounts,
-      "blocks" => block_id + 1,
+      "blocks" => blocks,
       "env" => EnvStore.all(db_ref),
       "hash" => Utils.encode16(hash),
       "id" => id,
