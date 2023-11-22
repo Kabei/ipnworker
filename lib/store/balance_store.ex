@@ -62,7 +62,8 @@ defmodule BalanceStore do
   end
 
   defmacro fees(total_fees, fees, burn) do
-    quote bind_quoted: [total_fees: total_fees, fees: fees, burn: burn, token: @token], location: :keep do
+    quote bind_quoted: [total_fees: total_fees, fees: fees, burn: burn, token: @token],
+          location: :keep do
       if fees > 0 do
         balance_key = DetsPlux.tuple(var!(from), token)
         validator_key = DetsPlux.tuple(var!(vOwner), token)
@@ -76,6 +77,17 @@ defmodule BalanceStore do
       else
         BalanceStore.burn(var!(from), token, burn)
       end
+    end
+  end
+
+  defmacro burn(account, token, amount) do
+    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
+      key = DetsPlux.tuple(account, token)
+      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, 0})
+      DetsPlux.update_counter(var!(tx), key, {2, -amount})
+      TokenSupply.subtract(var!(supply), amount)
+
+      RegPay.burn(var!(source), account, token, amount)
     end
   end
 
@@ -93,17 +105,6 @@ defmodule BalanceStore do
       DetsPlux.update_counter(var!(tx), key, {2, value})
 
       RegPay.coinbase(var!(source), account, token, value)
-    end
-  end
-
-  defmacro burn(account, token, amount) do
-    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
-      key = DetsPlux.tuple(account, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, 0})
-      DetsPlux.update_counter(var!(tx), key, {2, -amount})
-      TokenSupply.subtract(var!(supply), amount)
-
-      RegPay.burn(var!(source), account, token, amount)
     end
   end
 
