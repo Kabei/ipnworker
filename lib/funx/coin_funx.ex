@@ -4,8 +4,6 @@ defmodule Ippan.Funx.Coin do
   require BalanceStore
   require RegPay
 
-  @dialyzer {:nowarn_function, [lock: 4, unlock: 4]}
-
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @refund_timeout Application.compile_env(@app, :timeout_refund)
