@@ -44,13 +44,15 @@ defmodule Ippan.Ecto.Domain do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    q = "%#{q}%"
-    where(query, [t], like(t.name, ^q))
+    where(query, [t], like(t.name, ^"%#{q}%"))
   end
 
-  defp filter_search(query, %{"email" => q}) do
-    q = "%#{q}%"
-    where(query, [t], like(t.email, ^q))
+  defp filter_search(query, %{"owner" => owner}) do
+    where(query, [t], t.owner == ^owner)
+  end
+
+  defp filter_search(query, %{"email" => email}) do
+    where(query, [t], t.email == ^email)
   end
 
   defp filter_search(query, _), do: query
