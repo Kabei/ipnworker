@@ -31,6 +31,8 @@ defmodule Ipnworker.AccountRoutes do
 
     case DetsPlux.get_cache(dets, tx, id) do
       {pk, v, sig_type} ->
+        dets = DetsPlux.get(:nonce)
+        tx = DetsPlux.tx(dets, :cache_nonce)
         nonce = DetsPlux.get_cache(dets, tx, id, 0)
 
         %{
