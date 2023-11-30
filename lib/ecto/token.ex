@@ -45,7 +45,7 @@ defmodule Ippan.Ecto.Token do
 
   defp filter_search(query, %{"q" => q}) do
     q = "%#{q}%"
-    where(query, [t], ilike(t.id, ^q) or ilike(t.name, ^q))
+    where(query, [t], like(t.id, ^q) or like(t.name, ^q))
   end
 
   defp filter_search(query, _), do: query

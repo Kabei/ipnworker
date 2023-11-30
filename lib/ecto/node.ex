@@ -118,7 +118,7 @@ defmodule Ippan.Ecto.Node do
 
   defp filter_search(query, %{"q" => q}) do
     q = "%#{q}%"
-    where(query, [t], ilike(t.name, ^q))
+    where(query, [t], like(t.name, ^q))
   end
 
   defp filter_search(query, _), do: query

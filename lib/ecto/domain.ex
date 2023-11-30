@@ -44,7 +44,7 @@ defmodule Ippan.Ecto.Domain do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    where(query, [t], ilike(t.name, ^"%#{q}%"))
+    where(query, [t], like(t.name, ^"%#{q}%"))
   end
 
   defp filter_search(query, %{"owner" => owner}) do
