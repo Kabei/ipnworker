@@ -52,7 +52,7 @@ defmodule Ippan.Ecto.DNS do
 
   defp filter_search(query, %{"q" => q}) do
     q = "%#{q}%"
-    where(query, [x], like(x.name, ^q))
+    where(query, [x], ilike(x.name, ^q))
   end
 
   defp filter_search(query, _), do: query
