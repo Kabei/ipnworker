@@ -44,7 +44,7 @@ defmodule Ippan.Ecto.Domain do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    where(query, [t], like(t.name, ^"%#{q}%"))
+    where(query, [t], like(fragment("UPPER(?)", t.name), ^String.upcase("%#{q}%")))
   end
 
   defp filter_search(query, %{"owner" => owner}) do

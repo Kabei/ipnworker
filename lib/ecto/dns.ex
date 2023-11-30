@@ -51,8 +51,8 @@ defmodule Ippan.Ecto.DNS do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    q = "%#{q}%"
-    where(query, [x], like(x.name, ^q))
+    q = String.upcase("%#{q}%")
+    where(query, [x], like(fragment("UPPER(?)", x.name), ^q))
   end
 
   defp filter_search(query, _), do: query

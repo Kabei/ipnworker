@@ -44,8 +44,13 @@ defmodule Ippan.Ecto.Token do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    q = "%#{q}%"
-    where(query, [t], like(t.id, ^q) or like(t.name, ^q))
+    q = String.upcase("%#{q}%")
+
+    where(
+      query,
+      [t],
+      like(fragment("UPPER(?)", t.id), ^q) or like(fragment("UPPER(?)", t.name), ^q)
+    )
   end
 
   defp filter_search(query, _), do: query
