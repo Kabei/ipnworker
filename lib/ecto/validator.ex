@@ -46,7 +46,12 @@ defmodule Ippan.Ecto.Validator do
 
   defp filter_search(query, %{"q" => q}) do
     q = String.upcase("%#{q}%")
-    where(query, [t], like(fragment("UPPER(?)", t.name), ^q) or like(fragment("UPPER(?)", t.hostname), ^q))
+
+    where(
+      query,
+      [t],
+      like(fragment("UPPER(?)", t.name), ^q) or like(fragment("UPPER(?)", t.hostname), ^q)
+    )
   end
 
   defp filter_search(query, _), do: query
