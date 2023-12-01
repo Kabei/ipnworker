@@ -67,7 +67,7 @@ defmodule Ippan.Ecto.Block do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    where(query, [b], b.id == ^:erlang.binary_to_integer(q))
+    where(query, [b], b.id == ^Utils.check_integer(q, -1))
   end
 
   defp filter_search(query, _), do: query

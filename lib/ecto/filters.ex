@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Filters do
   def filter_limit(query, %{"lmt" => "unlimited"}), do: query
 
   def filter_limit(query, %{"lmt" => num_limit}) do
-    num = :erlang.binary_to_integer(num_limit)
+    num = check_integer(num_limit, @default_limit)
 
     if num > @max_limit do
       limit(query, ^@max_limit)
@@ -23,4 +23,11 @@ defmodule Ippan.Ecto.Filters do
   end
 
   def filter_offset(query, _params), do: query
+
+  defp check_integer(x, default) do
+    case Regex.match?(~r/^[0-9]*$/, x) do
+      true -> :erlang.binary_to_integer(x)
+      _ -> default
+    end
+  end
 end

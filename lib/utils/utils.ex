@@ -21,7 +21,7 @@ defmodule Ippan.Utils do
   def cast_boolean(true), do: true
   def cast_boolean(_), do: false
 
-  def cast_query_integer(x, default) do
+  def check_integer(x, default) do
     case Regex.match?(~r/^[0-9]*$/, x) do
       true -> x
       _ -> default

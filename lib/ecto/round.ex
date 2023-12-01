@@ -66,7 +66,7 @@ defmodule Ippan.Ecto.Round do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    where(query, [r], r.id == ^:erlang.binary_to_integer(q))
+    where(query, [r], r.id == ^Utils.check_integer(q, -1))
   end
 
   defp filter_search(query, _), do: query
