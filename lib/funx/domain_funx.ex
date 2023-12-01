@@ -5,7 +5,7 @@ defmodule Ippan.Funx.Domain do
   require Domain
   require DNS
 
-  @one_day 18_000
+  @one_day 20_000
 
   def new(source = %{id: account_id, round: round_id}, name, owner, days, opts \\ %{}) do
     db_ref = :persistent_term.get(:main_conn)

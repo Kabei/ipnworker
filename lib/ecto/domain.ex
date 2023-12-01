@@ -13,6 +13,7 @@ defmodule Ippan.Ecto.Domain do
     db_ref = :persistent_term.get(:main_ro)
 
     Domain.get(name)
+    |> Domain.list_to_map()
   end
 
   def all(params) do
