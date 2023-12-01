@@ -137,7 +137,7 @@ defmodule Download do
   # Uncomment one line below if you are prefer to test not "Content-Length" header response, but a real file size
   # defp do_handle_content_length(_, opts), do: do_download(opts)
   defp do_handle_content_length({"Content-Length", content_length}, opts) do
-    if String.to_integer(content_length) > opts.max_file_size do
+    if :erlang.binary_to_integer(content_length) > opts.max_file_size do
       finish_download({:error, :file_size_is_too_big}, opts)
     else
       do_download(opts)

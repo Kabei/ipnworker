@@ -67,7 +67,7 @@ defmodule Ippan.Ecto.Block do
   end
 
   defp filter_search(query, %{"q" => q}) do
-    where(query, [b], b.id == ^cast_integer(q, -1))
+    where(query, [b], b.id == ^:erlang.binary_to_integer(q))
   end
 
   defp filter_search(query, _), do: query
@@ -127,7 +127,4 @@ defmodule Ippan.Ecto.Block do
         signature: Utils.encode64(signature)
     }
   end
-
-  defp cast_integer(x, _def) when is_integer(x), do: x
-  defp cast_integer(_x, def), do: def
 end

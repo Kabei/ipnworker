@@ -4,45 +4,22 @@ defmodule Ippan.Ecto.Filters do
   @default_limit 50
   @max_limit 200
 
-  def filter_limit(query, %{"lmt" => -1}) do
-    query
-  end
+  def filter_limit(query, %{"lmt" => "unlimited"}), do: query
 
-  def filter_limit(query, params) do
-    filter_limit(query, params, @default_limit, @max_limit)
-  end
+  def filter_limit(query, %{"lmt" => num_limit}) do
+    num = :erlang.binary_to_integer(num_limit)
 
-  def filter_limit(query, %{"lmt" => num_limit}, default, max)
-      when is_integer(num_limit) do
-    case num_limit do
-      x when x in 1..max ->
-        limit(query, ^x)
-
-      _ ->
-        limit(query, ^default)
+    if num > @max_limit do
+      limit(query, ^@max_limit)
+    else
+      limit(query, ^num)
     end
   end
 
-  def filter_limit(query, %{"lmt" => num_limit}, default, max) do
-    filter_limit(query, %{"lmt" => String.to_integer(num_limit)}, default, max)
-  end
-
-  def filter_limit(query, _params, default, _max) do
-    limit(query, ^default)
-  end
-
-  def filter_offset(query, %{"starts" => num_offset}) when is_integer(num_offset) do
-    offset(query, ^num_offset)
-  end
+  def filter_limit(query, _), do: limit(query, ^@default_limit)
 
   def filter_offset(query, %{"starts" => num_offset}) do
-    try do
-      x = String.to_integer(num_offset)
-      filter_offset(query, %{"starts" => x})
-    catch
-      _error ->
-        offset(query, 0)
-    end
+    offset(query, ^num_offset)
   end
 
   def filter_offset(query, _params), do: query

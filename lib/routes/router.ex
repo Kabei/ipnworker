@@ -14,32 +14,26 @@ defmodule Ipnworker.Router do
   plug(:dispatch)
 
   post "/v1/call" do
-    try do
-      {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
+    {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
-      case get_req_header(conn, "auth") do
-        [sig64] ->
-          hash = Blake3.hash(body)
-          signature = Fast64.decode64(sig64)
-          size = byte_size(body) + byte_size(signature)
-          [type, nonce, from | args] = @json.decode!(body)
-          from_nonce = {from, nonce}
+    case get_req_header(conn, "auth") do
+      [sig64] ->
+        hash = Blake3.hash(body)
+        signature = Fast64.decode64(sig64)
+        size = byte_size(body) + byte_size(signature)
+        [type, nonce, from | args] = @json.decode!(body)
+        from_nonce = {from, nonce}
+        has_from_nonce = :ets.insert_new(:hash, {from_nonce, nil})
 
-          case :ets.insert_new(:hash, {from_nonce, nil}) do
+        try do
+          case has_from_nonce do
             true ->
               %{id: vid} =
                 validator =
                 :persistent_term.get(:validator) || raise IppanError, "Node is not available yet"
 
               handle_result =
-                [deferred, msg, _return] =
-                try do
-                  TxHandler.decode!()
-                rescue
-                  e ->
-                    :ets.delete(:hash, from_nonce)
-                    reraise e, __STACKTRACE__
-                end
+                [deferred, msg, _return] = TxHandler.decode!()
 
               dtx_key =
                 if deferred do
@@ -89,35 +83,37 @@ defmodule Ipnworker.Router do
             false ->
               send_resp(conn, 400, "Transaction already exists")
           end
+        rescue
+          e in IppanError ->
+            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+            send_resp(conn, 400, e.message)
 
-        _ ->
-          send_resp(conn, 400, "Signature missing")
-      end
-    rescue
-      e in IppanError ->
-        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-        send_resp(conn, 400, e.message)
+          e in IppanRedirectError ->
+            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+            db_ref = :persistent_term.get(:main_conn)
 
-      e in IppanRedirectError ->
-        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-        db_ref = :persistent_term.get(:main_conn)
+            %{hostname: hostname} =
+              Validator.get(:erlang.binary_to_integer(e.message))
 
-        %{hostname: hostname} =
-          Validator.get(String.to_integer(e.message))
+            url = "https://#{hostname}#{conn.request_path}"
 
-        url = "https://#{hostname}#{conn.request_path}"
+            conn
+            |> put_resp_header("location", url)
+            |> send_resp(302, "")
 
-        conn
-        |> put_resp_header("location", url)
-        |> send_resp(302, "")
+          e in [FunctionClauseError, ArgumentError] ->
+            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+            send_resp(conn, 400, "Invalid arguments")
 
-      e in [FunctionClauseError, ArgumentError] ->
-        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-        send_resp(conn, 400, "Invalid arguments")
+          e ->
+            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+            send_resp(conn, 400, "Invalid operation")
+        after
+          if has_from_nonce, do: :ets.delete(:hash, from_nonce)
+        end
 
-      e ->
-        Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-        send_resp(conn, 400, "Invalid operation")
+      _ ->
+        send_resp(conn, 400, "Signature missing")
     end
   end
 
