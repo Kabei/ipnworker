@@ -96,6 +96,11 @@ defmodule Ippan.Funx.Validator do
         db_ref = :persistent_term.get(:main_conn)
         Validator.update(map, id)
 
+        if id == :persistent_term.get(:vid) do
+          v = Ippan.Validator.get(id)
+          Ippan.Validator.self(v)
+        end
+
         # transform to text
         fun = fn x -> Utils.encode64(x) end
 

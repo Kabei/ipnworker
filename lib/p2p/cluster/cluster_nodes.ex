@@ -74,13 +74,14 @@ defmodule Ippan.ClusterNodes do
   def handle_request(_method, _data, _state), do: ["error", "Not found"]
 
   @impl Network
-  def handle_message("validator.update", %{"id" => vid, "args" => args}, _state) do
-    map = MapUtil.to_atoms(args)
+  def handle_message("validator.update", %{"id" => _vid, "args" => _args}, _state) do
+    # map = MapUtil.to_atoms(args)
 
-    if :persistent_term.get(:vid) == vid do
-      validator = :persistent_term.get(:validator)
-      Validator.self(Map.merge(validator, map))
-    end
+    # if :persistent_term.get(:vid) == vid do
+    #   validator = :persistent_term.get(:validator)
+    #   Validator.self(Map.merge(validator, map))
+    # end
+    :ok
   end
 
   @doc """
@@ -175,6 +176,7 @@ defmodule Ippan.ClusterNodes do
 
       if status > 0 do
         Validator.delete(round_creator_id)
+        Sqlite.sync(db_ref)
       end
 
       IO.inspect("step 3")
