@@ -9,12 +9,12 @@ defmodule Ippan.Ecto.Payments do
   @schema_prefix "history"
   schema "payments" do
     field(:from, :binary)
-    field(:nonce, :string)
+    field(:nonce, :decimal)
     field(:to, :binary)
     field(:round, :integer)
     field(:type, :integer)
     field(:token, :binary)
-    field(:amount, :string)
+    field(:amount, :decimal)
   end
 
   @select ~w(from nonce to round type token amount)a

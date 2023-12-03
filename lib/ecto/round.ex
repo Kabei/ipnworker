@@ -9,13 +9,13 @@ defmodule Ippan.Ecto.Round do
   @schema_prefix "history"
 
   schema "rounds" do
-    field(:id, :string)
+    field(:id, :decimal)
     field(:hash, :binary)
     field(:prev, :binary)
     field(:creator, :integer)
     field(:signature, :binary)
-    field(:coinbase, :string)
-    field(:reward, :string)
+    field(:coinbase, :decimal)
+    field(:reward, :decimal)
     field(:count, :integer)
     field(:tx_count, :integer)
     field(:size, :integer)

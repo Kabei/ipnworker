@@ -9,7 +9,7 @@ defmodule Ippan.Ecto.Block do
   @schema_prefix "history"
 
   schema "blocks" do
-    field(:id, :string)
+    field(:id, :decimal)
     field(:creator, :integer)
     field(:height, :integer)
     field(:hash, :binary)
