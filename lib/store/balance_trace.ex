@@ -42,7 +42,7 @@ defmodule BalanceTrace do
 
   def can_unlock!(bt = %BalanceTrace{db: db, from: from, tx: tx}, amount) do
     {_, map} = DetsPlux.get_cache(db, tx, from, {0, %{}})
-    IO.puts(map)
+    IO.inspect(map)
 
     if Map.get(map, "lock", 0) < amount do
       raise IppanError, "Invalid unlock amount"
