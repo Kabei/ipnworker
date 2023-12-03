@@ -15,7 +15,9 @@ defmodule BalanceTrace do
 
   def requires!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token, value) do
     key = DetsPlux.tuple(from, token)
-    DetsPlux.get_cache(db, tx, key, {0, %{}})
+    x = DetsPlux.get_cache(db, tx, key, {0, %{}})
+    IO.puts(key)
+    IO.puts(x)
 
     r = DetsPlux.update_counter(tx, key, {2, -value})
     IO.puts(r)
