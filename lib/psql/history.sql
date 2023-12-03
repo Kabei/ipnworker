@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
 
 CREATE TABLE IF NOT EXISTS history.txs(
   "from" BYTEA,
-  "nonce" BIGINT,
+  "nonce" NUMERIC,
   "ix" integer,
   "block" BIGINT,
   "hash" BYTEA NOT NULL,

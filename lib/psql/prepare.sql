@@ -1,7 +1,7 @@
 PREPARE insert_pay(bytea, numeric, bytea, bigint, integer, bytea, numeric)
 AS INSERT INTO history.payments VALUES($1,$2,$3,$4,$5,$6,$7);
 
-PREPARE insert_tx(bytea, bigint, integer, bigint, bytea, integer, integer, integer, integer, bytea, bytea)
+PREPARE insert_tx(bytea, numeric, integer, bigint, bytea, integer, integer, integer, integer, bytea, bytea)
 AS INSERT INTO history.txs VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);
 
 PREPARE insert_block(numeric, bigint, bigint, bytea, bytea, bytea, bytea, bigint, bigint, integer, integer, bigint, integer, integer)
