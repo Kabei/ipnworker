@@ -47,11 +47,11 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
     end
 
-    def reserve(%{from: from, nonce: nonce}, token, amount) do
+    def reserve(%{id: from, nonce: nonce}, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 201, token, amount})
     end
 
-    def expiry(%{from: from, nonce: nonce}, token, amount) do
+    def expiry(%{id: from, nonce: nonce}, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {nil, nonce, from, 202, token, amount})
     end
 
