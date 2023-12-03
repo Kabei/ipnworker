@@ -158,7 +158,7 @@ defmodule Ippan.Func.Coin do
     end
   end
 
-  def lock(%{id: account_id}, to_id, token_id, amount)
+  def lock(%{id: account_id}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
@@ -174,7 +174,7 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "lock property is missing"
 
       true ->
-        BalanceTrace.new(to_id)
+        BalanceTrace.new(to)
         |> BalanceTrace.requires!(@token, amount)
         |> BalanceTrace.output()
     end
