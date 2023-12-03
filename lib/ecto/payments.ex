@@ -14,7 +14,7 @@ defmodule Ippan.Ecto.Payments do
     field(:round, :integer)
     field(:type, :integer)
     field(:token, :binary)
-    field(:amount, :integer)
+    field(:amount, :string)
   end
 
   @select ~w(from nonce to round type token amount)a
