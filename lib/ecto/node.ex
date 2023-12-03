@@ -11,7 +11,7 @@ defmodule Ippan.Ecto.Node do
   @select ~w(id hostname port role pubkey net_pubkey avatar created_at)a
 
   def one(id) do
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
 
     Node.get(id)
   end
@@ -33,7 +33,7 @@ defmodule Ippan.Ecto.Node do
       |> Map.put(:updated_at, timestamp)
       |> MapUtil.to_atoms()
 
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
 
     result
     |> Node.to_list()
@@ -50,7 +50,7 @@ defmodule Ippan.Ecto.Node do
   end
 
   def trigger(event = "node.update", %{"id" => id, "data" => params}) do
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
 
     map =
       params
@@ -71,7 +71,7 @@ defmodule Ippan.Ecto.Node do
   end
 
   def trigger("node.leave", %{"id" => id}) do
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
 
     if Node.delete(id) == :done do
       miner = :persistent_term.get(:miner)
@@ -96,7 +96,7 @@ defmodule Ippan.Ecto.Node do
     {sql, args} =
       Repo.to_sql(:all, q)
 
-    db_ro = :persistent_term.get(:net_conn)
+    db_ro = :persistent_term.get(:local_conn)
 
     case Sqlite.query(db_ro, sql, args) do
       {:ok, results} ->
@@ -108,7 +108,7 @@ defmodule Ippan.Ecto.Node do
   end
 
   def total do
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
     Node.total()
   end
 

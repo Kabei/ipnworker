@@ -14,11 +14,11 @@ defmodule Ippan.Ecto.Balance do
     field(:id, :string)
     field(:token, :string)
     field(:balance, :integer)
-    field(:lock, :integer)
+    field(:map, :map)
   end
 
-  @select ~w(token balance lock)a
-  @token_fields ~w(avatar decimal symbol)a
+  @select ~w(token balance map)a
+  @token_fields ~w(avatar env decimal props symbol)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 

@@ -8,12 +8,13 @@ defmodule Ipnworker.NetworkRoutes do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @name Application.compile_env(@app, :name)
+  @jackpot "jackpot"
 
   @options %{
     "app_version" => Ipnworker.MixProject.version(),
     "block_data_max_size" => Application.compile_env(@app, :block_data_max_size),
     "block_extension" => Application.compile_env(@app, :block_extension),
-    "burn" => Application.compile_env(@app, :burn),
+    "reserve" => Application.compile_env(@app, :reserve),
     "round_timeout" => Application.compile_env(@app, :round_timeout),
     "block_max_size" => Application.compile_env(@app, :block_max_size),
     "blockchain_version" => Application.compile_env(@app, :version),
@@ -45,6 +46,7 @@ defmodule Ipnworker.NetworkRoutes do
     dets = DetsPlux.get(:wallet)
     accounts = DetsPlux.info(dets, nil, :size)
     supply = TokenSupply.new(@token)
+    jackpot = TokenSupply.new(@jackpot)
 
     %{
       "accounts" => accounts,
@@ -52,6 +54,7 @@ defmodule Ipnworker.NetworkRoutes do
       "env" => EnvStore.all(db_ref),
       "hash" => Utils.encode16(hash),
       "id" => id,
+      "jackpot" => TokenSupply.get(jackpot),
       "name" => @name,
       "supply" => TokenSupply.get(supply),
       "token" => @token,

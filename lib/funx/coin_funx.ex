@@ -1,11 +1,11 @@
 defmodule Ippan.Funx.Coin do
-  alias Ippan.Utils
+  alias Ippan.{Token, Utils}
   require Sqlite
   require BalanceStore
   require RegPay
+  require Token
 
   @app Mix.Project.config()[:app]
-  @token Application.compile_env(@app, :token)
   @refund_timeout Application.compile_env(@app, :timeout_refund)
 
   def send(
@@ -21,17 +21,16 @@ defmodule Ippan.Funx.Coin do
     is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
-    supply = TokenSupply.new(@token)
     tfees = Utils.calc_fees(fa, fb, size)
-    burn = Utils.calc_burn(tfees)
+    reserve = Utils.calc_reserve(tfees)
 
     BalanceStore.send(amount)
 
     if is_validator do
-      BalanceStore.burn(from, @token, burn)
+      BalanceStore.reserve(reserve)
     else
-      fees = tfees - burn
-      BalanceStore.fees(tfees, fees, burn)
+      fees = tfees - reserve
+      BalanceStore.fees(tfees, fees, reserve)
     end
   end
 
@@ -75,7 +74,7 @@ defmodule Ippan.Funx.Coin do
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
     tfees = Utils.calc_fees(fa, fb, size)
-    burn = Utils.calc_burn(tfees)
+    reserve = Utils.calc_reserve(tfees)
 
     total =
       for [account, value] <- outputs do
@@ -86,18 +85,11 @@ defmodule Ippan.Funx.Coin do
 
     TokenSupply.add(supply, total)
 
-    supply =
-      if token_id == @token do
-        supply
-      else
-        TokenSupply.new(@token)
-      end
-
     if is_validator do
-      BalanceStore.burn(from, @token, burn)
+      BalanceStore.reserve(reserve)
     else
-      fees = tfees - burn
-      BalanceStore.fees(tfees, fees, burn)
+      fees = tfees - reserve
+      BalanceStore.fees(tfees, fees, reserve)
     end
   end
 
@@ -113,20 +105,19 @@ defmodule Ippan.Funx.Coin do
     is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
-    supply = TokenSupply.new(@token)
 
     Enum.each(outputs, fn [to, amount] ->
       BalanceStore.send(amount)
     end)
 
     tfees = Utils.calc_fees(fa, fb, size)
-    burn = Utils.calc_burn(tfees)
+    reserve = Utils.calc_reserve(tfees)
 
     if is_validator do
-      BalanceStore.burn(from, @token, burn)
+      BalanceStore.reserve(reserve)
     else
-      fees = tfees - burn
-      BalanceStore.fees(tfees, fees, burn)
+      fees = tfees - reserve
+      BalanceStore.fees(tfees, fees, reserve)
     end
   end
 
@@ -134,12 +125,29 @@ defmodule Ippan.Funx.Coin do
     multisend(source, token_id, outputs)
   end
 
-  def burn(source = %{id: account_id}, token_id, amount) do
+  def burn(source, to, token_id, amount) do
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    supply = TokenSupply.new(token_id)
+
+    BalanceStore.burn(to, token_id, amount)
+  end
+
+  def drop(source = %{id: account_id}, token_id, amount) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
 
     BalanceStore.burn(account_id, token_id, amount)
+  end
+
+  def reload(source = %{id: account_id}, token_id) do
+    db_ref = :persistent_term.get(:main_conn)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    %{env: %{"reload.amount" => value}} = Token.get(token_id)
+
+    BalanceStore.reload(account_id, token_id, value)
   end
 
   def refund(source = %{id: from}, hash16) do

@@ -22,12 +22,14 @@ defmodule Platform do
     end
 
     v = Validator.get(vid)
-    :persistent_term.put(:validator, v)
+    Validator.self(v)
 
     :ok
   end
 
   defp load_genesis_file(db_ref) do
+    IO.puts("Load Genesis File")
+
     {data = %{"tokens" => _, "validators" => _, "wallets" => _}, _binding} =
       Path.join(:code.priv_dir(@app), "genesis.exs")
       |> Code.eval_file()

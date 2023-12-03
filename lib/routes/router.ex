@@ -117,6 +117,33 @@ defmodule Ipnworker.Router do
     end
   end
 
+  get "/v1/info" do
+    case get_req_header(conn, "etag") do
+      [etag] ->
+        hash = "\"#{:persistent_term.get(:vhash)}\""
+
+        if hash == etag do
+          send_resp(conn, 304, "")
+        else
+          info = Ippan.Ecto.Validator.me()
+
+          conn
+          |> put_resp_header("Etag", hash)
+          |> put_resp_content_type("application/json")
+          |> send_resp(200, Jason.encode!(info))
+        end
+
+      _ ->
+        info = Ippan.Ecto.Validator.me()
+        hash = "\"#{:persistent_term.get(:vhash)}\""
+
+        conn
+        |> put_resp_header("Etag", hash)
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(info))
+    end
+  end
+
   forward("/v1/dl", to: Ipnworker.FileRoutes)
   forward("/v1/round", to: Ipnworker.RoundRoutes)
   forward("/v1/block", to: Ipnworker.BlockRoutes)

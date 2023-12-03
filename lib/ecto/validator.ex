@@ -9,6 +9,10 @@ defmodule Ippan.Ecto.Validator do
   @table "validator"
   @select ~w(id hostname port name owner pubkey net_pubkey avatar fa fb stake failures created_at updated_at)a
 
+  def me do
+    :persistent_term.get(:validator) |> fun()
+  end
+
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
 
@@ -68,6 +72,10 @@ defmodule Ippan.Ecto.Validator do
   defp fun(nil), do: nil
 
   defp fun(x = %{pubkey: pk, net_pubkey: npk}) do
-    %{x | pubkey: Utils.encode64(pk), net_pubkey: Utils.encode64(npk)}
+    %{
+      x
+      | pubkey: Utils.encode64(pk),
+        net_pubkey: Utils.encode64(npk)
+    }
   end
 end

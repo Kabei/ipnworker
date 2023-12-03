@@ -6,6 +6,7 @@ defmodule RegPay do
   # 100. Pay
   # 101. Refund
   # 200. Fees
+  # 201. Reserve
   # 300. Burn
   # 301. lock
   # 302. unlock
@@ -31,6 +32,11 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 0, token, amount})
     end
 
+    def reload(source, token, amount) do
+      %{id: from, nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {nil, nonce, from, 3, token, amount})
+    end
+
     def payment(source, from, to, token, amount) do
       %{nonce: nonce} = source
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 100, token, amount})
@@ -41,11 +47,16 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
-    def fees(_source, _from, _to, _token, 0), do: :ok
+    # def fees(_source, _from, _to, _token, 0), do: :ok
 
     def fees(source, from, to, token, amount) do
       %{nonce: nonce} = source
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
+    end
+
+    def reserve(source, token, amount) do
+      %{from: from, nonce: nonce} = source
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 201, token, amount})
     end
 
     def burn(source, from, token, amount) do
@@ -73,9 +84,11 @@ defmodule RegPay do
   else
     def init, do: :ok
     def coinbase(_, _, _, _), do: :ok
+    def reload(_, _, _), do: :ok
     def payment(_, _, _, _, _), do: :ok
     def refund(_, _, _, _, _), do: :ok
     def fees(_, _, _, _, _), do: :ok
+    def reserve(_, _, _), do: :ok
     def burn(_, _, _, _), do: :ok
     def lock(_, _, _, _), do: :ok
     def unlock(_, _, _, _), do: :ok

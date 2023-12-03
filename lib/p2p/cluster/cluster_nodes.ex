@@ -29,6 +29,10 @@ defmodule Ippan.ClusterNodes do
     test = System.get_env("test")
     {local_round_id, _hash} = Round.last({-1, nil})
 
+    if local_round_id != -1 do
+      :persistent_term.put(:round, local_round_id)
+    end
+
     if is_nil(test) do
       IO.inspect("here go")
 
@@ -52,7 +56,7 @@ defmodule Ippan.ClusterNodes do
 
   @impl Network
   def fetch(id) do
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
     Node.get(id)
   end
 
@@ -75,7 +79,7 @@ defmodule Ippan.ClusterNodes do
 
     if :persistent_term.get(:vid) == vid do
       validator = :persistent_term.get(:validator)
-      :persistent_term.put(:validator, Map.merge(validator, map))
+      Validator.self(Map.merge(validator, map))
     end
   end
 
@@ -129,6 +133,7 @@ defmodule Ippan.ClusterNodes do
       vid = :persistent_term.get(:vid)
       balance_pid = DetsPlux.get(:balance)
       balance_tx = DetsPlux.tx(:balance)
+      :persistent_term.put(:round, round_id)
 
       IO.inspect(round.id)
 

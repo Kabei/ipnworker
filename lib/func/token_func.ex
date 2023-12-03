@@ -49,6 +49,7 @@ defmodule Ippan.Func.Token do
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_any(:opts, Token.props())
+        |> MapUtil.validate_map(:env)
 
         BalanceTrace.new(account_id)
         |> BalanceTrace.requires!(@token, price)

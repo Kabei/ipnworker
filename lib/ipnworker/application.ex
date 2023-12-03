@@ -15,7 +15,7 @@ defmodule Ipnworker.Application do
       MemTables,
       DetsSup,
       MainStore,
-      NetStore,
+      LocalStore,
       PgStore,
       Ipnworker.Repo,
       :poolboy.child_spec(:minerpool, miner_config()),

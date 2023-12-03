@@ -1,3 +1,5 @@
+alias Ippan.{Validator, Token, Wallet}
+
 pk =
   <<133, 210, 110, 113, 239, 43, 61, 189, 153, 31, 241, 205, 62, 28, 241, 50, 184, 225, 166, 252,
     172, 96, 246, 11, 32, 130, 167, 194, 57, 206, 148, 104>>
@@ -70,7 +72,7 @@ address = "0x2Qyubpv2bgy8bDZ7UpkuwabHjJdc"
     %{name: "validator.price", value: 100_000}
   ],
   "tokens" => [
-    %{
+    %Token{
       avatar: "https://ippan.com/images/IPN.png",
       created_at: 0,
       decimal: 9,
@@ -78,25 +80,28 @@ address = "0x2Qyubpv2bgy8bDZ7UpkuwabHjJdc"
       max_supply: 42_000_000_000_000_000,
       name: "Instant Payment Network",
       owner: address,
-      props: ["coinbase", "lock", "burn"],
+      props: ["burn", "coinbase", "drop", "lock"],
       symbol: "Þ",
       updated_at: 0
     },
-    %{
-      avatar: "https://ippan.com/images/IPN.png",
+    %Token{
+      avatar: "https://ippan.com/images/XPN.png",
       created_at: 0,
       decimal: 9,
       id: "XPN",
       max_supply: 0,
       name: "Xtream Payment Network",
       owner: address,
-      props: ["coinbase", "lock", "burn", "payconnect"],
+      props: ["burn", "coinbase", "drop", "lock", "reload"],
       symbol: "xÞ",
-      updated_at: 0
+      updated_at: 0,
+      env: %{
+        "reload.amount" => 500
+      }
     }
   ],
   "validators" => [
-    %{
+    %Validator{
       avatar: nil,
       created_at: 0,
       fa: 0,
@@ -112,7 +117,7 @@ address = "0x2Qyubpv2bgy8bDZ7UpkuwabHjJdc"
       stake: 0,
       updated_at: 0
     },
-    %{
+    %Validator{
       avatar: nil,
       created_at: 0,
       fa: 0,
@@ -130,7 +135,7 @@ address = "0x2Qyubpv2bgy8bDZ7UpkuwabHjJdc"
     }
   ],
   "wallets" => [
-    %{
+    %Wallet{
       id: "0x2Qyubpv2bgy8bDZ7UpkuwabHjJdc",
       pubkey: pk,
       sig_type: 0,

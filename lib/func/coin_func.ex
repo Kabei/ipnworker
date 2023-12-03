@@ -127,6 +127,28 @@ defmodule Ippan.Func.Coin do
     |> BalanceTrace.output()
   end
 
+  def reload(%{id: account_id}, token_id) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    %{env: %{"reload.amount" => _amount, "reload.times" => times}, props: props} =
+      Token.get(token_id)
+
+    if "reload" not in props, do: raise(IppanError, "Reload property is missing")
+
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :cache_balance)
+    key = DetsPlux.tuple(account_id, token_id)
+    {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+
+    case map do
+      %{} ->
+        :ok
+
+      %{"lastReload" => lastReload} when :erlang.is_integer(lastReload) ->
+        if :persistent_term.get(:round) + 1 < lastReload + times, do: raise(IppanError, "")
+    end
+  end
+
   def refund(%{id: account_id}, hash16)
       when byte_size(hash16) == 64 do
     db_ref = :persistent_term.get(:main_conn)
@@ -142,19 +164,19 @@ defmodule Ippan.Func.Coin do
   end
 
   def lock(%{id: account_id}, to_id, token_id, amount)
-      when is_integer(amount) do
+      when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
     cond do
       is_nil(token) ->
-        raise IppanError, "TokenID not exists"
+        raise IppanError, "Invalid token ID"
 
       token.owner != account_id ->
-        raise IppanError, "unauthorised"
+        raise IppanError, "Unauthorised"
 
       not Token.has_prop?(token, "lock") ->
-        raise IppanError, "Invalid property"
+        raise IppanError, "lock property is missing"
 
       true ->
         BalanceTrace.new(to_id)
@@ -164,7 +186,7 @@ defmodule Ippan.Func.Coin do
   end
 
   def unlock(%{id: account_id}, to_id, token_id, amount)
-      when is_integer(amount) do
+      when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
@@ -173,10 +195,10 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "TokenID not exists"
 
       token.owner != account_id ->
-        raise IppanError, "unauthorised"
+        raise IppanError, "Unauthorised"
 
       not Token.has_prop?(token, "lock") ->
-        raise IppanError, "Invalid property"
+        raise IppanError, "lock property missing"
 
       true ->
         BalanceTrace.new(to_id)
@@ -185,13 +207,31 @@ defmodule Ippan.Func.Coin do
     end
   end
 
-  def burn(%{id: account_id}, token_id, amount) when is_integer(amount) and amount > 0 do
+  def burn(%{id: account_id}, to, token_id, amount) when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
     cond do
       not Token.has_prop?(token, "burn") ->
-        raise IppanError, "Token property invalid"
+        raise IppanError, "burn property missing"
+
+      EnvStore.owner() != account_id ->
+        raise IppanError, "Unauthorised"
+
+      true ->
+        BalanceTrace.new(to)
+        |> BalanceTrace.requires!(token_id, amount)
+        |> BalanceTrace.output()
+    end
+  end
+
+  def drop(%{id: account_id}, token_id, amount) when is_integer(amount) and amount > 0 do
+    db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(token_id)
+
+    cond do
+      not Token.has_prop?(token, "drop") ->
+        raise IppanError, "drop property missing"
 
       true ->
         BalanceTrace.new(account_id)

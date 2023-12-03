@@ -24,7 +24,7 @@ defmodule Ipnworker.NodeSync do
   def init(local_round_id) do
     IO.inspect("nodeSync: init")
     miner = :persistent_term.get(:miner)
-    db_ref = :persistent_term.get(:net_conn)
+    db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
 
     if is_nil(node) do

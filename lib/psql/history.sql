@@ -1,13 +1,13 @@
  CREATE SCHEMA IF NOT EXISTS history;
 
 CREATE TABLE IF NOT EXISTS history.rounds(
-  "id" BIGINT PRIMARY KEY NOT NULL,
+  "id" NUMERIC PRIMARY KEY NOT NULL,
   "hash" BYTEA,
   "prev" BYTEA,
   "creator" BIGINT,
   "signature" BYTEA,
-  "coinbase" BIGINT,
-  "reward" BIGINT,
+  "coinbase" NUMERIC,
+  "reward" NUMERIC,
   "count" BIGINT,
   "tx_count" BIGINT,
   "size" BIGINT,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS history.snapshot(
 );
 
 CREATE TABLE IF NOT EXISTS history.blocks(
-  "id" BIGINT PRIMARY KEY,
+  "id" NUMERIC PRIMARY KEY,
   "creator" BIGINT NOT NULL,
   "height" BIGINT NOT NULL,
   "hash" BYTEA NOT NULL,
@@ -65,19 +65,19 @@ CREATE TABLE IF NOT EXISTS history.txs(
 CREATE TABLE IF NOT EXISTS history.balance(
   "id" BYTEA,
   "token" BYTEA,
-  "balance" BIGINT,
-  "lock" BIGINT,
+  "balance" NUMERIC,
+  "map" JSONB,
   PRIMARY KEY("id", "token")
 );
 
 CREATE TABLE IF NOT EXISTS history.payments(
   "from" BYTEA,
-  "nonce" INTEGER,
+  "nonce" NUMERIC,
   "to" BYTEA,
   "round" BIGINT,
   "type" INTEGER,
   "token" BYTEA,
-  "amount" BIGINT
+  "amount" NUMERIC
 );
 
 CREATE INDEX IF NOT EXISTS txs_hash_idx ON history.txs("hash");
