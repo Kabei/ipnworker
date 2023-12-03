@@ -40,7 +40,7 @@ defmodule BalanceTrace do
     %{bt | output: :lists.merge(kw, outputs)}
   end
 
-  def can_unlock!(bt = %BalanceTrace{db: db, from: from, tx: tx}, amount) do
+  def can_unlock!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token, amount) do
     key = DetsPlux.tuple(from, token)
     {_, map} = DetsPlux.get_cache(db, tx, key, {0, %{}})
 

@@ -197,7 +197,7 @@ defmodule Ippan.Func.Coin do
 
       true ->
         BalanceTrace.new(to)
-        |> BalanceTrace.can_unlock!(amount)
+        |> BalanceTrace.can_unlock!(token_id, amount)
 
         :ok
     end
