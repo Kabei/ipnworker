@@ -180,7 +180,7 @@ defmodule Ippan.Func.Coin do
     end
   end
 
-  def unlock(%{id: account_id}, to_id, token_id, amount)
+  def unlock(%{id: account_id}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
@@ -196,9 +196,10 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "lock property missing"
 
       true ->
-        BalanceTrace.new(to_id)
-        |> BalanceTrace.requires!(@token, -amount)
-        |> BalanceTrace.output()
+        BalanceTrace.new(to)
+        |> BalanceTrace.can_unlock!(amount)
+
+        :ok
     end
   end
 
@@ -208,7 +209,7 @@ defmodule Ippan.Func.Coin do
 
     cond do
       not Token.has_prop?(token, "burn") ->
-        raise IppanError, "burn property missing"
+        raise IppanError, "Burn property missing"
 
       EnvStore.owner() != account_id ->
         raise IppanError, "Unauthorised"
@@ -226,7 +227,7 @@ defmodule Ippan.Func.Coin do
 
     cond do
       not Token.has_prop?(token, "drop") ->
-        raise IppanError, "drop property missing"
+        raise IppanError, "Drop property missing"
 
       true ->
         BalanceTrace.new(account_id)
