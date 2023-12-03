@@ -13,7 +13,7 @@ defmodule Ippan.Ecto.Balance do
   schema "balance" do
     field(:id, :string)
     field(:token, :string)
-    field(:balance, :decimal)
+    field(:balance, :numeric)
     field(:map, :map)
   end
 
