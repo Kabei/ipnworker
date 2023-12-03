@@ -45,8 +45,8 @@ config :ipnworker, :cluster,
     send_timeout: 30_000,
     send_timeout_close: true,
     reuseaddr: true,
-    packet: 2,
-    packet_size: 64_000
+    packet: 4,
+    packet_size: 1_000_000
   ]
 
 # remote database setup

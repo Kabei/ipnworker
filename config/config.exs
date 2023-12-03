@@ -66,8 +66,8 @@ config :ipnworker, :p2p_client, [
   :binary,
   active: false,
   reuseaddr: true,
-  packet: 2,
-  packet_size: 64_000
+  packet: 4,
+  packet_size: 1_000_000
 ]
 
 config :ipnworker, json: Jason
