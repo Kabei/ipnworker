@@ -3,8 +3,11 @@ defmodule Ippan.Ecto.Filters do
 
   @default_limit 50
   @max_limit 200
+  @dev Mix.env() == :dev
 
-  def filter_limit(query, %{"lmt" => "unlimited"}), do: query
+  if @dev do
+    def filter_limit(query, %{"lmt" => "unlimited"}), do: query
+  end
 
   def filter_limit(query, %{"lmt" => num_limit}) do
     num = check_integer(num_limit, @default_limit)
