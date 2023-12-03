@@ -85,8 +85,7 @@ defmodule Ippan.BlockHandler do
               size = byte_size(body) + byte_size(signature)
               [type, nonce, from | args] = @json.decode!(body)
 
-              result =
-                TxHandler.decode_from_file!()
+              result = TxHandler.decode_from_file!()
 
               case :ets.insert_new(ets, {{from, nonce}, nil}) do
                 true ->

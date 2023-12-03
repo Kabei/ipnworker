@@ -130,22 +130,17 @@ defmodule Ippan.Func.Coin do
   def reload(%{id: account_id}, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    %{env: %{"reload.amount" => _amount, "reload.times" => times}, props: props} =
+    %{env: env, props: props} =
       Token.get(token_id)
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :cache_balance)
-    key = DetsPlux.tuple(account_id, token_id)
-    {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    price = Map.get(env, "reload.price", 0)
 
-    case map do
-      %{} ->
-        :ok
-
-      %{"lastReload" => lastReload} when :erlang.is_integer(lastReload) ->
-        if :persistent_term.get(:round) + 1 < lastReload + times, do: raise(IppanError, "")
+    if price != 0 do
+      BalanceTrace.new(account_id)
+      |> BalanceTrace.requires!(@token, price)
+      |> BalanceTrace.output()
     end
   end
 

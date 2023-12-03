@@ -27,50 +27,43 @@ defmodule RegPay do
       :persistent_term.put(:payment, tid)
     end
 
-    def coinbase(source, to, token, amount) do
-      %{id: from, nonce: nonce} = source
+    def coinbase(%{id: from, nonce: nonce}, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 0, token, amount})
     end
 
-    def reload(source, token, amount) do
-      %{id: from, nonce: nonce} = source
+    def reload(%{id: from, nonce: nonce}, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {nil, nonce, from, 3, token, amount})
     end
 
-    def payment(source, from, to, token, amount) do
-      %{nonce: nonce} = source
+    def payment(%{nonce: nonce}, from, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 100, token, amount})
     end
 
-    def refund(source, from, to, token, amount) do
-      %{nonce: nonce} = source
+    def refund(%{nonce: nonce}, from, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
-    # def fees(_source, _from, _to, _token, 0), do: :ok
-
-    def fees(source, from, to, token, amount) do
-      %{nonce: nonce} = source
+    def fees(%{nonce: nonce}, from, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
     end
 
-    def reserve(source, token, amount) do
-      %{from: from, nonce: nonce} = source
+    def reserve(%{from: from, nonce: nonce}, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 201, token, amount})
     end
 
-    def burn(source, from, token, amount) do
-      %{nonce: nonce} = source
+    def expiry(%{from: from, nonce: nonce}, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {nil, nonce, from, 202, token, amount})
+    end
+
+    def burn(%{nonce: nonce}, from, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 300, token, amount})
     end
 
-    def lock(source, to, token, amount) do
-      %{id: from, nonce: nonce} = source
+    def lock(%{id: from, nonce: nonce}, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 301, token, amount})
     end
 
-    def unlock(source, to, token, amount) do
-      %{id: from, nonce: nonce} = source
+    def unlock(%{id: from, nonce: nonce}, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 302, token, amount})
     end
 
@@ -83,17 +76,18 @@ defmodule RegPay do
     end
   else
     def init, do: :ok
-    def coinbase(_, _, _, _), do: :ok
-    def reload(_, _, _), do: :ok
-    def payment(_, _, _, _, _), do: :ok
-    def refund(_, _, _, _, _), do: :ok
-    def fees(_, _, _, _, _), do: :ok
-    def reserve(_, _, _), do: :ok
-    def burn(_, _, _, _), do: :ok
-    def lock(_, _, _, _), do: :ok
-    def unlock(_, _, _, _), do: :ok
-    def reward(_, _, _), do: :ok
-    def jackpot(_, _, _), do: :ok
+    def coinbase(_, _, _, _), do: true
+    def reload(_, _, _), do: true
+    def payment(_, _, _, _, _), do: true
+    def refund(_, _, _, _, _), do: true
+    def expiry(_, _, _), do: true
+    def fees(_, _, _, _, _), do: true
+    def reserve(_, _, _), do: true
+    def burn(_, _, _, _), do: true
+    def lock(_, _, _, _), do: true
+    def unlock(_, _, _, _), do: true
+    def reward(_, _, _), do: true
+    def jackpot(_, _, _), do: true
   end
 
   def commit(nil, _), do: nil

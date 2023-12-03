@@ -94,39 +94,48 @@ defmodule Ippan.TxHandler do
 
       return = apply(mod, fun, [source | var!(args)])
 
-      case deferred do
-        false ->
-          [
-            deferred,
-            [
-              var!(hash),
-              var!(type),
-              var!(from),
-              var!(nonce),
-              var!(args),
-              [var!(body), var!(signature)],
-              var!(size)
-            ],
-            return
-          ]
+      case return do
+        :error ->
+          raise IppanError, "Invalid returned value"
 
-        _true ->
-          key = hd(var!(args)) |> to_string()
+        {:error, message} ->
+          raise IppanError, message
 
-          [
-            deferred,
-            [
-              var!(hash),
-              var!(type),
-              key,
-              var!(from),
-              var!(nonce),
-              var!(args),
-              [var!(body), var!(signature)],
-              var!(size)
-            ],
-            return
-          ]
+        _ ->
+          case deferred do
+            false ->
+              [
+                deferred,
+                [
+                  var!(hash),
+                  var!(type),
+                  var!(from),
+                  var!(nonce),
+                  var!(args),
+                  [var!(body), var!(signature)],
+                  var!(size)
+                ],
+                return
+              ]
+
+            _true ->
+              key = hd(var!(args)) |> to_string()
+
+              [
+                deferred,
+                [
+                  var!(hash),
+                  var!(type),
+                  key,
+                  var!(from),
+                  var!(nonce),
+                  var!(args),
+                  [var!(body), var!(signature)],
+                  var!(size)
+                ],
+                return
+              ]
+          end
       end
     end
   end
