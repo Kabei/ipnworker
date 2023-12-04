@@ -137,7 +137,7 @@ defmodule Ippan.Func.Coin do
 
     round_id = :persistent_term.get(:round)
     dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :balance)
+    tx = DetsPlux.tx(dets, :cache_balance)
     %{env: %{"reload.times" => times}} = Token.get(token_id)
 
     key = DetsPlux.tuple(account_id, token_id)
@@ -149,11 +149,16 @@ defmodule Ippan.Func.Coin do
 
     price = Map.get(env, "reload.price", 0)
 
-    if price != 0 do
-      BalanceTrace.new(account_id)
-      |> BalanceTrace.requires!(@token, price)
-      |> BalanceTrace.output()
-    end
+    ret =
+      if price != 0 do
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, price)
+        |> BalanceTrace.output()
+      end
+
+    DetsPlux.update_element(tx, key, 3, Map.put(map, "lastRound", round_id))
+
+    ret
   end
 
   def refund(%{id: account_id}, hash16)
