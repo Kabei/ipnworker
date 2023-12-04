@@ -146,10 +146,14 @@ defmodule Ippan.Funx.Coin do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     %{env: env} = Token.get(token_id)
+    %{"reload.amount" => value, "reload.times" => times} = env
 
     key = DetsPlux.tuple(account_id, token_id)
     b = {balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
-    last_reload = Map.get(map, "lastReload", 0)
+    init_reload = Map.get(map, "initReload", round_id)
+    last_reload = Map.get(map, "lastRound", round_id)
+    mult = calc_reload_mult(round_id, init_reload, last_reload, times)
+
     IO.inspect(env)
     IO.inspect(key)
     IO.inspect(b)
@@ -157,9 +161,9 @@ defmodule Ippan.Funx.Coin do
     IO.inspect(round_id)
 
     case env do
-      %{"expiry" => expiry, "reload.amount" => value, "reload.times" => times} ->
-        req_time = last_reload + times
-        IO.inspect("with expiry #{req_time}")
+      %{"expiry" => expiry} ->
+        # req_time = last_reload + times
+        # IO.inspect("with expiry #{req_time}")
 
         cond do
           round_id - last_reload > expiry ->
@@ -168,37 +172,24 @@ defmodule Ippan.Funx.Coin do
             DetsPlux.update_element(tx, key, 3, new_map)
             BalanceStore.expiry(account_id, key, token_id, -balance)
 
-          round_id >= req_time or last_reload == 0 ->
-            mult = calc_reload_mult(round_id, last_reload, times)
-            IO.inspect("mult = #{mult}")
+          true ->
+            new_map =
+              map
+              |> Map.put("initRound", init_reload)
+              |> Map.put("lastRound", last_reload)
 
-            new_map = Map.put(map, "lastReload", round_id)
             DetsPlux.update_element(tx, key, 3, new_map)
             BalanceStore.reload(key, token_id, value * mult)
-
-          true ->
-            IO.inspect("No case with exp")
-            :error
-        end
-
-      %{"reload.amount" => value, "reload.times" => times} ->
-        req_time = last_reload + times
-        IO.inspect("no expiry #{req_time}")
-
-        if round_id >= req_time or last_reload == 0 do
-          mult = calc_reload_mult(round_id, last_reload, times)
-          IO.inspect("mult = #{mult}")
-          new_map = Map.put(map, "lastReload", round_id)
-          DetsPlux.update_element(tx, key, 3, new_map)
-          BalanceStore.reload(key, token_id, value * mult)
-        else
-          IO.inspect("no case")
-          :error
         end
 
       _ ->
-        IO.inspect("no case")
-        :error
+        new_map =
+          map
+          |> Map.put("initRound", init_reload)
+          |> Map.put("lastRound", last_reload)
+
+        DetsPlux.update_element(tx, key, 3, new_map)
+        BalanceStore.reload(key, token_id, value * mult)
     end
   end
 
@@ -232,11 +223,10 @@ defmodule Ippan.Funx.Coin do
     BalanceStore.unlock(to, token_id, amount)
   end
 
-  def calc_reload_mult(_round_id, 0, _times), do: 1
+  defp calc_reload_mult(round_id, init_round, _last_round, _times) when round_id == init_round,
+    do: 1
 
-  def calc_reload_mult(round_id, req_time, times) do
-    result = div(round_id - req_time, times)
-
-    if result > 0, do: result, else: 1
+  defp calc_reload_mult(round_id, init_round, last_round, times) do
+    div(round_id - init_round, times) - div(last_round - init_round, times)
   end
 end
