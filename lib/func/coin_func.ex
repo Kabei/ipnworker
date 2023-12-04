@@ -242,7 +242,7 @@ defmodule Ippan.Func.Coin do
       not Token.has_prop?(token, "burn") ->
         raise IppanError, "Burn property missing"
 
-      EnvStore.owner() != account_id ->
+      token.owner != account_id ->
         raise IppanError, "Unauthorised"
 
       true ->
