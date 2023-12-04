@@ -169,7 +169,7 @@ defmodule Ippan.Funx.Coin do
             BalanceStore.expiry(account_id, key, token_id, -balance)
 
           round_id >= req_time or last_reload == 0 ->
-            mult = calc_reload_mult(round_id, req_time, times)
+            mult = calc_reload_mult(round_id, last_reload, times)
             IO.inspect("mult = #{mult}")
 
             new_map = Map.put(map, "lastReload", round_id)
@@ -186,7 +186,7 @@ defmodule Ippan.Funx.Coin do
         IO.inspect("no expiry #{req_time}")
 
         if round_id >= req_time or last_reload == 0 do
-          mult = calc_reload_mult(round_id, req_time, times)
+          mult = calc_reload_mult(round_id, last_reload, times)
           IO.inspect("mult = #{mult}")
           new_map = Map.put(map, "lastReload", round_id)
           DetsPlux.update_element(tx, key, 3, new_map)
@@ -232,9 +232,9 @@ defmodule Ippan.Funx.Coin do
     BalanceStore.unlock(to, token_id, amount)
   end
 
-  defp calc_reload_mult(_round_id, req_time, times) when req_time == times, do: 1
+  def calc_reload_mult(_round_id, 0, _times), do: 1
 
-  defp calc_reload_mult(round_id, req_time, times) do
+  def calc_reload_mult(round_id, req_time, times) do
     result = div(round_id - req_time, times)
 
     if result > 0, do: result, else: 1
