@@ -174,7 +174,7 @@ defmodule Ippan.Funx.Coin do
 
             new_map = Map.put(map, "lastReload", round_id)
             DetsPlux.update_element(tx, key, 3, new_map)
-            BalanceStore.reload(account_id, key, value * mult)
+            BalanceStore.reload(key, token_id, value * mult)
 
           true ->
             IO.inspect("No case with exp")
@@ -190,7 +190,7 @@ defmodule Ippan.Funx.Coin do
           IO.inspect("mult = #{mult}")
           new_map = Map.put(map, "lastReload", round_id)
           DetsPlux.update_element(tx, key, 3, new_map)
-          BalanceStore.reload(account_id, key, value * mult)
+          BalanceStore.reload(key, token_id, value * mult)
         else
           IO.inspect("no case")
           :error
