@@ -185,7 +185,7 @@ defmodule Ippan.Funx.Coin do
         req_time = last_reload + times
         IO.inspect("no expiry #{req_time}")
 
-        if round_id >= req_time do
+        if round_id >= req_time or last_reload == 0 do
           mult = calc_reload_mult(round_id, req_time, times)
           IO.inspect("mult = #{mult}")
           new_map = Map.put(map, "lastReload", round_id)
