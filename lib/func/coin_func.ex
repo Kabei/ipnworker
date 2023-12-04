@@ -130,8 +130,7 @@ defmodule Ippan.Func.Coin do
   def reload(%{id: account_id}, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    %{env: env, props: props} =
-      Token.get(token_id)
+    %{env: env, props: props} = Token.get(token_id)
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
@@ -156,7 +155,7 @@ defmodule Ippan.Func.Coin do
         |> BalanceTrace.output()
       end
 
-    DetsPlux.update_element(tx, key, 3, Map.put(map, "lastRound", round_id))
+    DetsPlux.update_element(tx, key, 3, Map.put(map, "lastReload", round_id))
 
     ret
   end
