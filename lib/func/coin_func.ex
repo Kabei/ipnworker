@@ -135,6 +135,18 @@ defmodule Ippan.Func.Coin do
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
+    round_id = :persistent_term.get(:round)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    %{env: %{"reload.times" => times}} = Token.get(token_id)
+
+    key = DetsPlux.tuple(account_id, token_id)
+    {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    last_reload = Map.get(map, "lastReload", 0)
+    req_time = last_reload + times
+
+    if round_id < req_time, do: raise(IppanError, "It's already recharged")
+
     price = Map.get(env, "reload.price", 0)
 
     if price != 0 do
