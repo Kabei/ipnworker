@@ -125,20 +125,20 @@ defmodule Ippan.Funx.Coin do
     multisend(source, token_id, outputs)
   end
 
+  def burn(source = %{id: account_id}, token_id, amount) do
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    supply = TokenSupply.new(token_id)
+
+    BalanceStore.burn(account_id, token_id, amount)
+  end
+
   def burn(source, to, token_id, amount) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     supply = TokenSupply.new(token_id)
 
     BalanceStore.burn(to, token_id, amount)
-  end
-
-  def drop(source = %{id: account_id}, token_id, amount) do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :balance)
-    supply = TokenSupply.new(token_id)
-
-    BalanceStore.burn(account_id, token_id, amount)
   end
 
   def reload(source = %{id: account_id, round: round_id}, token_id) do

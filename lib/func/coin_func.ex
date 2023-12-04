@@ -203,6 +203,21 @@ defmodule Ippan.Func.Coin do
     end
   end
 
+  def burn(%{id: account_id}, token_id, amount) when is_integer(amount) and amount > 0 do
+    db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(token_id)
+
+    cond do
+      not Token.has_prop?(token, "burn") ->
+        raise IppanError, "Burn property missing"
+
+      true ->
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(token_id, amount)
+        |> BalanceTrace.output()
+    end
+  end
+
   def burn(%{id: account_id}, to, token_id, amount) when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
@@ -216,21 +231,6 @@ defmodule Ippan.Func.Coin do
 
       true ->
         BalanceTrace.new(to)
-        |> BalanceTrace.requires!(token_id, amount)
-        |> BalanceTrace.output()
-    end
-  end
-
-  def drop(%{id: account_id}, token_id, amount) when is_integer(amount) and amount > 0 do
-    db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(token_id)
-
-    cond do
-      not Token.has_prop?(token, "drop") ->
-        raise IppanError, "Drop property missing"
-
-      true ->
-        BalanceTrace.new(account_id)
         |> BalanceTrace.requires!(token_id, amount)
         |> BalanceTrace.output()
     end
