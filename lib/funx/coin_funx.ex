@@ -148,11 +148,11 @@ defmodule Ippan.Funx.Coin do
     %{env: env} = Token.get(token_id)
 
     key = DetsPlux.tuple(account_id, token_id)
-    {balance, map} = DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
-    last_reload = Map.get(map, "lastReload", round_id)
+    {balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    last_reload = Map.get(map, "lastReload", 0)
 
     case env do
-      %{"reload.amount" => value, "reload.times" => times, "expiry" => expiry} ->
+      %{"expiry" => expiry, "reload.amount" => value, "reload.times" => times} ->
         req_time = last_reload + times
 
         cond do
@@ -161,8 +161,8 @@ defmodule Ippan.Funx.Coin do
             DetsPlux.update_element(tx, key, 3, new_map)
             BalanceStore.expiry(account_id, key, token_id, -balance)
 
-          round_id > req_time ->
-            mult = calc_reload_mult(round_id, last_reload, req_time, times)
+          round_id >= req_time ->
+            mult = calc_reload_mult(round_id, req_time, times)
 
             new_map = Map.put(map, "lastReload", round_id)
             DetsPlux.update_element(tx, key, 3, new_map)
@@ -175,10 +175,11 @@ defmodule Ippan.Funx.Coin do
       %{"reload.amount" => value, "reload.times" => times} ->
         req_time = last_reload + times
 
-        if round_id > req_time do
-          mult = calc_reload_mult(round_id, last_reload, req_time, times)
+        if round_id >= req_time do
+          mult = calc_reload_mult(round_id, req_time, times)
 
-          DetsPlux.update_element(tx, key, 3, map)
+          new_map = Map.put(map, "lastReload", round_id)
+          DetsPlux.update_element(tx, key, 3, new_map)
           BalanceStore.reload(account_id, key, value * mult)
         else
           :error
@@ -219,7 +220,9 @@ defmodule Ippan.Funx.Coin do
     BalanceStore.unlock(to, token_id, amount)
   end
 
-  defp calc_reload_mult(round_id, last_reload, req_time, times) do
-    if last_reload > 0, do: div(round_id - req_time, times), else: 1
+  def calc_reload_mult(_round_id, req_time, times) when req_time == times, do: 1
+
+  def calc_reload_mult(round_id, req_time, times) do
+    div(round_id - req_time, times)
   end
 end

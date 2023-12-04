@@ -3,6 +3,7 @@ defmodule RegPay do
   # 0. Coinbase
   # 1. Round Reward
   # 2. Jackpot
+  # 3. Reload
   # 100. Pay
   # 101. Refund
   # 200. Fees
