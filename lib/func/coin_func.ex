@@ -224,8 +224,8 @@ defmodule Ippan.Func.Coin do
     token = Token.get(token_id)
 
     cond do
-      not Token.has_prop?(token, "burn") ->
-        raise IppanError, "Burn property missing"
+      not Token.has_prop?(token, "drop") ->
+        raise IppanError, "Drop property missing"
 
       true ->
         BalanceTrace.new(account_id)

@@ -11,6 +11,7 @@ defmodule RegPay do
   # 300. Burn
   # 301. lock
   # 302. unlock
+  # 303. drop coins
 
   @app Mix.Project.config()[:app]
   @history Application.compile_env(@app, :history)
@@ -44,7 +45,7 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
-    def fees(%{nonce: nonce}, from, to, token, amount) do
+    def fees(%{id: from, nonce: nonce}, _from, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
     end
 
@@ -53,11 +54,15 @@ defmodule RegPay do
     end
 
     def expiry(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {nil, nonce, from, 202, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 202, token, amount})
     end
 
-    def burn(%{nonce: nonce}, from, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 300, token, amount})
+    def drop(%{id: from, nonce: nonce}, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 303, token, amount})
+    end
+
+    def burn(%{id: from, nonce: nonce}, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 300, token, amount})
     end
 
     def lock(%{id: from, nonce: nonce}, to, token, amount) do
@@ -84,6 +89,7 @@ defmodule RegPay do
     def expiry(_, _, _), do: true
     def fees(_, _, _, _, _), do: true
     def reserve(_, _, _), do: true
+    def drop(_, _, _), do: true
     def burn(_, _, _, _), do: true
     def lock(_, _, _, _), do: true
     def unlock(_, _, _, _), do: true

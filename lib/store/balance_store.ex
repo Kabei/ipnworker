@@ -100,6 +100,17 @@ defmodule BalanceStore do
     end
   end
 
+  defmacro drop(account, token, amount) do
+    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
+      key = DetsPlux.tuple(account, token)
+      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      DetsPlux.update_counter(var!(tx), key, {2, -amount})
+      TokenSupply.subtract(var!(supply), amount)
+
+      RegPay.drop(var!(source), token, amount)
+    end
+  end
+
   defmacro burn(account, token, amount) do
     quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
       key = DetsPlux.tuple(account, token)
