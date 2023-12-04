@@ -220,9 +220,9 @@ defmodule Ippan.Funx.Coin do
     BalanceStore.unlock(to, token_id, amount)
   end
 
-  def calc_reload_mult(_round_id, req_time, times) when req_time == times, do: 1
+  defp calc_reload_mult(_round_id, req_time, times) when req_time == times, do: 1
 
-  def calc_reload_mult(round_id, req_time, times) do
+  defp calc_reload_mult(round_id, req_time, times) do
     div(round_id - req_time, times)
   end
 end
