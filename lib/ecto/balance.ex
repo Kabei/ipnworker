@@ -52,6 +52,7 @@ defmodule Ippan.Ecto.Balance do
     Enum.map(results, fn x ->
       IO.inspect(x)
       token = Token.get(x.token)
+      IO.inspect(token)
       map = Map.take(token, @token_fields)
 
       Map.merge(x, map)
