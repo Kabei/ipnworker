@@ -49,13 +49,14 @@ defmodule Ippan.Ecto.Balance do
   defp data(results, %{"extra" => _}) do
     db_ref = :persistent_term.get(:main_conn)
 
-    Enum.map(results, fn x ->
-      IO.inspect(x)
+    Enum.filter(results, fn
+      %{token: nil} -> false
+      %{token: _token} -> true
+    end)
+    |> Enum.map(fn x ->
       token = Token.get(x.token)
-      IO.inspect(token)
-      map = Map.take(token, @token_fields)
 
-      Map.merge(x, map)
+      Map.merge(x, Map.take(token, @token_fields))
       |> MapUtil.drop_nils()
     end)
   end
