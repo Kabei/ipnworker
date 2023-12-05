@@ -50,6 +50,7 @@ defmodule Ippan.Ecto.Balance do
     db_ref = :persistent_term.get(:main_conn)
 
     Enum.map(results, fn x ->
+      IO.inspect(x)
       token = Token.get(x.token)
       map = Map.take(token, @token_fields)
 
