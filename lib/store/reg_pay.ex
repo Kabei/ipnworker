@@ -62,7 +62,7 @@ defmodule RegPay do
     end
 
     def burn(%{id: from, nonce: nonce}, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 300, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 300, token, -amount})
     end
 
     def lock(%{id: from, nonce: nonce}, to, token, amount) do
