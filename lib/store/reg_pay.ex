@@ -34,7 +34,7 @@ defmodule RegPay do
     end
 
     def reload(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {nil, nonce, from, 3, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 3, token, amount})
     end
 
     def payment(%{nonce: nonce}, from, to, token, amount) do
@@ -50,15 +50,15 @@ defmodule RegPay do
     end
 
     def reserve(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 201, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 201, token, -amount})
     end
 
     def expiry(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 202, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 202, token, -amount})
     end
 
     def drop(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 303, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 303, token, -amount})
     end
 
     def burn(%{id: from, nonce: nonce}, to, token, amount) do
@@ -66,7 +66,7 @@ defmodule RegPay do
     end
 
     def lock(%{id: from, nonce: nonce}, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 301, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 301, token, -amount})
     end
 
     def unlock(%{id: from, nonce: nonce}, to, token, amount) do
