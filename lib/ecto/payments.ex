@@ -96,6 +96,14 @@ defmodule Ippan.Ecto.Payments do
     where(query, [p], p.from == ^address or p.to == ^address)
   end
 
+  defp filter_while(query, %{"in" => address}) do
+    where(query, [p], p.to == ^address and p.amount > 0)
+  end
+
+  defp filter_while(query, %{"out" => address}) do
+    where(query, [p], p.to == ^address and p.amount < 0)
+  end
+
   defp filter_while(query, %{"from" => address, "nonce" => nonce}) do
     where(query, [p], p.from == ^address and p.nonce == ^nonce)
   end

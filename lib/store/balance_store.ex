@@ -113,11 +113,7 @@ defmodule BalanceStore do
 
   defmacro burn(account, token, amount) do
     quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
-      IO.inspect("BURN")
-      IO.inspect(token)
-      IO.inspect(amount)
       key = DetsPlux.tuple(account, token)
-      IO.inspect(key)
       DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
       DetsPlux.update_counter(var!(tx), key, {2, -amount})
       TokenSupply.subtract(var!(supply), amount)
