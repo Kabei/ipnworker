@@ -9,6 +9,7 @@ defmodule Ippan.ClusterNodes do
   @token Application.compile_env(@app, :token)
   @pubsub :pubsub
   @history Application.compile_env(@app, :history)
+  @maintenance Application.compile_env(@app, :maintenance)
 
   use Network,
     app: @app,
@@ -230,8 +231,8 @@ defmodule Ippan.ClusterNodes do
     data = [round_id, winner, amount]
     :done = Sqlite.step("insert_jackpot", data)
     BalanceStore.income(dets, tx, winner, @token, amount)
-    supply = TokenSupply.new(@token)
-    TokenSupply.add(supply, amount)
+    supply = TokenSupply.jackpot()
+    TokenSupply.put(supply, 0)
 
     if pg_conn do
       RegPay.jackpot(winner, @token, amount)
@@ -261,7 +262,7 @@ defmodule Ippan.ClusterNodes do
   defp run_maintenance(0, _), do: nil
 
   defp run_maintenance(round_id, db_ref) do
-    if rem(round_id, 25_000) == 0 do
+    if rem(round_id, @maintenance) == 0 do
       Sqlite.step("expiry_refund", [round_id])
       Sqlite.step("expiry_domain", [round_id])
     end

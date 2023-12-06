@@ -20,6 +20,7 @@ defmodule Ipnworker.NetworkRoutes do
     "blockchain_version" => Application.compile_env(@app, :version),
     "decode_extension" => Application.compile_env(@app, :decode_extension),
     "note_max_size" => Application.compile_env(@app, :note_max_size),
+    "maintenance" => Application.compile_env(@app, :maintenance),
     "max_tx_amount" => Application.compile_env(@app, :max_tx_amount),
     "message_max_size" => Application.compile_env(@app, :message_max_size),
     "message_timeout" => Application.compile_env(@app, :message_timeout),
