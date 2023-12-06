@@ -14,7 +14,7 @@ defmodule Ippan.Ecto.Block do
     field(:height, :integer)
     field(:hash, :binary)
     field(:prev, :binary)
-    field(:hashfile, :binary)
+    field(:filehash, :binary)
     field(:signature, :binary)
     field(:round, :integer)
     field(:timestamp, :integer)
@@ -25,7 +25,7 @@ defmodule Ippan.Ecto.Block do
     field(:vsn, :integer)
   end
 
-  @select ~w(id creator height hash prev hashfile signature round timestamp count rejected size status vsn)a
+  @select ~w(id creator height hash prev filehash signature round timestamp count rejected size status vsn)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -118,12 +118,12 @@ defmodule Ippan.Ecto.Block do
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [b], asc: b.id)
   defp sort(query, _), do: order_by(query, [b], desc: b.id)
 
-  defp fun(x = %{hash: hash, prev: prev, hashfile: hashfile, signature: signature}) do
+  defp fun(x = %{hash: hash, prev: prev, filehash: filehash, signature: signature}) do
     %{
       x
       | hash: Utils.encode16(hash),
         prev: Utils.encode16(prev),
-        hashfile: Utils.encode16(hashfile),
+        filehash: Utils.encode16(filehash),
         signature: Utils.encode64(signature)
     }
   end

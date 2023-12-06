@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
   "height" BIGINT NOT NULL,
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
-  "hashfile" BYTEA,
+  "filehash" BYTEA,
   "signature" BYTEA,
   "round" BIGINT NOT NULL,
   "timestamp" BIGINT,

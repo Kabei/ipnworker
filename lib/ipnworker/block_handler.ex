@@ -19,7 +19,7 @@ defmodule Ippan.BlockHandler do
         "count" => count,
         "creator" => creator_id,
         "hash" => hash,
-        "hashfile" => hashfile,
+        "filehash" => filehash,
         "height" => height,
         "hostname" => hostname,
         "prev" => prev,
@@ -50,10 +50,10 @@ defmodule Ippan.BlockHandler do
         filestat.size > @max_block_size or filestat.size != size ->
           raise IppanError, "Invalid block size"
 
-        hash != Block.compute_hash(creator_id, height, prev, hashfile, timestamp) ->
+        hash != Block.compute_hash(creator_id, height, prev, filehash, timestamp) ->
           raise(IppanError, "Invalid block hash")
 
-        hashfile != hash_file(output_path) ->
+        filehash != hash_file(output_path) ->
           raise(IppanError, "Hash block file is invalid")
 
         Cafezinho.Impl.verify(signature, hash, pubkey) != :ok ->
