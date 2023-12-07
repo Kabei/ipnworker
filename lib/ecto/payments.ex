@@ -67,8 +67,14 @@ defmodule Ippan.Ecto.Payments do
       IO.inspect(x)
       token = Token.get(x.token)
 
-      Map.merge(x, Map.take(token, @token_fields))
+      IO.inspect(token)
+
+      r = Map.merge(x, Map.take(token, @token_fields))
       |> MapUtil.drop_nils()
+
+      IO.inspect(r)
+
+      r
     end)
   end
 
