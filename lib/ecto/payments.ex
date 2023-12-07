@@ -20,7 +20,7 @@ defmodule Ippan.Ecto.Payments do
   end
 
   @select ~w(from nonce to round type token amount)a
-  @token_fields ~w(avatar env decimal props symbol)a
+  @token_fields ~w(decimal symbol)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
