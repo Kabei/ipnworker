@@ -52,6 +52,21 @@ defmodule Ippan.Ecto.Payments do
     select(query, [p], map(p, @select))
   end
 
+  defp data(results, _) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    Enum.filter(results, fn
+      %{token: nil} -> false
+      %{token: _token} -> true
+    end)
+    |> Enum.map(fn x ->
+      token = Token.get(x.token)
+
+      Map.merge(x, Map.take(token, @token_fields))
+      |> MapUtil.drop_nils()
+    end)
+  end
+
   defp filter_range(query, %{"round" => id}) do
     where(query, [p], p.round == ^id)
   end
