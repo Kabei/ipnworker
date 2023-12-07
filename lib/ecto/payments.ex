@@ -64,6 +64,7 @@ defmodule Ippan.Ecto.Payments do
       %{token: _token} -> true
     end)
     |> Enum.map(fn x ->
+      IO.inspect(x)
       token = Token.get(x.token)
 
       Map.merge(x, Map.take(token, @token_fields))
