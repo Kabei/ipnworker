@@ -1,9 +1,11 @@
 defmodule Ippan.Ecto.Payments do
   use Ecto.Schema
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3, join: 5]
-  alias Ippan.{Ecto.Round, Utils}
+  alias Ippan.{Ecto.Round, Token, Utils}
   alias Ipnworker.Repo
   alias __MODULE__
+  require Token
+  require Sqlite
 
   @primary_key false
   @schema_prefix "history"
@@ -18,6 +20,7 @@ defmodule Ippan.Ecto.Payments do
   end
 
   @select ~w(from nonce to round type token amount)a
+  @token_fields ~w(avatar env decimal props symbol)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
@@ -32,6 +35,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_select(params)
     |> sort(params)
     |> Repo.all()
+    |> data(params)
   end
 
   defp filter_select(query, %{"times" => _}) do
