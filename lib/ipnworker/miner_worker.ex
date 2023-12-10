@@ -86,7 +86,7 @@ defmodule MinerWorker do
       e ->
         # delete player
         Validator.delete(creator_id)
-        ClusterNodes.broadcast(%{"event" => "validator.leave", "data" => creator_id})
+        PubSub.broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
         b = Block.cancel(block, round_id, 1)
         :done = Block.insert(Block.to_list(b))
 
