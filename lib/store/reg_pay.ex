@@ -8,6 +8,7 @@ defmodule RegPay do
   # 101. Refund
   # 200. Fees
   # 201. Reserve
+  # 202. Expired
   # 300. Burn
   # 301. lock
   # 302. unlock
@@ -53,7 +54,7 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 201, token, -amount})
     end
 
-    def expiry(%{id: from, nonce: nonce}, token, amount) do
+    def expired(%{id: from, nonce: nonce}, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 202, token, -amount})
     end
 

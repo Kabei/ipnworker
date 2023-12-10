@@ -142,14 +142,14 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro expiry(account, key, token, value) do
+  defmacro expired(account, key, token, value) do
     quote bind_quoted: [account: account, key: key, value: value, token: token],
           location: :keep do
       DetsPlux.update_element(var!(tx), key, 2, -value)
       supply = TokenSupply.new(token)
       TokenSupply.subtract(supply, value)
 
-      RegPay.expiry(var!(source), token, value)
+      RegPay.expired(var!(source), token, value)
     end
   end
 
