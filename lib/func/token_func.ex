@@ -140,7 +140,7 @@ defmodule Ippan.Func.Token do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      Enum.all?(props, fn elem -> elem in props_def end) == false ->
+      Enum.any?(props, fn elem -> elem in props_def end) ->
         raise IppanError, "Invalid token property"
 
       true ->
