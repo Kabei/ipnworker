@@ -10,7 +10,7 @@ defmodule Ippan.Func.Validator do
   @max_validators Application.compile_env(@app, :max_validators)
   @max_fees 1_000_000_000_000
 
-  def new(
+  def join(
         %{id: account_id},
         hostname,
         port,
@@ -123,11 +123,68 @@ defmodule Ippan.Func.Validator do
     end
   end
 
-  def delete(%{id: account_id}, id) do
+  def leave(%{id: account_id}, id) do
     db_ref = :persistent_term.get(:main_conn)
 
     unless Validator.owner?(id, account_id) do
       raise IppanError, "Invalid owner"
+    end
+  end
+
+  def env_set(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        _name,
+        _value
+      ) do
+    db_ref = :persistent_term.get(:main_conn)
+    validator = Validator.get(id)
+
+    cond do
+      size > 1024 ->
+        raise IppanError, "Invalid tx size"
+
+      validator.owner != account_id ->
+        raise IppanError, "Invalid owner"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
+    end
+  end
+
+  def env_delete(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        name
+      ) do
+    db_ref = :persistent_term.get(:main_conn)
+    validator = Validator.get(id)
+
+    cond do
+      validator.owner != account_id ->
+        raise IppanError, "Invalid owner"
+
+      not Map.has_key?(validator.env, name) ->
+        raise IppanError, "#{name} not exists"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
     end
   end
 end

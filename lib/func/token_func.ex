@@ -108,4 +108,132 @@ defmodule Ippan.Func.Token do
         :ok
     end
   end
+
+  def prop_add(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        prop
+      ) do
+    db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(id)
+    props = if(is_list(prop), do: prop, else: [prop])
+    props_def = Token.props()
+
+    cond do
+      is_nil(token) ->
+        raise IppanError, "Token #{id} not exists"
+
+      token.owner != account_id ->
+        raise IppanError, "Invalid owner"
+
+      Enum.all?(props, fn elem -> elem in props_def end) ->
+        raise IppanError, "Invalid token property"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
+    end
+  end
+
+  def prop_drop(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        prop
+      ) do
+    db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(id)
+    props = if(is_list(prop), do: prop, else: [prop])
+    token_props = token.props
+
+    cond do
+      is_nil(token) ->
+        raise IppanError, "Token #{id} not exists"
+
+      token.owner != account_id ->
+        raise IppanError, "Invalid owner"
+
+      Enum.all?(props, fn elem -> elem in token_props end) ->
+        raise IppanError, "Property not exists into #{id}"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
+    end
+  end
+
+  def env_set(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        name,
+        value
+      ) do
+    db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(id)
+
+    cond do
+      size > 1024 ->
+        raise IppanError, "Invalid tx size"
+
+      token.owner != account_id ->
+        raise IppanError, "Invalid owner"
+
+      true ->
+        if name in ["reload.amount", "reload.times", "expiry"] and not is_integer(value) and
+             value > 0 do
+          raise(IppanError, "Invalid value")
+        end
+
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
+    end
+  end
+
+  def env_delete(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        id,
+        name
+      ) do
+    db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(id)
+
+    cond do
+      token.owner != account_id ->
+        raise IppanError, "Invalid owner"
+
+      not Map.has_key?(token.env, name) ->
+        raise IppanError, "#{name} not exists"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
+    end
+  end
 end
