@@ -185,7 +185,7 @@ defmodule Ippan.Func.Token do
     end
   end
 
-  def env_set(
+  def env_put(
         %{
           id: account_id,
           size: size,
@@ -194,7 +194,8 @@ defmodule Ippan.Func.Token do
         id,
         name,
         value
-      ) do
+      )
+      when byte_size(name) in 1..30 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(id)
 
@@ -230,7 +231,8 @@ defmodule Ippan.Func.Token do
         },
         id,
         name
-      ) do
+      )
+      when is_binary(name) do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(id)
 

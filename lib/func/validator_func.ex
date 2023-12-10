@@ -131,16 +131,17 @@ defmodule Ippan.Func.Validator do
     end
   end
 
-  def env_set(
+  def env_put(
         %{
           id: account_id,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
         id,
-        _name,
+        name,
         _value
-      ) do
+      )
+      when byte_size(name) in 1..30 do
     db_ref = :persistent_term.get(:main_conn)
     validator = Validator.get(id)
 
