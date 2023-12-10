@@ -49,7 +49,17 @@ defmodule Ippan.Func.Token do
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_any(:opts, Token.props())
-        |> MapUtil.validate_map(:env)
+
+        env = Map.get(map_filter, :env)
+
+        if is_map(env) do
+          for {name, value} <- env do
+            if name in ["reload.amount", "reload.times", "expiry"] and not is_integer(value) and
+                 value > 0 do
+              raise(IppanError, "Invalid value")
+            end
+          end
+        end
 
         BalanceTrace.new(account_id)
         |> BalanceTrace.requires!(@token, price)

@@ -1,7 +1,7 @@
 defmodule MinerWorker do
   use GenServer
   require RegPay
-  alias Ippan.{Block, TxHandler, Validator, Wallet}
+  alias Ippan.{Block, ClusterNodes, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
   require Sqlite
   require TxHandler
@@ -86,6 +86,9 @@ defmodule MinerWorker do
       e ->
         # delete player
         Validator.delete(creator_id)
+        ClusterNodes.broadcast(%{"event" => "validator.leave", "data" => creator_id})
+        b = Block.cancel(block, round_id, 1)
+        :done = Block.insert(Block.to_list(b))
 
         Logger.error(Exception.format(:error, e, __STACKTRACE__))
         # IO.puts("Error occurred at #{__ENV__.file}:#{__ENV__.line}")
