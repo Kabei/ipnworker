@@ -148,8 +148,8 @@ defmodule Ippan.Funx.Coin do
     %{env: env} = Token.get(token_id)
     %{"reload.amount" => value, "reload.times" => times} = env
 
-    key = DetsPlux.tuple(account_id, token_id)
-    {balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    target = DetsPlux.tuple(account_id, token_id)
+    {balance, map} = DetsPlux.get_cache(dets, tx, target, {0, %{}})
     init_reload = Map.get(map, "initReload", round_id)
     last_reload = Map.get(map, "lastReload", round_id)
     mult = calc_reload_mult(round_id, init_reload, last_reload, times)
@@ -160,8 +160,8 @@ defmodule Ippan.Funx.Coin do
           round_id - last_reload > expiry ->
             IO.inspect("EXPIRY")
             new_map = Map.put(map, "lastReload", round_id)
-            DetsPlux.update_element(tx, key, 3, new_map)
-            BalanceStore.expired(account_id, key, token_id, -balance)
+            DetsPlux.update_element(tx, target, 3, new_map)
+            BalanceStore.expired(target, token_id, balance)
 
           true ->
             new_map =
@@ -169,8 +169,8 @@ defmodule Ippan.Funx.Coin do
               |> Map.put("initReload", init_reload)
               |> Map.put("lastReload", round_id)
 
-            DetsPlux.update_element(tx, key, 3, new_map)
-            BalanceStore.reload(key, token_id, value * mult)
+            DetsPlux.update_element(tx, target, 3, new_map)
+            BalanceStore.reload(target, token_id, value * mult)
         end
 
       _ ->
@@ -179,8 +179,8 @@ defmodule Ippan.Funx.Coin do
           |> Map.put("initReload", init_reload)
           |> Map.put("lastReload", round_id)
 
-        DetsPlux.update_element(tx, key, 3, new_map)
-        BalanceStore.reload(key, token_id, value * mult)
+        DetsPlux.update_element(tx, target, 3, new_map)
+        BalanceStore.reload(target, token_id, value * mult)
     end
   end
 
