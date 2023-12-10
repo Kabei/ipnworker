@@ -1,7 +1,7 @@
 defmodule MinerWorker do
   use GenServer
   require RegPay
-  alias Ippan.{Block, ClusterNodes, TxHandler, Validator, Wallet}
+  alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
   require Sqlite
   require TxHandler
