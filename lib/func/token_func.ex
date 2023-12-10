@@ -202,6 +202,9 @@ defmodule Ippan.Func.Token do
       size > 1024 ->
         raise IppanError, "Invalid tx size"
 
+      map_size(token.env) >= 10 ->
+        raise IppanError, "Invalid token variables map size"
+
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 

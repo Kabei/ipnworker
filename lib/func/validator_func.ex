@@ -148,6 +148,9 @@ defmodule Ippan.Func.Validator do
       size > 1024 ->
         raise IppanError, "Invalid tx size"
 
+      map_size(validator.env) >= 10 ->
+        raise IppanError, "Invalid variables map size"
+
       validator.owner != account_id ->
         raise IppanError, "Invalid owner"
 
