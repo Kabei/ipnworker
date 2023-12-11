@@ -145,7 +145,7 @@ defmodule BalanceStore do
   defmacro expired(target, token, value) do
     quote bind_quoted: [target: target, value: value, token: token],
           location: :keep do
-      DetsPlux.update_element(var!(tx), target, 2, -value)
+      DetsPlux.update_counter(var!(tx), target, 2, -value)
       supply = TokenSupply.new(token)
       TokenSupply.subtract(supply, value)
 
