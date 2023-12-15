@@ -35,12 +35,12 @@ defmodule Ippan.BlockHandler do
       file_exists = File.exists?(output_path)
 
       unless file_exists do
-        :ok = Download.from(remote_url, output_path, @max_block_size)
+        :ok = Download.await(remote_url, output_path, @max_block_size)
       else
         {:ok, filestat} = File.stat(output_path)
 
         if filestat.size != size do
-          :ok = Download.from(remote_url, output_path, @max_block_size)
+          :ok = Download.await(remote_url, output_path, @max_block_size)
         end
       end
 
