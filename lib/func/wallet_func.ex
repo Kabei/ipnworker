@@ -22,7 +22,7 @@ defmodule Ippan.Func.Wallet do
       id != account_id ->
         raise IppanError, "Invalid sender"
 
-      validator_id == validator.id ->
+      validator_id != validator.id ->
         raise IppanError, "Invalid validator"
 
       sig_type not in 0..2 ->
