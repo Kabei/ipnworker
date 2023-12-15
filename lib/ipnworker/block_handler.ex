@@ -87,7 +87,7 @@ defmodule Ippan.BlockHandler do
 
           ets = :ets.new(:temp, [:set])
 
-          IO.inspect("before hash duplic")
+          IO.inspect("before check hash duplic")
 
           values =
             Enum.reduce(messages, [], fn [body, signature], acc ->
@@ -110,12 +110,18 @@ defmodule Ippan.BlockHandler do
 
           :ets.delete(ets)
 
+          IO.inspect("after check hash duplic")
+
           if count != Enum.count(values) do
             raise IppanError, "Invalid block messages count"
           end
 
+          IO.inspect("before export")
+
           export_path =
             Path.join(:persistent_term.get(:decode_dir), Block.decode_path(creator_id, height))
+
+          IO.inspect(export_path)
 
           :ok =
             File.write(
