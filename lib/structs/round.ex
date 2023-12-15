@@ -240,4 +240,14 @@ defmodule Ippan.Round do
       end
     end
   end
+
+  defmacro fetch_all(starts, limit, offset) do
+    quote bind_quoted: [starts: starts, limit: limit, offset: offset], location: :keep do
+      Sqlite.fetch_all("get_rounds", [starts, limit, offset])
+      |> case do
+        nil -> []
+        data -> Enum.map(data, fn x -> Ippan.Round.list_to_map(x) end)
+      end
+    end
+  end
 end

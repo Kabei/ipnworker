@@ -25,7 +25,7 @@ defmodule Ippan.Funx.Wallet do
         wdets = DetsPlux.get(:wallet)
         wtx = DetsPlux.tx(:wallet)
         DetsPlux.get_cache(wdets, wtx, from)
-        DetsPlux.update_element(wtx, from, 2, validator_id)
+        DetsPlux.update_element(wtx, from, 3, validator_id)
     end
   end
 end
