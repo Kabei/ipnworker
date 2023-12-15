@@ -34,6 +34,10 @@ defmodule Ippan.BlockHandler do
       output_path = Block.block_path(creator_id, height)
       file_exists = File.exists?(output_path)
 
+      IO.inspect(remote_url)
+      IO.inspect(output_path)
+      IO.inspect(file_exists)
+
       unless file_exists do
         :ok = Download.await(remote_url, output_path, @max_block_size)
       else
