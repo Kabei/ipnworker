@@ -118,8 +118,7 @@ defmodule Ippan.BlockHandler do
 
           IO.inspect("before export")
 
-          export_path =
-            Path.join(:persistent_term.get(:decode_dir), Block.decode_path(creator_id, height))
+          export_path = Block.decode_path(creator_id, height)
 
           IO.inspect(export_path)
 
