@@ -48,6 +48,7 @@ defmodule Ippan.BlockHandler do
         end
       end
 
+      IO.inspect("stats")
       {:ok, filestat} = File.stat(output_path)
 
       cond do
@@ -67,8 +68,11 @@ defmodule Ippan.BlockHandler do
           raise(IppanError, "Invalid block version")
 
         true ->
+          IO.inspect("File.read")
           {:ok, content} = File.read(output_path)
           %{"vsn" => vsn, "data" => messages} = decode_file!(content)
+
+          IO.inspect("Version")
 
           if vsn != version do
             raise(IppanError, "Invalid blockfile version")
@@ -82,6 +86,8 @@ defmodule Ippan.BlockHandler do
           validator = Validator.get(creator_id)
 
           ets = :ets.new(:temp, [:set])
+
+          IO.inspect("before hash duplic")
 
           values =
             Enum.reduce(messages, [], fn [body, signature], acc ->
@@ -102,11 +108,11 @@ defmodule Ippan.BlockHandler do
             end)
             |> Enum.reverse()
 
+          :ets.delete(ets)
+
           if count != Enum.count(values) do
             raise IppanError, "Invalid block messages count"
           end
-
-          :ets.delete(ets)
 
           export_path =
             Path.join(:persistent_term.get(:decode_dir), Block.decode_path(creator_id, height))
