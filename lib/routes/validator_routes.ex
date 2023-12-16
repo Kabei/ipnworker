@@ -22,6 +22,20 @@ defmodule Ipnworker.ValidatorRoutes do
     |> send_json()
   end
 
+  head "/:id" do
+    case Validator.exists?(id) do
+      true -> send_resp(conn, 200, "")
+      false -> send_resp(conn, 204, "")
+    end
+  end
+
+  head "/hostname/:hostname" do
+    case Validator.exists_host?(hostname) do
+      true -> send_resp(conn, 200, "")
+      false -> send_resp(conn, 204, "")
+    end
+  end
+
   match _ do
     send_resp(conn, 404, "Not found")
   end

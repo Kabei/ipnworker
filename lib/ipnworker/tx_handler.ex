@@ -259,7 +259,7 @@ defmodule Ippan.TxHandler do
            hash,
            type,
            account_id,
-           validator_id,
+           validator,
            nonce,
            args,
            size
@@ -274,12 +274,12 @@ defmodule Ippan.TxHandler do
             round: var!(round_id),
             size: size,
             type: type,
-            validator: validator_id
+            validator: validator
           }
 
           apply(module, fun, [source | args])
 
-        {_block_and_tx_hash, fun} when is_function(fun) ->
+        {_block_and_tx_hash, fun} ->
           fun.()
       end)
 

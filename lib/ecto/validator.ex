@@ -20,6 +20,29 @@ defmodule Ippan.Ecto.Validator do
     |> fun()
   end
 
+  def exists?(id) do
+    db_ref = :persistent_term.get(:main_ro)
+    Validator.exists?(id)
+  end
+
+  def exists_host?(hostname) do
+    q =
+      from(@table)
+      |> where([v], v.hostnmae == ^hostname)
+      |> select([v], v.id)
+
+    {sql, args} =
+      Repo.to_sql(:all, q)
+
+    db_ro = :persistent_term.get(:main_ro)
+
+    case Sqlite.query(db_ro, sql, args) do
+      {:ok, []} -> false
+      {:ok, _results} -> true
+      _ -> false
+    end
+  end
+
   def all(params) do
     q =
       from(@table)
