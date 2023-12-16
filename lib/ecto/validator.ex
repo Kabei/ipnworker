@@ -28,7 +28,7 @@ defmodule Ippan.Ecto.Validator do
   def exists_host?(hostname) do
     q =
       from(@table)
-      |> where([v], v.hostnmae == ^hostname)
+      |> where([v], v.hostname == ^hostname)
       |> select([v], v.id)
 
     {sql, args} =
