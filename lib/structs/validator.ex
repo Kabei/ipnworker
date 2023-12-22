@@ -1,4 +1,5 @@
 defmodule Ippan.Validator do
+  require Logger
   alias Ippan.Utils
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
@@ -178,7 +179,8 @@ defmodule Ippan.Validator do
       Sqlite.step("delete_validator", [id])
 
       if id == :persistent_term.get(:vid) do
-        Ippan.Validator.put_self(nil)
+        Logger.warning("I have left the network")
+        System.halt()
       end
     end
   end
