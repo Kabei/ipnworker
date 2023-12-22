@@ -87,7 +87,7 @@ defmodule RegPay do
     def reload(_, _, _), do: true
     def payment(_, _, _, _, _), do: true
     def refund(_, _, _, _, _), do: true
-    def expiry(_, _, _), do: true
+    def expired(_, _, _), do: true
     def fees(_, _, _, _, _), do: true
     def reserve(_, _, _), do: true
     def drop(_, _, _), do: true
