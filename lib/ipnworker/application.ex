@@ -7,6 +7,7 @@ defmodule Ipnworker.Application do
 
   @impl true
   def start(_type, _args) do
+    check_install()
     start_node()
     make_folders()
     load_keys()
@@ -28,15 +29,17 @@ defmodule Ipnworker.Application do
     Supervisor.start_link(children, opts)
   end
 
+  defp check_install do
+    {_, 0} = System.cmd("git", ["version"])
+  end
+
   defp start_node do
     vid =
       System.get_env("VID") || raise IppanStartUpError, "variable VID (ValidatorID) is missing"
 
-    name = System.get_env("NAME") || raise IppanStartUpError, "variable NAME is missing"
     miner = System.get_env("MINER") || raise IppanStartUpError, "variable MINER is missing"
 
     :persistent_term.put(:vid, :erlang.binary_to_integer(vid))
-    :persistent_term.put(:name, name)
     :persistent_term.put(:miner, miner)
   end
 
