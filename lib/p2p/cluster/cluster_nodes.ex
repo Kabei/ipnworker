@@ -208,7 +208,7 @@ defmodule Ippan.ClusterNodes do
 
       # :persistent_term.put(:round, round_id)
 
-      fun = :persistent_term.get(:last_fun)
+      fun = :persistent_term.get(:last_fun, nil)
 
       if fun do
         :persistent_term.erase(:last_fun)
