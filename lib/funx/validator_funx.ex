@@ -45,6 +45,8 @@ defmodule Ippan.Funx.Validator do
             :error
 
           _ ->
+            next_id = Validator.next_id()
+
             validator =
               %Validator{
                 id: next_id,
@@ -64,7 +66,7 @@ defmodule Ippan.Funx.Validator do
             Validator.insert(Validator.to_list(validator))
 
             if next_id == :persistent_term.get(:vid) do
-              Validator.self(validator)
+              Validator.put_self(validator)
             end
 
             event = %{"event" => "validator.new", "data" => Validator.to_text(validator)}
@@ -96,8 +98,8 @@ defmodule Ippan.Funx.Validator do
         Validator.update(map, id)
 
         if id == :persistent_term.get(:vid) do
-          v = Ippan.Validator.get(id)
-          Ippan.Validator.self(v)
+          v = Map.merge(:persistent_term.get(:validator), map)
+          Validator.put_self(v)
         end
 
         # transform to text
