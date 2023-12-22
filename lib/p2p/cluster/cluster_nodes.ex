@@ -43,9 +43,11 @@ defmodule Ippan.ClusterNodes do
         nil ->
           :ok
 
-        node ->
+        node_raw ->
+          node = Node.list_to_map(node_raw)
+
           spawn(fn ->
-            connect(Node.list_to_map(node))
+            connect(node)
 
             if @history do
               NodeSync.start_link(local_round_id)
