@@ -8,6 +8,7 @@ defmodule Ippan.BlockHandler do
   require TxHandler
   require Sqlite
   require Validator
+  require Logger
 
   @app Mix.Project.config()[:app]
   @version Application.compile_env(@app, :version)
@@ -129,8 +130,8 @@ defmodule Ippan.BlockHandler do
             )
       end
     rescue
-      error ->
-        IO.inspect(error)
+      err ->
+        Logger.error(Exception.format(:error, err, __STACKTRACE__))
         :error
     end
   end
