@@ -207,6 +207,13 @@ defmodule Ippan.ClusterNodes do
       run_maintenance(round_id, db_ref)
 
       # :persistent_term.put(:round, round_id)
+
+      fun = :persistent_term.get(:last_fun)
+
+      if fun do
+        :persistent_term.erase(:last_fun)
+        fun.()
+      end
     end
   end
 

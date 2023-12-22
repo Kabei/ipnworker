@@ -9,7 +9,7 @@ defmodule Ippan.Func.Env do
       byte_size(bin) > 4096 ->
         raise IppanError, "Value is too long"
 
-      :persistent_term.get(:owner) != account_id ->
+      EnvStore.owner() != account_id ->
         raise IppanError, "Unauthorized"
 
       true ->
