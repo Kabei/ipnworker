@@ -134,6 +134,18 @@ defmodule Ippan.Func.Coin do
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
+    acc_type = Map.get(env, "reload.accType")
+
+    if acc_type do
+      cond do
+        acc_type == "anon" and not Match.wallet_address?(account_id) ->
+          raise IppanError, "Your account type is not allowed"
+
+        acc_type == "public" and not Match.username?(account_id) ->
+          raise IppanError, "Your account type is not allowed"
+      end
+    end
+
     round_id = :persistent_term.get(:round)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :cache_balance)
