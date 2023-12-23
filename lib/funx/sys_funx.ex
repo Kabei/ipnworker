@@ -32,6 +32,9 @@ defmodule Ippan.Funx.Sys do
                 "get&clean" ->
                   System.cmd("mix", ["deps.clean", "--unlock", "--unused"])
                   System.cmd("mix", ["deps.get"])
+
+                nil ->
+                  :ok
               end
 
               # compile
@@ -39,8 +42,11 @@ defmodule Ippan.Funx.Sys do
                 "force" ->
                   System.cmd("mix", ["compile", "--force"])
 
-                _ ->
+                "normal" ->
                   System.cmd("mix", ["compile"])
+
+                _ ->
+                  :ok
               end
 
             _ ->
@@ -63,7 +69,7 @@ defmodule Ippan.Funx.Sys do
 
           :persistent_term.put(:last_fun, fun)
 
-        nil ->
+        _ ->
           :ok
       end
     else
