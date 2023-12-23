@@ -131,7 +131,7 @@ defmodule Ippan.Func.Token do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(id)
     props = if(is_list(prop), do: prop, else: [prop])
-    token_props = Token.props()
+    props_allowed = Token.props()
 
     cond do
       is_nil(token) ->
@@ -140,8 +140,14 @@ defmodule Ippan.Func.Token do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      Enum.any?(token_props, fn elem -> elem in props end) ->
+      Enum.all?(props, fn elem -> not String.valid?(elem) end) ->
+        raise IppanError, "Property is not string valid"
+
+      Enum.any?(props, fn elem -> elem not in props_allowed end) ->
         raise IppanError, "Invalid token property"
+
+      Enum.any?(token.props, fn elem -> elem in props end) ->
+        raise IppanError, "Token property already exists"
 
       true ->
         fees = Utils.calc_fees(fa, fb, size)
