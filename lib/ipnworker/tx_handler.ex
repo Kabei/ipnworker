@@ -177,6 +177,7 @@ defmodule Ippan.TxHandler do
             var!(from),
             var!(nonce),
             var!(args),
+            var!(signature),
             var!(size)
           ]
 
@@ -190,6 +191,7 @@ defmodule Ippan.TxHandler do
             var!(from),
             var!(nonce),
             var!(args),
+            var!(signature),
             var!(size)
           ]
       end

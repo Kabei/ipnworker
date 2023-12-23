@@ -119,7 +119,7 @@ defmodule MinerWorker do
     cref = :counters.new(1, [])
 
     Enum.each(transactions, fn
-      [hash, type, from, nonce, args, size] ->
+      [hash, type, from, nonce, args, sig, size] ->
         result =
           case Wallet.gte_nonce(nonce_dets, nonce_tx, from, nonce) do
             :error ->
@@ -143,14 +143,14 @@ defmodule MinerWorker do
             size,
             @cjson,
             @json.encode!(args),
-            nil
+            sig
           ])
           |> IO.inspect()
         end
 
         :counters.add(cref, 1, 1)
 
-      [hash, type, arg_key, from, nonce, args, size] ->
+      [hash, type, arg_key, from, nonce, args, sig, size] ->
         ix = :counters.get(cref, 1)
 
         result =
@@ -174,7 +174,7 @@ defmodule MinerWorker do
             size,
             @cjson,
             @json.encode!(args),
-            nil
+            sig
           ])
           |> IO.inspect()
         end
