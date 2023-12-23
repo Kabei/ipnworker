@@ -64,8 +64,7 @@ defmodule Ippan.Funx.Sys do
 
           :persistent_term.put(:last_fun, fun)
 
-        _ ->
-          :ok
+        _ -> :ok
       end
     end
   end
