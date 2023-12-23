@@ -84,13 +84,12 @@ defmodule MinerWorker do
       {:reply, :ok, state}
     rescue
       err ->
+        Logger.error(Exception.format(:error, err, __STACKTRACE__))
         # delete player
         Validator.delete(creator_id)
         PubSub.broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
         b = Block.cancel(block, round_id, 1)
         :done = Block.insert(Block.to_list(b))
-
-        Logger.error(Exception.format(:error, err, __STACKTRACE__))
         {:reply, :error, state}
     after
       IO.inspect("Bstep 4")
