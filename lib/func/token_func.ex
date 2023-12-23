@@ -20,7 +20,7 @@ defmodule Ippan.Func.Token do
         opts \\ %{}
       )
       when byte_size(id) <= 10 and byte_size(name) <= 100 and decimal in 0..18 and
-             byte_size(symbol) in 0..5 and max_supply >= 0 and max_supply <= @max_number do
+             byte_size(symbol) in 1..5 and max_supply >= 0 and max_supply <= @max_number do
     map_filter =
       opts
       |> Map.take(Token.optionals())
@@ -131,7 +131,7 @@ defmodule Ippan.Func.Token do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(id)
     props = if(is_list(prop), do: prop, else: [prop])
-    props_def = Token.props()
+    token_props = Token.props()
 
     cond do
       is_nil(token) ->
@@ -140,7 +140,7 @@ defmodule Ippan.Func.Token do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      Enum.any?(props, fn elem -> elem in props_def end) ->
+      Enum.any?(token_props, fn elem -> elem in props end) ->
         raise IppanError, "Invalid token property"
 
       true ->

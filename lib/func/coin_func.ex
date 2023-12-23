@@ -158,7 +158,7 @@ defmodule Ippan.Func.Coin do
     last_reload = Map.get(map, "lastReload", 0)
     req_time = last_reload + times
 
-    if last_reload != 0 and round_id < req_time, do: raise(IppanError, "It's already recharged")
+    if last_reload > 0 and round_id < req_time, do: raise(IppanError, "It's already recharged #{round_id} #{req_time}")
 
     price = Map.get(env, "reload.price", 0)
 

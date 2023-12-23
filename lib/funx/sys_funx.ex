@@ -26,9 +26,12 @@ defmodule Ippan.Funx.Sys do
                 "get" ->
                   System.cmd("mix", ["deps.get"])
 
-                "get & clean" ->
-                  System.cmd("mix", ["deps.get"])
+                "clean" ->
                   System.cmd("mix", ["deps.clean", "--unlock", "--unused"])
+
+                "get&clean" ->
+                  System.cmd("mix", ["deps.clean", "--unlock", "--unused"])
+                  System.cmd("mix", ["deps.get"])
               end
 
               # compile
