@@ -32,6 +32,12 @@ defmodule Ippan.TxHandler do
           end
 
           {pk, sig_type}
+
+        3 ->
+          {pk, v, sig_type} =
+            DetsPlux.get_cache(dets, tx, var!(from))
+
+          {pk, sig_type}
       end
     end
   end
