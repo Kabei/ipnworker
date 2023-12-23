@@ -33,8 +33,9 @@ defmodule Ippan.TxHandler do
 
           {pk, sig_type}
 
+        # get from variable not redirect
         3 ->
-          {pk, v, sig_type} =
+          {pk, _v, sig_type} =
             DetsPlux.get_cache(dets, tx, var!(from))
 
           {pk, sig_type}
