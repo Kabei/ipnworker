@@ -131,7 +131,7 @@ defmodule Ippan.Func.Token do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(id)
     props = if(is_list(prop), do: prop, else: [prop])
-    props_allowed = Token.props()
+    allowed = Token.props()
 
     cond do
       is_nil(token) ->
@@ -143,7 +143,7 @@ defmodule Ippan.Func.Token do
       Enum.all?(props, fn elem -> not String.valid?(elem) end) ->
         raise IppanError, "Property is not string valid"
 
-      Enum.any?(props, fn elem -> elem not in props_allowed end) ->
+      Enum.any?(props, fn elem -> elem not in allowed end) ->
         raise IppanError, "Invalid token property"
 
       Enum.any?(token.props, fn elem -> elem in props end) ->
@@ -170,7 +170,6 @@ defmodule Ippan.Func.Token do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(id)
     props = if(is_list(prop), do: prop, else: [prop])
-    token_props = token.props
 
     cond do
       is_nil(token) ->
@@ -179,7 +178,7 @@ defmodule Ippan.Func.Token do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      not Enum.all?(props, fn elem -> elem in token_props end) ->
+      not Enum.any?(token.props, fn elem -> elem in props end) ->
         raise IppanError, "Property not exists into #{id}"
 
       true ->
