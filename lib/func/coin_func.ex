@@ -1,4 +1,6 @@
 defmodule Ippan.Func.Coin do
+  require Ippan.Round
+  alias Ippan.Round
   alias Ippan.{Token, Utils}
   require Sqlite
   require BalanceStore
@@ -146,7 +148,7 @@ defmodule Ippan.Func.Coin do
       end
     end
 
-    round_id = :persistent_term.get(:round)
+    {round_id, _} = Round.last()
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :cache_balance)
     %{env: %{"reload.times" => times}} = Token.get(token_id)
