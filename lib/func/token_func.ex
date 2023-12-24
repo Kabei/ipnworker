@@ -54,7 +54,7 @@ defmodule Ippan.Func.Token do
 
         if is_map(env) do
           for {name, value} <- env do
-            if name in ["reload.amount", "reload.times", "expiry"] and not is_integer(value) and
+            if name in ["reload.amount", "reload.times", "reload.expiry"] and not is_integer(value) and
                  value > 0 do
               raise(IppanError, "Invalid value")
             end
@@ -215,7 +215,7 @@ defmodule Ippan.Func.Token do
         raise IppanError, "Invalid owner"
 
       true ->
-        if name in ["reload.amount", "reload.times", "expiry"] and not is_integer(value) and
+        if name in ["reload.amount", "reload.times", "reload.expiry"] and not is_integer(value) and
              value > 0 do
           raise(IppanError, "Invalid value")
         end
