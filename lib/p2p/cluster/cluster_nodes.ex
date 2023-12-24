@@ -91,14 +91,14 @@ defmodule Ippan.ClusterNodes do
   Create a new round. Received from a IPNCORE
   """
   def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
-    IO.inspect("handle 1")
+    # IO.inspect("handle 1")
     round = MapUtil.to_atoms(msg_round)
 
     unless node_syncing?(round) do
       if @history do
         pgid = PgStore.pool()
 
-        IO.inspect("handle 2")
+        # IO.inspect("handle 2")
 
         Postgrex.transaction(
           pgid,
@@ -130,7 +130,7 @@ defmodule Ippan.ClusterNodes do
         hostname,
         pg_conn
       ) do
-    IO.inspect("step 0")
+    # IO.inspect("step 0")
     db_ref = :persistent_term.get(:main_conn)
 
     unless Round.exists?(round_id) do
@@ -139,10 +139,10 @@ defmodule Ippan.ClusterNodes do
       balance_tx = DetsPlux.tx(:balance)
       # :persistent_term.put(:round, round_id)
 
-      IO.inspect(round.id)
+      IO.puts("##{round.id}")
 
       pool_pid = Process.whereis(:minerpool)
-      IO.inspect("step 1")
+      # IO.inspect("step 1")
       is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
       for block = %{"creator" => block_creator_id} <- blocks do
@@ -167,7 +167,7 @@ defmodule Ippan.ClusterNodes do
       end
       |> Task.await_many(:infinity)
 
-      IO.inspect("step 2")
+      # IO.inspect("step 2")
 
       TxHandler.run_deferred_txs()
 
@@ -182,7 +182,7 @@ defmodule Ippan.ClusterNodes do
         Sqlite.sync(db_ref)
       end
 
-      IO.inspect("step 3")
+      # IO.inspect("step 3")
       round_encode = Round.to_list(round)
       Round.insert(round_encode)
 
@@ -192,11 +192,17 @@ defmodule Ippan.ClusterNodes do
       RegPay.commit(pg_conn, round_id)
 
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
-      IO.inspect("step 4")
+      # IO.inspect("step 4")
 
       if @history do
         PgStore.insert_round(pg_conn, round_encode)
-        |> IO.inspect()
+        |> then(fn
+          {:ok, _} ->
+            :ok
+
+          err ->
+            IO.inspect(err)
+        end)
       end
 
       # Push event

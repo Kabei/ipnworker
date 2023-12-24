@@ -100,7 +100,7 @@ defmodule MinerWorker do
 
       if @history do
         PgStore.insert_block(pg_conn, b)
-        |> IO.inspect()
+        # |> IO.inspect()
       end
 
       # Push event
@@ -144,7 +144,7 @@ defmodule MinerWorker do
             @json.encode!(args),
             sig
           ])
-          |> IO.inspect()
+          # |> IO.inspect()
         end
 
         :counters.add(cref, 1, 1)
@@ -175,7 +175,7 @@ defmodule MinerWorker do
             @json.encode!(args),
             sig
           ])
-          |> IO.inspect()
+          # |> IO.inspect()
         end
 
         :counters.add(cref, 1, 1)
