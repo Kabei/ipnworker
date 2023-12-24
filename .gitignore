@@ -44,4 +44,4 @@ config/options.exs
 *.db
 *.cub
 *.log
-*.dets
+*.out
