@@ -153,12 +153,15 @@ defmodule Ippan.Func.Coin do
     tx = DetsPlux.tx(dets, :cache_balance)
     %{env: %{"reload.times" => times}} = Token.get(token_id)
 
+    if times < 60, do: raise(IppanError, "reload.times is lower 60")
+
     key = DetsPlux.tuple(account_id, token_id)
     {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
     last_reload = Map.get(map, "lastReload", 0)
     req_time = last_reload + times
 
-    if last_reload > 0 and round_id < req_time, do: raise(IppanError, "It's already recharged #{round_id} #{req_time}")
+    if last_reload > 0 and round_id < req_time,
+      do: raise(IppanError, "It's already recharged #{round_id} #{req_time}")
 
     price = Map.get(env, "reload.price", 0)
 
