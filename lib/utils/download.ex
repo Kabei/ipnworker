@@ -26,33 +26,53 @@ defmodule Download do
       { :ok, "/custom/absolute/file/path.db" }
 
   """
-
+  require Logger
   # 1 GB
   @max_file_size 1024 * 1024 * 1000
   @timeout 60_000
+  @retry 10
   @module __MODULE__
 
-  def await(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
+  def await(url, path, retry \\ @retry, max_file_size \\ @max_file_size, timeout \\ @timeout) do
     File.rm(path)
 
     Task.async(fn ->
-      with {:ok, file} <- create_file(path),
-           {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
-           {:ok, _pid} <- start_download(url, response_parsing_pid, path),
-           :ok <- wait_for_download(),
-           do: :ok
+      try_from(url, path, retry, max_file_size, timeout)
     end)
     |> Task.await(timeout)
   end
 
-  def from(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
-    File.rm(path)
+  defp try_from(_url, _path, 0, _max_file_size, _timeout) do
+    {:error, :many_retry}
+  end
 
-    with {:ok, file} <- create_file(path),
-         {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
-         {:ok, _pid} <- start_download(url, response_parsing_pid, path),
-         :ok <- wait_for_download(),
-         do: :ok
+  defp try_from(
+         url,
+         path,
+         retry,
+         max_file_size,
+         timeout
+       ) do
+    try do
+      with {:ok, file} <- create_file(path),
+           {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
+           {:ok, _pid} <- start_download(url, response_parsing_pid, path),
+           :ok <- wait_for_download() do
+        :ok
+      else
+        {:error, :file_size_is_too_big} ->
+          {:error, :file_size_is_too_big}
+
+        _ ->
+          Process.sleep(50)
+          try_from(url, path, retry - 1, max_file_size, timeout)
+      end
+    rescue
+      err ->
+        Logger.warning(Exception.format(:error, err, __STACKTRACE__))
+        Process.sleep(200)
+        try_from(url, path, retry, max_file_size, timeout)
+    end
   end
 
   defp create_file(path), do: File.open(path, [:write, :exclusive])
@@ -90,6 +110,7 @@ defmodule Download do
     end
   end
 
+  require Logger
   alias HTTPoison.{AsyncHeaders, AsyncStatus, AsyncChunk, AsyncEnd}
   require Logger
   @doc false
