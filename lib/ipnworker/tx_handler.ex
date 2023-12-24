@@ -73,7 +73,7 @@ defmodule Ippan.TxHandler do
   # (conn, stmts, hash, msg, signature, size, validator_id, validator)
   defmacro decode! do
     quote location: :keep do
-      %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} =
+      %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification, key: key_unique} =
         Funcs.lookup(var!(type))
 
       wallet_dets = DetsPlux.get(:wallet)
@@ -126,7 +126,14 @@ defmodule Ippan.TxHandler do
               ]
 
             _true ->
-              key = hd(var!(args)) |> to_string()
+              key =
+                case key_unique do
+                  1 ->
+                    var!(from)
+
+                  _ ->
+                    hd(var!(args)) |> to_string()
+                end
 
               [
                 deferred,
@@ -149,7 +156,7 @@ defmodule Ippan.TxHandler do
 
   defmacro decode_from_file! do
     quote location: :keep do
-      %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification} =
+      %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification, key: key_unique} =
         Funcs.lookup(var!(type))
 
       {wallet_pk, sig_type} =
@@ -189,7 +196,14 @@ defmodule Ippan.TxHandler do
           ]
 
         _true ->
-          key = hd(var!(args)) |> to_string()
+          key =
+            case key_unique do
+              1 ->
+                var!(from)
+
+              _ ->
+                hd(var!(args)) |> to_string()
+            end
 
           [
             var!(hash),
