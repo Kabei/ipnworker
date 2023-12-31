@@ -8,9 +8,9 @@ cpus=$(nproc)
 total_pids=2000000
 
 # if not defined
-if [ -z "$MIX_ENV" ]; then
-  export MIX_ENV=prod
-fi
+# if [ -z "$MIX_ENV" ]; then
+#   export MIX_ENV=prod
+# fi
 
 if [ "$MODE" = "iex" ]; then
     iex --erl "+A $cpus +P $total_pids" -S mix
