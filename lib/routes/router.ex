@@ -13,107 +13,110 @@ defmodule Ipnworker.Router do
   plug(:match)
   plug(:dispatch)
 
-  post "/v1/call" do
-    {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
+  if Application.compile_env(@app, :call, true) do
+    post "/v1/call" do
+      {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
-    case get_req_header(conn, "auth") do
-      [sig64] ->
-        hash = Blake3.hash(body)
-        signature = Fast64.decode64(sig64)
-        size = byte_size(body) + byte_size(signature)
-        [type, nonce, from | args] = @json.decode!(body)
-        from_nonce = {from, nonce}
-        has_from_nonce = :ets.insert_new(:hash, {from_nonce, nil})
+      case get_req_header(conn, "auth") do
+        [sig64] ->
+          hash = Blake3.hash(body)
+          signature = Fast64.decode64(sig64)
+          size = byte_size(body) + byte_size(signature)
+          [type, nonce, from | args] = @json.decode!(body)
+          from_nonce = {from, nonce}
+          has_from_nonce = :ets.insert_new(:hash, {from_nonce, nil})
 
-        try do
-          case has_from_nonce do
-            true ->
-              %{id: vid} =
-                validator =
-                :persistent_term.get(:validator) || raise IppanError, "Node is not available yet"
+          try do
+            case has_from_nonce do
+              true ->
+                %{id: vid} =
+                  validator =
+                  :persistent_term.get(:validator) ||
+                    raise IppanError, "Node is not available yet"
 
-              handle_result =
-                [deferred, msg, _return] = TxHandler.decode!()
+                handle_result =
+                  [deferred, msg, _return] = TxHandler.decode!()
 
-              dtx_key =
-                if deferred do
-                  [hash, type, key | _rest] = msg
+                dtx_key =
+                  if deferred do
+                    [hash, type, key | _rest] = msg
 
-                  case :ets.insert_new(:dhash, {{type, key}, hash}) do
-                    true ->
-                      {type, key}
+                    case :ets.insert_new(:dhash, {{type, key}, hash}) do
+                      true ->
+                        {type, key}
 
-                    false ->
-                      :ets.delete(:hash, from_nonce)
-                      tx = DetsPlux.tx(:nonce, :cache_nonce)
-                      Wallet.revert_nonce(tx, from)
-                      raise IppanError, "Deferred transaction already exists"
+                      false ->
+                        :ets.delete(:hash, from_nonce)
+                        tx = DetsPlux.tx(:nonce, :cache_nonce)
+                        Wallet.revert_nonce(tx, from)
+                        raise IppanError, "Deferred transaction already exists"
+                    end
                   end
+
+                miner_id = :persistent_term.get(:miner)
+
+                case ClusterNodes.call(miner_id, "new_msg", handle_result) do
+                  {:ok, %{"index" => index}} ->
+                    nonce_dets = DetsPlux.get(:nonce)
+                    nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
+                    DetsPlux.put(nonce_tx, from, nonce)
+
+                    json(%{
+                      "hash" => Base.encode16(hash, case: :lower),
+                      "index" => index
+                    })
+
+                  {:error, message} ->
+                    :ets.delete(:hash, from_nonce)
+
+                    if dtx_key do
+                      :ets.delete(:dhash, dtx_key)
+                    end
+
+                    case message do
+                      message when is_binary(message) ->
+                        send_resp(conn, 400, message)
+
+                      _ ->
+                        send_resp(conn, 503, "")
+                    end
                 end
 
-              miner_id = :persistent_term.get(:miner)
+              false ->
+                send_resp(conn, 400, "Transaction already exists")
+            end
+          rescue
+            e in IppanError ->
+              Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+              send_resp(conn, 400, e.message)
 
-              case ClusterNodes.call(miner_id, "new_msg", handle_result) do
-                {:ok, %{"index" => index}} ->
-                  nonce_dets = DetsPlux.get(:nonce)
-                  nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
-                  DetsPlux.put(nonce_tx, from, nonce)
+            e in IppanRedirectError ->
+              Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+              db_ref = :persistent_term.get(:main_conn)
 
-                  json(%{
-                    "hash" => Base.encode16(hash, case: :lower),
-                    "index" => index
-                  })
+              %{hostname: hostname} =
+                Validator.get(:erlang.binary_to_integer(e.message))
 
-                {:error, message} ->
-                  :ets.delete(:hash, from_nonce)
+              url = "https://#{hostname}#{conn.request_path}"
 
-                  if dtx_key do
-                    :ets.delete(:dhash, dtx_key)
-                  end
+              conn
+              |> put_resp_header("location", url)
+              |> send_resp(302, "")
 
-                  case message do
-                    message when is_binary(message) ->
-                      send_resp(conn, 400, message)
+            e in [FunctionClauseError, ArgumentError] ->
+              Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+              send_resp(conn, 400, "Invalid arguments")
 
-                    _ ->
-                      send_resp(conn, 503, "")
-                  end
-              end
-
-            false ->
-              send_resp(conn, 400, "Transaction already exists")
+            e ->
+              Logger.debug(Exception.format(:error, e, __STACKTRACE__))
+              send_resp(conn, 400, "Invalid operation")
+          after
+            if has_from_nonce, do: :ets.delete(:hash, from_nonce)
           end
-        rescue
-          e in IppanError ->
-            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-            send_resp(conn, 400, e.message)
 
-          e in IppanRedirectError ->
-            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-            db_ref = :persistent_term.get(:main_conn)
-
-            %{hostname: hostname} =
-              Validator.get(:erlang.binary_to_integer(e.message))
-
-            url = "https://#{hostname}#{conn.request_path}"
-
-            conn
-            |> put_resp_header("location", url)
-            |> send_resp(302, "")
-
-          e in [FunctionClauseError, ArgumentError] ->
-            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-            send_resp(conn, 400, "Invalid arguments")
-
-          e ->
-            Logger.debug(Exception.format(:error, e, __STACKTRACE__))
-            send_resp(conn, 400, "Invalid operation")
-        after
-          if has_from_nonce, do: :ets.delete(:hash, from_nonce)
-        end
-
-      _ ->
-        send_resp(conn, 400, "Signature missing")
+        _ ->
+          send_resp(conn, 400, "Signature missing")
+      end
     end
   end
 

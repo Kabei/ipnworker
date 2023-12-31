@@ -45,10 +45,12 @@ cd ipnworker
 echo "
 import Config
 
-# Node setup
+# History enable. (default: false)
 config :ipnworker, :history, true
-# Cluster API (Remote control)
+# Cluster API enable (Admin remote control)
 config :ipnworker, :remote, false
+# Call API enable (default: true)
+config :ipnworker, :call, true
 " > config/options.exs
 ```
 

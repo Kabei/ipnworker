@@ -49,9 +49,7 @@ defmodule Ippan.ClusterNodes do
           spawn(fn ->
             connect(node)
 
-            if @history do
-              NodeSync.start_link(local_round_id)
-            end
+            NodeSync.start_link(local_round_id)
           end)
       end
     end
