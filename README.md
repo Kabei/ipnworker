@@ -14,22 +14,23 @@ IPPAN blockchain transaction pre-verification node.
 * cargo 1.70
 * cmake 3.26
 * git 2.41.0
+* postgresql 15
 
 ## Installation 
 ### Generate env_file
 ```bash
 echo "
-NAME=miner
+NAME=worker1
 VID=<number>
 SECRET_KEY=<same-secret-key-from-ipncore>
 CLUSTER_KEY=<same-cluster-key-from-ipncore>
-MINER=miner@192.168.0.1
-PGHOST=localhost
-PGDATABASE=ippan
-PGUSER=kambei
+MINER=<name@hostname>
+PGHOST=<hostname>
+PGDATABASE=<database>
+PGUSER=<username>
 PGPASSWORD=<secret>
 DATA_DIR=/usr/src/data
-NODES=miner@192.168.0.1" > env_file
+NODES=<name@hostname>" > env_file
 ```
 
 ### Download and execute script
