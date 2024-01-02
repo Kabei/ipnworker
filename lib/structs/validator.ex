@@ -1,5 +1,4 @@
 defmodule Ippan.Validator do
-  require Logger
   alias Ippan.Utils
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
@@ -13,6 +12,7 @@ defmodule Ippan.Validator do
           avatar: String.t() | nil,
           fa: integer(),
           fb: integer(),
+          active: boolean(),
           failures: integer(),
           env: map(),
           created_at: non_neg_integer(),
@@ -32,6 +32,7 @@ defmodule Ippan.Validator do
     :fb,
     :created_at,
     :updated_at,
+    active: false,
     failures: 0,
     env: %{}
   ]
@@ -54,6 +55,7 @@ defmodule Ippan.Validator do
       x.avatar,
       x.fa,
       x.fb,
+      if(x.active == true, do: 1, else: 0),
       x.failures,
       CBOR.encode(x.env),
       x.created_at,
@@ -83,6 +85,7 @@ defmodule Ippan.Validator do
         avatar,
         fa,
         fb,
+        active,
         failures,
         env,
         created_at,
@@ -99,6 +102,7 @@ defmodule Ippan.Validator do
       net_pubkey: net_pubkey,
       fb: fb,
       fa: fa,
+      active: if(active == 1, do: true, else: false),
       failures: failures,
       env: :erlang.element(1, CBOR.Decoder.decode(env)),
       created_at: created_at,
@@ -115,7 +119,7 @@ defmodule Ippan.Validator do
     %{x | pubkey: Utils.encode64(pk), net_pubkey: Utils.encode64(npk)}
   end
 
-  def calc_price(next_id), do: (next_id + 1) * EnvStore.validator_price()
+  def calc_price(total), do: (total + 1) * EnvStore.validator_price()
 
   def put_self(v) do
     :persistent_term.put(:validator, v)
@@ -170,6 +174,14 @@ defmodule Ippan.Validator do
     quote bind_quoted: [map: map, id: id], location: :keep do
       :ets.delete(:validator, id)
       Sqlite.update("blockchain.validator", map, id: id)
+    end
+  end
+
+  defmacro put_active(id, active) do
+    quote bind_quoted: [id: id, active: active], location: :keep do
+      :ets.delete(:validator, id)
+      active = if active == true, do: 1, else: 0
+      Sqlite.update("blockchain.validator", %{"active" => active}, id: id)
     end
   end
 

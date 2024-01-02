@@ -123,6 +123,14 @@ defmodule Ippan.Func.Validator do
     end
   end
 
+  def active(%{id: account_id}, id, active) when is_boolean(active) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    unless Validator.owner?(id, account_id) do
+      raise IppanError, "Invalid owner"
+    end
+  end
+
   def leave(%{id: account_id}, id) do
     db_ref = :persistent_term.get(:main_conn)
 
