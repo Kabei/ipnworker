@@ -75,8 +75,7 @@ defmodule Ippan.ClusterClient do
           {:noreply, Map.put(new_state, :tRef, tRef), :hibernate}
 
         error ->
-          # IO.inspect("ERROR 2")
-          # IO.inspect(error)
+          # IO.inspect("ERROR 2 #{inspect(error)}")
           retry_connect(state, retry, error)
       end
     else
@@ -136,7 +135,7 @@ defmodule Ippan.ClusterClient do
   def handle_info({:tcp_closed, socket}, %{id: id} = state) do
     Logger.debug("tcp_closed | #{id}")
     @adapter.close(socket)
-    @node.on_disconnect(state)
+    @node.on_disconnect(state, 1)
     {:stop, :normal, state}
   end
 
