@@ -126,9 +126,16 @@ defmodule Ippan.Func.Validator do
   def active(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, active)
       when is_boolean(active) do
     db_ref = :persistent_term.get(:main_conn)
+    v = Validator.get(id)
 
     cond do
-      not Validator.owner?(id, account_id) ->
+      is_nil(v) ->
+        raise IppanError, "Validator #{id} not exists"
+
+      v.active == active ->
+        raise IppanError, "Property already has the same value"
+
+      v.owner != account_id ->
         raise IppanError, "Invalid owner"
 
       true ->
