@@ -123,11 +123,20 @@ defmodule Ippan.Func.Validator do
     end
   end
 
-  def active(%{id: account_id}, id, active) when is_boolean(active) do
+  def active(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, active)
+      when is_boolean(active) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless Validator.owner?(id, account_id) do
-      raise IppanError, "Invalid owner"
+    cond do
+      not Validator.owner?(id, account_id) ->
+        raise IppanError, "Invalid owner"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
     end
   end
 
