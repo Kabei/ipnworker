@@ -62,6 +62,12 @@ defmodule Ippan.ClusterNodes do
   end
 
   @impl Network
+  def exists?(id) do
+    db_ref = :persistent_term.get(:local_conn)
+    Node.exists?(id)
+  end
+
+  @impl Network
   def handle_request("verify_block", data, _state) do
     case BlockHandler.verify_file!(data) do
       :ok ->

@@ -30,12 +30,6 @@ defmodule Ippan.ClusterServer do
     {:continue, state}
   end
 
-  def handle_data("CLOSE", _socket, state) do
-    Logger.debug("close message")
-    ClusterNodes.on_disconnect(state, 0)
-    {:close, state}
-  end
-
   # event data | id method data
   def handle_data(packet, _socket, state) do
     ClusterNodes.on_message(packet, state)
@@ -53,7 +47,7 @@ defmodule Ippan.ClusterServer do
   @impl ThousandIsland.Handler
   def handle_shutdown(_socket, state) do
     Logger.debug("handle shutdown")
-    ClusterNodes.on_disconnect(state, 1)
+    ClusterNodes.on_disconnect(state, 0)
     {:close, state}
   end
 
