@@ -46,10 +46,10 @@ cd ipnworker
 echo "
 import Config
 
-# History enable. (default: false)
+# History mode enable. (default: false)
 config :ipnworker, :history, true
-# Cluster API enable (Admin remote control)
-config :ipnworker, :remote, false
+# Query API enable (default: true)
+config :ipnworker, :api, true
 # Call API enable (default: true)
 config :ipnworker, :call, true
 " > config/options.exs
@@ -58,11 +58,14 @@ config :ipnworker, :call, true
 ### History mode
 Allows write history of transactions in database remote
 ```Elixir
+# change in config/options.exs
 config :ipnworker, :history, true
 ```
 ## Run
 
 ```bash
+cp scripts/run.sh ./run.sh
+chmod +x run.sh
 ./run.sh
 ```
 ## Docker

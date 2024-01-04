@@ -9,11 +9,15 @@ defmodule Ipnworker.Router do
   @app Mix.Project.config()[:app]
   @json Application.compile_env(@app, :json)
   @max_size Application.compile_env(@app, :message_max_size)
+  # Enable
+  @api Application.compile_env(@app, :api, true)
+  @call Application.compile_env(@app, :call, true)
+  @admin Application.compile_env(@app, :admin, false)
 
   plug(:match)
   plug(:dispatch)
 
-  if Application.compile_env(@app, :call, true) do
+  if @call do
     post "/v1/call" do
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
@@ -147,22 +151,24 @@ defmodule Ipnworker.Router do
     end
   end
 
-  forward("/v1/dl", to: Ipnworker.FileRoutes)
-  forward("/v1/round", to: Ipnworker.RoundRoutes)
-  forward("/v1/block", to: Ipnworker.BlockRoutes)
-  forward("/v1/txs", to: Ipnworker.TxRoutes)
-  forward("/v1/payment", to: Ipnworker.PaymentsRoutes)
-  forward("/v1/validator", to: Ipnworker.ValidatorRoutes)
-  forward("/v1/token", to: Ipnworker.TokenRoutes)
-  forward("/v1/jackpot", to: Ipnworker.JackpotRoutes)
-  forward("/v1/domain", to: Ipnworker.DomainRoutes)
-  forward("/v1/dns", to: Ipnworker.DnsRoutes)
-  forward("/v1/network", to: Ipnworker.NetworkRoutes)
-  forward("/v1/account", to: Ipnworker.AccountRoutes)
-  forward("/v1/event", to: Ipnworker.EventRoutes)
-  # forward "/v1/snap", to: Ipnworker.SnapRoutes
+  if @api do
+    forward("/v1/dl", to: Ipnworker.FileRoutes)
+    forward("/v1/round", to: Ipnworker.RoundRoutes)
+    forward("/v1/block", to: Ipnworker.BlockRoutes)
+    forward("/v1/txs", to: Ipnworker.TxRoutes)
+    forward("/v1/payment", to: Ipnworker.PaymentsRoutes)
+    forward("/v1/validator", to: Ipnworker.ValidatorRoutes)
+    forward("/v1/token", to: Ipnworker.TokenRoutes)
+    forward("/v1/jackpot", to: Ipnworker.JackpotRoutes)
+    forward("/v1/domain", to: Ipnworker.DomainRoutes)
+    forward("/v1/dns", to: Ipnworker.DnsRoutes)
+    forward("/v1/network", to: Ipnworker.NetworkRoutes)
+    forward("/v1/account", to: Ipnworker.AccountRoutes)
+    forward("/v1/event", to: Ipnworker.EventRoutes)
+    # forward "/v1/snap", to: Ipnworker.SnapRoutes
+  end
 
-  if Application.compile_env(@app, :remote, false) do
+  if @admin do
     forward("/v1/cluster", to: Ipnworker.ClusterRoutes)
   end
 
