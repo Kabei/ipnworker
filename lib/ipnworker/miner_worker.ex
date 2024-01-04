@@ -131,6 +131,9 @@ defmodule MinerWorker do
         if @history do
           ix = :counters.get(cref, 1)
 
+          IO.inspect("result tx")
+          IO.inspect(result)
+
           PgStore.insert_tx(pg_conn, [
             from,
             nonce,
