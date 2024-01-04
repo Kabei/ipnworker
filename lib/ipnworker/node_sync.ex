@@ -44,7 +44,7 @@ defmodule Ipnworker.NodeSync do
 
       if diff > 0 do
         init_round = max(local_round_id, 0)
-        IO.puts("NodeSync starts from ##{init_round + 1}")
+        IO.puts("NodeSync starts from ##{init_round} to #{remote_round_id}")
         :ets.new(:sync, @ets_opts)
         :persistent_term.put(:node_sync, self())
 
@@ -79,7 +79,7 @@ defmodule Ipnworker.NodeSync do
           queue: ets_queue
         }
       ) do
-    if round_id > target_id do
+    if round_id < target_id do
       {:ok, new_rounds} =
         ClusterNodes.call(node_id, "get_rounds", %{
           "limit" => @offset,
