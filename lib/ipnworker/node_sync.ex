@@ -28,6 +28,7 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def init(_) do
+    :persistent_term.put(:status, :sync)
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
@@ -123,6 +124,7 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def terminate(_reason, %{queue: ets_queue}) do
+    :persistent_term.put(:status, :synced)
     :persistent_term.erase(:node_sync)
     :ets.delete(ets_queue)
   end

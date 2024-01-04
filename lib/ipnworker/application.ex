@@ -43,6 +43,7 @@ defmodule Ipnworker.Application do
     :persistent_term.put(:vid, :erlang.binary_to_integer(vid))
     :persistent_term.put(:name, name)
     :persistent_term.put(:miner, miner)
+    :persistent_term.put(:status, :startup)
   end
 
   defp load_keys do
