@@ -1,5 +1,5 @@
 defmodule Ipnworker.NodeSync do
-  use GenServer
+  use GenServer, restart: :trasient
   alias Ippan.{Node, ClusterNodes, Round}
   require Ippan.{Node, Round}
   require Sqlite
@@ -91,8 +91,6 @@ defmodule Ipnworker.NodeSync do
       build(round, hostname)
     end)
 
-    offset = length(new_rounds)
-
     if round_id >= target_id do
       if :ets.info(ets_queue, :size) > 0 do
         {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
@@ -100,9 +98,11 @@ defmodule Ipnworker.NodeSync do
         {:stop, :normal, state}
       end
     else
+      len = length(new_rounds)
+
       {
         :noreply,
-        %{state | offset: offset + offset, round: round_id + offset},
+        %{state | offset: offset + len, round: round_id + len},
         {:continue, :fetch}
       }
     end
