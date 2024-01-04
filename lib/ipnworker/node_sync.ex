@@ -129,7 +129,9 @@ defmodule Ipnworker.NodeSync do
     :ets.delete(ets_queue)
   end
 
-  def terminate(_reason, _state), do: :ok
+  def terminate(_reason, _state) do
+    :persistent_term.put(:status, :synced)
+  end
 
   def add_queue(round) do
     :ets.insert(:sync, {round.id, round})
