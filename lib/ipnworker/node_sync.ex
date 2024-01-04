@@ -134,14 +134,6 @@ defmodule Ipnworker.NodeSync do
   end
 
   defp build(round, hostname) do
-    pgid = PgStore.pool()
-
-    Postgrex.transaction(
-      pgid,
-      fn conn ->
-        ClusterNodes.build_round(round, hostname, conn)
-      end,
-      timeout: :infinity
-    )
+    GenServer.call(RoundBuilder, {:build, round, hostname, false})
   end
 end
