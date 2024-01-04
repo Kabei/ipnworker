@@ -59,7 +59,7 @@ defmodule Ipnworker.NodeSync do
            round: init_round,
            starts: local_round_id + 1,
            target: remote_round_id
-         }, {:continue, :init}}
+         }, {:continue, :fetch}}
       else
         IO.inspect("No Sync")
         {:stop, :normal}
@@ -69,7 +69,7 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def handle_continue(
-        :init,
+        :fetch,
         state = %{
           hostname: hostname,
           node: node_id,
@@ -101,14 +101,12 @@ defmodule Ipnworker.NodeSync do
         {:stop, :normal, state}
       end
     else
-      # {:noreply, %{state | offset: offset + @offset, round: round_id + @offset},
-      #  {:continue, :init}}
-      {:stop, :normal, state}
+      {
+        :noreply,
+        %{state | offset: offset + @offset, round: round_id + @offset},
+        {:continue, :fetch}
+      }
     end
-  end
-
-  def handle_continue(:init, state) do
-    {:stop, :normal, state}
   end
 
   def handle_continue({:next, :"$end_of_table"}, state) do
