@@ -41,7 +41,7 @@ defmodule Ippan.ClusterNodes do
         node_raw ->
           node = Node.list_to_map(node_raw)
 
-          spawn(fn -> connect(node) end)
+          spawn_link(fn -> connect(node) end)
       end
     end
   end
@@ -79,7 +79,9 @@ defmodule Ippan.ClusterNodes do
     end
 
     if node_id == :persistent_term.get(:miner) do
-      NodeSync.start_link()
+      spawn(fn ->
+        NodeSync.start_link()
+      end)
     end
   end
 
@@ -310,8 +312,12 @@ defmodule Ippan.ClusterNodes do
 
       pid ->
         case Process.alive?(pid) do
-          true -> :ets.insert(:sync, {round.id, round})
-          false -> false
+          true ->
+            :ets.insert(:sync, {round.id, round})
+
+          false ->
+            :persistent_term.erase(:node_sync)
+            false
         end
     end
   end
