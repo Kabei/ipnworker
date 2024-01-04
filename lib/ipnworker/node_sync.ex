@@ -95,8 +95,9 @@ defmodule Ipnworker.NodeSync do
         {:stop, :normal, state}
       end
     else
-      {:noreply, %{state | offset: offset + @offset, round: round_id + @offset},
-       {:continue, :init}}
+      # {:noreply, %{state | offset: offset + @offset, round: round_id + @offset},
+      #  {:continue, :init}}
+      {:stop, :normal, state}
     end
   end
 
