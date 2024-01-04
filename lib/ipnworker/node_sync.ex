@@ -17,7 +17,13 @@ defmodule Ipnworker.NodeSync do
   @opts timeout: 10_000, retry: 10
 
   def start_link do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+    case Process.whereis(__MODULE__) do
+      nil ->
+        GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+
+      pid ->
+        {:already_stated, pid}
+    end
   end
 
   @impl true
