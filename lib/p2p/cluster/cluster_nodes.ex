@@ -313,7 +313,7 @@ defmodule Ippan.ClusterNodes do
       pid ->
         case Process.alive?(pid) do
           true ->
-            :ets.insert(:sync, {round.id, round})
+            NodeSync.add_queue(round)
 
           false ->
             :persistent_term.erase(:node_sync)

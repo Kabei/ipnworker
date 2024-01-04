@@ -129,6 +129,10 @@ defmodule Ipnworker.NodeSync do
 
   def terminate(_reason, _state), do: :ok
 
+  def add_queue(round) do
+    :ets.insert(:sync, {round.id, round})
+  end
+
   defp build(round, hostname) do
     pgid = PgStore.pool()
 
