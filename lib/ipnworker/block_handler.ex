@@ -24,16 +24,17 @@ defmodule Ippan.BlockHandler do
         "height" => height,
         "hostname" => hostname,
         "prev" => prev,
-        "pubkey" => pubkey,
         "signature" => signature,
         "size" => size,
         "timestamp" => timestamp,
         "vsn" => version
       }) do
     try do
+      db_ref = :persistent_term.get(:main_conn)
       remote_url = Block.url(hostname, creator_id, height)
       output_path = Block.block_path(creator_id, height)
       file_exists = File.exists?(output_path)
+      %{pubkey: pubkey} = Validator.get(creator_id)
 
       IO.inspect(remote_url)
       IO.inspect(output_path)
