@@ -80,8 +80,6 @@ defmodule Ipnworker.NodeSync do
           queue: ets_queue
         }
       ) do
-    IO.inspect("round: ##{round_id}")
-
     {:ok, new_rounds} =
       ClusterNodes.call(node_id, "get_rounds", %{
         "limit" => @offset,
