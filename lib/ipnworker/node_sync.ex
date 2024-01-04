@@ -28,14 +28,13 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def init(_) do
-    IO.inspect("nodeSync: init")
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
     {local_round_id, _hash} = Round.last({-1, nil})
 
     if is_nil(node) do
-      IO.inspect("no init")
+      IO.puts("NodeSync no init")
       {:stop, :normal}
     else
       {:ok, {remote_round_id, _hash}} =
@@ -44,8 +43,8 @@ defmodule Ipnworker.NodeSync do
       diff = remote_round_id - local_round_id
 
       if diff > 0 do
-        IO.inspect("init sync")
         init_round = max(local_round_id, 0)
+        IO.puts("NodeSync starts from ##{init_round + 1}")
         :ets.new(:sync, @ets_opts)
         :persistent_term.put(:node_sync, self())
 
@@ -92,6 +91,8 @@ defmodule Ipnworker.NodeSync do
       build(round, hostname)
     end)
 
+    offset = length(new_rounds)
+
     if round_id >= target_id do
       if :ets.info(ets_queue, :size) > 0 do
         {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
@@ -101,7 +102,7 @@ defmodule Ipnworker.NodeSync do
     else
       {
         :noreply,
-        %{state | offset: offset + @offset, round: round_id + @offset},
+        %{state | offset: offset + offset, round: round_id + offset},
         {:continue, :fetch}
       }
     end
