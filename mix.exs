@@ -32,6 +32,15 @@ defmodule Ipnworker.MixProject do
     ]
   end
 
+  def package do
+    [
+      name: @app,
+      maintainers: ["Kambei Sapote"],
+      licenses: ["MIT"],
+      files: ["lib/*", "mix.exs", "README*", "LICENSE*"]
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
@@ -52,16 +61,6 @@ defmodule Ipnworker.MixProject do
       {:falcon, git: "https://kabei@github.com/kabei/falcon.git", branch: "master"},
       {:ntrukem, git: "https://kabei@github.com/kabei/ntrukem.git", branch: "master"},
       {:fast64, git: "https://kabei@github.com/kabei/fast64_elixir.git", branch: "master"}
-    ]
-  end
-
-  def package do
-    [
-      name: @app,
-      description: "IPPAN Worker",
-      maintainers: ["Kambei Sapote"],
-      licenses: ["MIT"],
-      files: ["lib/*", "mix.exs", "README*", "LICENSE*"]
     ]
   end
 
