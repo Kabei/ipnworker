@@ -75,7 +75,6 @@ See docker/README.md
 |Name|Default|
 |-|-|
 |Blockchain|IPPAN|
-|Block Time|5 seconds|
 |Native Token|IPN|
 |Block file Max size|10 MB|
 |Transaction Max size|8192 bytes|
