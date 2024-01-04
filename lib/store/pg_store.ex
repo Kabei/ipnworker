@@ -11,7 +11,7 @@ defmodule PgStore do
 
   @app Mix.Project.config()[:app]
   @json Application.compile_env(@app, :json)
-  # DB Pool connexions
+  # DB Pool connections
   @pool :pg_pool
   @repo Ipnworker.Repo
   @history Application.compile_env(@app, :history)
@@ -19,7 +19,9 @@ defmodule PgStore do
   def child_spec(_args) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start, []}
+      restart: :permanent,
+      start: {__MODULE__, :start, []},
+      type: :worker
     }
   end
 
@@ -52,20 +54,10 @@ defmodule PgStore do
     pid = pool()
 
     # Destroy all data
-
-    case Postgrex.query(pid, "ALTER SCHEMA history RENAME TO drop_history;", []) do
+    case Postgrex.query(pid, "DROP SCHEMA history CASCADE;", []) do
       {:ok, _} ->
-        case Postgrex.query(pid, "DROP SCHEMA drop_history CASCADE;", []) do
-          {:ok, _} ->
-            # Stop connection
-            stop(pid)
-            # Init connection
-            pid = start()
-            pid
-
-          error ->
-            error
-        end
+        # Restart connection
+        restart(pid)
 
       error ->
         error
@@ -134,9 +126,10 @@ defmodule PgStore do
     )
   end
 
-  def stop(pid) do
+  # Restart service
+  def restart(pid) do
     :persistent_term.erase(@pool)
-    GenServer.stop(pid)
+    GenServer.stop(pid, :normal)
   end
 
   defp init(pid, opts) do
