@@ -14,7 +14,7 @@ defmodule RoundBuilder do
   @history Application.compile_env(@app, :history)
   @maintenance Application.compile_env(@app, :maintenance)
 
-  def start_link(_) do
+  def start_link do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 

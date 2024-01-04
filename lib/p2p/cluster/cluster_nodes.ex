@@ -19,6 +19,7 @@ defmodule Ippan.ClusterNodes do
     sup: Ippan.ClusterSup
 
   def on_init(_) do
+    RoundBuilder.start_link()
     connect_to_miner()
   end
 
