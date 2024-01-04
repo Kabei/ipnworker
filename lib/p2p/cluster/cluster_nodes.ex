@@ -41,9 +41,7 @@ defmodule Ippan.ClusterNodes do
         node_raw ->
           node = Node.list_to_map(node_raw)
 
-          spawn_link(fn ->
-            connect(node)
-          end)
+          spawn(fn -> connect(node) end)
       end
     end
   end
