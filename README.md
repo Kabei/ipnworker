@@ -71,8 +71,8 @@ chmod +x run.sh
 ## Docker
 See docker/README.md
 
-## Settings
-|||
+## Config
+|Name|Default|
 |-|-|
 |Blockchain|IPPAN|
 |Block Time|5 seconds|
