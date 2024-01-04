@@ -35,9 +35,9 @@ NODES=<name@hostname>" > env_file
 
 ### Download and execute script
 ```bash
-curl https://github.com/kabei/releases/download/0.5/ipncore-install.sh \
-&& chmod +x ipncore-install.sh \
-&& ./ipncore-install.sh
+curl https://github.com/kabei/releases/download/0.5/ipnworker-install.sh \
+&& chmod +x ipnworker-install.sh \
+&& ./ipnworker-install.sh
 ```
 
 ```bash
