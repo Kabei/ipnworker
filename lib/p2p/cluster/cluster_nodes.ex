@@ -28,11 +28,6 @@ defmodule Ippan.ClusterNodes do
   defp connect_to_miner do
     db_ref = :persistent_term.get(:main_conn)
     test = System.get_env("test")
-    {local_round_id, _hash} = Round.last({-1, nil})
-
-    # if local_round_id != -1 do
-    #   :persistent_term.put(:round, local_round_id)
-    # end
 
     if is_nil(test) do
       IO.inspect("here go")
@@ -46,10 +41,8 @@ defmodule Ippan.ClusterNodes do
         node_raw ->
           node = Node.list_to_map(node_raw)
 
-          spawn(fn ->
+          spawn_link(fn ->
             connect(node)
-
-            NodeSync.start_link(local_round_id)
           end)
       end
     end
@@ -65,6 +58,31 @@ defmodule Ippan.ClusterNodes do
   def exists?(id) do
     db_ref = :persistent_term.get(:local_conn)
     Node.exists?(id)
+  end
+
+  @impl Network
+  def on_connect(
+        node_id,
+        %{
+          socket: _socket,
+          sharedkey: _sharedkey,
+          hostname: _hostname,
+          net_pubkey: _net_pubkey
+        } =
+          map
+      ) do
+    client_conn = Map.has_key?(map, :opts)
+    Logger.debug("On connect #{node_id} opts: #{client_conn}")
+
+    if client_conn do
+      :ets.insert(@table, {node_id, map})
+    else
+      :ets.insert_new(@table, {node_id, map})
+    end
+
+    if node_id == :persistent_term.get(:miner) do
+      NodeSync.start_link()
+    end
   end
 
   @impl Network
