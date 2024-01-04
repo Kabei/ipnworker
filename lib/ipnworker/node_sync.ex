@@ -79,25 +79,19 @@ defmodule Ipnworker.NodeSync do
           queue: ets_queue
         }
       ) do
-    {:ok, new_rounds} =
-      ClusterNodes.call(node_id, "get_rounds", %{
-        "limit" => @offset,
-        "offset" => offset,
-        "starts" => starts
-      })
+    if round_id > target_id do
+      {:ok, new_rounds} =
+        ClusterNodes.call(node_id, "get_rounds", %{
+          "limit" => @offset,
+          "offset" => offset,
+          "starts" => starts
+        })
 
-    Enum.each(new_rounds, fn new_round ->
-      round = MapUtil.to_atoms(new_round)
-      build(round, hostname)
-    end)
+      Enum.each(new_rounds, fn new_round ->
+        round = MapUtil.to_atoms(new_round)
+        build(round, hostname)
+      end)
 
-    if round_id >= target_id do
-      if :ets.info(ets_queue, :size) > 0 do
-        {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
-      else
-        {:stop, :normal, state}
-      end
-    else
       len = length(new_rounds)
 
       {
@@ -105,6 +99,12 @@ defmodule Ipnworker.NodeSync do
         %{state | offset: offset + len, round: round_id + len},
         {:continue, :fetch}
       }
+    else
+      if :ets.info(ets_queue, :size) > 0 do
+        {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
+      else
+        {:stop, :normal, state}
+      end
     end
   end
 
