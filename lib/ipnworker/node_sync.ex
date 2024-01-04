@@ -136,6 +136,6 @@ defmodule Ipnworker.NodeSync do
   end
 
   defp build(round, hostname) do
-    GenServer.call(RoundBuilder, {:build, round, hostname, false})
+    GenServer.call(RoundBuilder, {:build, round, hostname, false}, :infinity)
   end
 end
