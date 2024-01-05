@@ -34,9 +34,11 @@ defmodule Ipnworker.Router do
             try do
               case has_from_nonce do
                 true ->
-                  %{id: vid} =
-                    validator =
-                    :persistent_term.get(:validator) ||
+                  db_ref = :persistent_term.get(:main_conn)
+                  vid = :persistent_term.get(:vid)
+
+                  validator =
+                    Validator.get(vid) ||
                       raise IppanError, "Node is not available yet"
 
                   handle_result =
