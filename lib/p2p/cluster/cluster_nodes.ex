@@ -77,9 +77,7 @@ defmodule Ippan.ClusterNodes do
     end
 
     if node_id == :persistent_term.get(:miner) do
-      spawn(fn ->
-        NodeSync.start_link()
-      end)
+      NodeSync.start_link()
     end
   end
 
