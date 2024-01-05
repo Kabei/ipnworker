@@ -34,7 +34,7 @@ defmodule Ippan.Func.Wallet do
         raise IppanError, "Invalid pubkey size"
 
       DetsPlux.member_tx?(dets, tx, id) ->
-        raise IppanError, "Wallet already exists"
+        raise IppanError, "Wallet #{id} already exists"
 
       true ->
         :ok
