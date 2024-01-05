@@ -33,7 +33,6 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def handle_continue(:prepare, state) do
-    :persistent_term.put(:status, :sync)
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
@@ -51,8 +50,9 @@ defmodule Ipnworker.NodeSync do
       if diff > 0 do
         init_round = max(local_round_id, 0)
         IO.puts("NodeSync starts from ##{init_round} to #{remote_round_id}")
-        :ets.new(:sync, @ets_opts)
+        :persistent_term.put(:status, :sync)
         :persistent_term.put(:node_sync, self())
+        :ets.new(:sync, @ets_opts)
 
         {:noreply,
          %{
