@@ -9,7 +9,6 @@ defmodule Platform do
 
   def start do
     db_ref = :persistent_term.get(:main_conn)
-    vid = :persistent_term.get(:vid)
     EnvStore.load(db_ref)
 
     case EnvStore.owner() do
@@ -20,9 +19,6 @@ defmodule Platform do
       _owner ->
         :ok
     end
-
-    v = Validator.get(vid)
-    Validator.put_self(v)
 
     :ok
   end

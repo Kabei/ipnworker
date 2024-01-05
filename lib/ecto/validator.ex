@@ -10,7 +10,9 @@ defmodule Ippan.Ecto.Validator do
   @select ~w(id hostname port name owner pubkey net_pubkey avatar fa fb active failures env created_at updated_at)a
 
   def me do
-    :persistent_term.get(:validator) |> fun()
+    db_ref = :persistent_term.get(:main_ro)
+    vid = :persistent_term.get(:vid)
+    Validator.get(vid) |> fun()
   end
 
   def one(id) do

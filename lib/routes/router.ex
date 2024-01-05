@@ -129,15 +129,14 @@ defmodule Ipnworker.Router do
   end
 
   get "/v1/info" do
+    info = Ippan.Ecto.Validator.me()
+    hash = "\"#{:erlang.phash2(info)}\""
+
     case get_req_header(conn, "etag") do
       [etag] ->
-        hash = "\"#{:persistent_term.get(:vhash)}\""
-
         if hash == etag do
           send_resp(conn, 304, "")
         else
-          info = Ippan.Ecto.Validator.me()
-
           conn
           |> put_resp_header("Etag", hash)
           |> put_resp_content_type("application/json")
@@ -146,7 +145,6 @@ defmodule Ipnworker.Router do
 
       _ ->
         info = Ippan.Ecto.Validator.me()
-        hash = "\"#{:persistent_term.get(:vhash)}\""
 
         conn
         |> put_resp_header("Etag", hash)
