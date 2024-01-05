@@ -1,11 +1,12 @@
 defmodule Ippan.BlockHandler do
-  alias Ippan.Validator
-  alias Ippan.{Block, TxHandler}
+  alias Ippan.{Block, Round, Validator, TxHandler}
+  alias Phoenix.PubSub
 
   import Ippan.Block,
     only: [decode_file!: 1, encode_file!: 1, hash_file: 1]
 
   require TxHandler
+  require Round
   require Sqlite
   require Validator
   require Logger
@@ -14,9 +15,11 @@ defmodule Ippan.BlockHandler do
   @version Application.compile_env(@app, :version)
   @max_block_size Application.compile_env(@app, :block_max_size)
   @json Application.compile_env(@app, :json)
+  @pubsub :pubsub
 
   @spec verify_file!(map) :: :ok | :error
   def verify_file!(%{
+        "round" => block_round_id,
         "count" => count,
         "creator" => creator_id,
         "hash" => hash,
@@ -39,6 +42,9 @@ defmodule Ippan.BlockHandler do
       IO.inspect(remote_url)
       IO.inspect(output_path)
       IO.inspect(file_exists)
+
+      {current_round_id, _} = Round.last()
+      check_round!(block_round_id, current_round_id)
 
       unless file_exists do
         :ok = Download.await(remote_url, output_path, @max_block_size)
@@ -138,4 +144,26 @@ defmodule Ippan.BlockHandler do
   end
 
   def verify_file!(_), do: :error
+
+  defp check_round!(block_round_id, current_round_id) do
+    if current_round_id + 1 != block_round_id do
+      PubSub.subscribe(@pubsub, "round.new")
+
+      loop_wait!(block_round_id, current_round_id)
+    end
+  end
+
+  defp loop_wait!(block_round_id, current_round_id) do
+    receive do
+      %{"id" => rid} when rid + 1 == block_round_id ->
+        PubSub.unsubscribe(@pubsub, "round.new")
+
+      _ ->
+        loop_wait!(block_round_id, current_round_id)
+    after
+      10_000 ->
+        PubSub.unsubscribe(@pubsub, "round.new")
+        raise RuntimeError, "Timeout Rounds not equals"
+    end
+  end
 end
