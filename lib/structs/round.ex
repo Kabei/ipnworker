@@ -176,6 +176,12 @@ defmodule Ippan.Round do
     |> Map.put(:blocks, blocks)
   end
 
+  def is_some_block_mine?([], _vid), do: false
+
+  def is_some_block_mine?(blocks, vid) do
+    Enum.any?(blocks, &(&1.creator == vid))
+  end
+
   def null?(%{status: status}) when status > 0, do: true
   def null?(_), do: false
 
