@@ -28,6 +28,10 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def init(_args) do
+    {:ok, nil, {:continue, :prepare}}
+  end
+
+  def handle_continue(:prepare, _init_state) do
     :persistent_term.put(:status, :sync)
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
