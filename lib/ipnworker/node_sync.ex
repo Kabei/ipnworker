@@ -31,6 +31,7 @@ defmodule Ipnworker.NodeSync do
     {:ok, nil, {:continue, :prepare}}
   end
 
+  @impl true
   def handle_continue(:prepare, state) do
     :persistent_term.put(:status, :sync)
     miner = :persistent_term.get(:miner)
@@ -53,7 +54,7 @@ defmodule Ipnworker.NodeSync do
         :ets.new(:sync, @ets_opts)
         :persistent_term.put(:node_sync, self())
 
-        {:ok,
+        {:noreply,
          %{
            db_ref: db_ref,
            node: node.id,
@@ -71,7 +72,6 @@ defmodule Ipnworker.NodeSync do
     end
   end
 
-  @impl true
   def handle_continue(
         :fetch,
         state = %{
