@@ -128,14 +128,12 @@ defmodule Ipnworker.NodeSync do
 
   @impl true
   def terminate(_reason, %{queue: ets_queue}) do
-    IO.inspect("Terminate 1")
     :persistent_term.put(:status, :synced)
     :persistent_term.erase(:node_sync)
     :ets.delete(ets_queue)
   end
 
   def terminate(_reason, _state) do
-    IO.inspect("Terminate 2")
     :persistent_term.put(:status, :synced)
   end
 
