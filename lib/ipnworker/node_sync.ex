@@ -31,7 +31,7 @@ defmodule Ipnworker.NodeSync do
     {:ok, nil, {:continue, :prepare}}
   end
 
-  def handle_continue(:prepare, _init_state) do
+  def handle_continue(:prepare, state) do
     :persistent_term.put(:status, :sync)
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
@@ -40,7 +40,7 @@ defmodule Ipnworker.NodeSync do
 
     if is_nil(node) do
       IO.puts("NodeSync no init")
-      {:stop, :normal}
+      {:stop, :normal, state}
     else
       {:ok, {remote_round_id, _hash}} =
         ClusterNodes.call(node.id, "last_round", nil, @opts)
@@ -66,7 +66,7 @@ defmodule Ipnworker.NodeSync do
          }, {:continue, :fetch}}
       else
         IO.inspect("No Sync")
-        {:stop, :normal}
+        {:stop, :normal, state}
       end
     end
   end
