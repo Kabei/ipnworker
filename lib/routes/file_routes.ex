@@ -24,23 +24,19 @@ defmodule Ipnworker.FileRoutes do
       |> put_resp_content_type("application/octet-stream")
       |> send_file(200, block_path)
     else
-      if vid == :persistent_term.get(:vid) |> to_string do
-        miner = :persistent_term.get(:miner)
-        node = ClusterNodes.info(miner)
-        url = Block.cluster_block_url(node.hostname, vid, height)
+      miner = :persistent_term.get(:miner)
+      node = ClusterNodes.info(miner)
+      url = Block.cluster_block_url(node.hostname, vid, height)
 
-        case Download.await(url, block_path) do
-          :ok ->
-            conn
-            |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
-            |> put_resp_content_type("application/octet-stream")
-            |> send_file(200, block_path)
+      case Download.await(url, block_path) do
+        :ok ->
+          conn
+          |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+          |> put_resp_content_type("application/octet-stream")
+          |> send_file(200, block_path)
 
-          _e ->
-            send_resp(conn, 404, "")
-        end
-      else
-        send_resp(conn, 404, "")
+        _e ->
+          send_resp(conn, 404, "")
       end
     end
   end
@@ -56,23 +52,19 @@ defmodule Ipnworker.FileRoutes do
       |> put_resp_content_type("application/octet-stream")
       |> send_file(200, block_path)
     else
-      if vid == :persistent_term.get(:vid) |> to_string do
-        miner = :persistent_term.get(:miner)
-        node = ClusterNodes.info(miner)
-        url = Block.cluster_decode_url(node.hostname, vid, height)
+      miner = :persistent_term.get(:miner)
+      node = ClusterNodes.info(miner)
+      url = Block.cluster_decode_url(node.hostname, vid, height)
 
-        case Download.await(url, block_path) do
-          :ok ->
-            conn
-            |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
-            |> put_resp_content_type("application/octet-stream")
-            |> send_file(200, block_path)
+      case Download.await(url, block_path) do
+        :ok ->
+          conn
+          |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+          |> put_resp_content_type("application/octet-stream")
+          |> send_file(200, block_path)
 
-          _e ->
-            send_resp(conn, 404, "")
-        end
-      else
-        send_resp(conn, 404, "")
+        _e ->
+          send_resp(conn, 404, "")
       end
     end
 
