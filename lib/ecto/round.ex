@@ -55,6 +55,7 @@ defmodule Ippan.Ecto.Round do
     |> filter_limit(params)
     |> filter_range(params)
     |> filter_search(params)
+    |> filter_status(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -107,6 +108,12 @@ defmodule Ippan.Ecto.Round do
   end
 
   defp filter_range(query, _), do: query
+
+  defp filter_status(query, %{"status" => status}) do
+    where(query, [r], r.status == ^status)
+  end
+
+  defp filter_status(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [r], asc: r.id)
   defp sort(query, _), do: order_by(query, [r], desc: r.id)
