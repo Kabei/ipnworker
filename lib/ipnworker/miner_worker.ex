@@ -100,7 +100,13 @@ defmodule MinerWorker do
 
       if @history do
         PgStore.insert_block(pg_conn, b)
-        # |> IO.inspect()
+        |> then(fn
+          {:ok, _} ->
+            :ok
+
+          err ->
+            IO.inspect(err)
+        end)
       end
 
       # Push event
@@ -144,6 +150,7 @@ defmodule MinerWorker do
             @json.encode!(args),
             sig
           ])
+
           # |> IO.inspect()
         end
 
@@ -175,6 +182,7 @@ defmodule MinerWorker do
             @json.encode!(args),
             sig
           ])
+
           # |> IO.inspect()
         end
 
