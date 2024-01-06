@@ -67,14 +67,6 @@ defmodule Ipnworker.FileRoutes do
           send_resp(conn, 404, "")
       end
     end
-
-    # if File.exists?(block_path) do
-    #   conn
-    #   |> put_resp_content_type("application/octet-stream")
-    #   |> send_file(200, block_path)
-    # else
-    #   send_resp(conn, 404, "")
-    # end
   end
 
   match _ do
