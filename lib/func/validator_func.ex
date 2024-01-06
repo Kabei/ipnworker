@@ -35,7 +35,7 @@ defmodule Ippan.Func.Validator do
       fa < 0 or fa > @max_fees or fb < 1 or fb > @max_fees ->
         raise IppanError, "Invalid fees"
 
-      byte_size(net_pubkey) > 1278 ->
+      byte_size(net_pubkey) > 1138 ->
         raise IppanError, "Invalid net_pubkey size #{byte_size(net_pubkey)}"
 
       byte_size(pubkey) > 897 ->
@@ -111,7 +111,7 @@ defmodule Ippan.Func.Validator do
         end)
         |> MapUtil.transform(:net_pubkey, fn x ->
           case Fast64.decode64(x) do
-            j when byte_size(j) > 897 ->
+            j when byte_size(j) > 1138 ->
               raise IppanError, "Invalid net_pubkey"
 
             j ->
