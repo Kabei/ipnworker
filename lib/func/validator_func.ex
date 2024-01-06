@@ -95,7 +95,7 @@ defmodule Ippan.Func.Validator do
           |> BalanceTrace.requires!(@token, fees)
 
         MapUtil.to_atoms(map_filter)
-        |> MapUtil.validate_hostname(:hostname)
+        |> MapUtil.validate_hostname_or_ip(:hostname)
         |> MapUtil.validate_length_range(:name, 1..20)
         |> MapUtil.validate_url(:url)
         |> MapUtil.validate_value(:fa, :gte, 0)
