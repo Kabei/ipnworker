@@ -176,6 +176,21 @@ defmodule Ippan.Round do
     |> Map.put(:blocks, blocks)
   end
 
+  def sync_remote(%{"blocks" => blocks} = msg_round) do
+    blocks =
+      Enum.reduce(blocks, [], fn b, acc ->
+        block =
+          MapUtil.to_atoms(b, Block.fields())
+
+        acc ++ [block]
+      end)
+
+    msg_round
+    # |> MapUtil.to_atoms(~w(id creator hash prev signature timestamp))
+    |> MapUtil.to_atoms(~w(id creator extra hash prev signature size status timestamp tx_count))
+    |> Map.put(:blocks, blocks)
+  end
+
   def is_some_block_mine?([], _vid), do: false
 
   def is_some_block_mine?(blocks, vid) do
@@ -185,6 +200,8 @@ defmodule Ippan.Round do
   def null?(%{status: status}) when status > 0, do: true
   def null?(_), do: false
 
+  # status: 1 = timeout
+  # status: 2 = Error round data
   @spec cancel(
           non_neg_integer(),
           binary() | nil,
