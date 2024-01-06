@@ -51,6 +51,7 @@ defmodule Ippan.Ecto.Validator do
       |> filter_offset(params)
       |> filter_limit(params)
       |> filter_search(params)
+      |> filter_active(params)
       |> filter_while(params)
       |> filter_select()
       |> sort(params)
@@ -90,6 +91,16 @@ defmodule Ippan.Ecto.Validator do
   end
 
   defp filter_while(query, _), do: query
+
+  defp filter_active(query, %{"active" => "0"}) do
+    where(query, [b], b.status == false)
+  end
+
+  defp filter_active(query, %{"active" => "1"}) do
+    where(query, [b], b.status == true)
+  end
+
+  defp filter_active(query, _), do: query
 
   defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
   defp sort(query, _), do: order_by(query, [t], asc: t.created_at)

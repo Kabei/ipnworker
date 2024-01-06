@@ -56,6 +56,7 @@ defmodule Ippan.Ecto.Block do
     |> filter_round(params)
     |> filter_search(params)
     |> filter_range(params)
+    |> filter_status(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -81,6 +82,12 @@ defmodule Ippan.Ecto.Block do
   end
 
   defp filter_round(query, _), do: query
+
+  defp filter_status(query, %{"status" => status}) do
+    where(query, [b], b.status == ^status)
+  end
+
+  defp filter_status(query, _), do: query
 
   defp filter_range(query, %{"end" => fin, "start" => start}) do
     where(query, [b], b.id >= ^start and b.id <= ^fin)
