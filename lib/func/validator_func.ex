@@ -47,7 +47,7 @@ defmodule Ippan.Func.Validator do
       map_filter != opts ->
         raise IppanError, "Invalid options parameter"
 
-      not Match.hostname?(hostname) ->
+      not Match.hostname?(hostname) or not Match.ipv4(hostname) ->
         raise IppanError, "Invalid hostname"
 
       Validator.exists_host?(hostname) ->
