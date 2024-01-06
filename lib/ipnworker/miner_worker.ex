@@ -42,6 +42,7 @@ defmodule MinerWorker do
             creator: creator_id,
             height: height,
             round: round_id,
+            count: count,
             vsn: version
           } = block,
           hostname,
@@ -88,7 +89,7 @@ defmodule MinerWorker do
         # delete player
         Validator.delete(creator_id)
         PubSub.broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
-        b = Block.cancel(block, round_id, 1)
+        b = Block.cancel(block, round_id, count, 1)
         :done = Block.insert(Block.to_list(b))
         {:reply, :error, state}
     after
