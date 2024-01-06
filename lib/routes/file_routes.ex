@@ -52,11 +52,37 @@ defmodule Ipnworker.FileRoutes do
 
     if File.exists?(block_path) do
       conn
+      |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
       |> put_resp_content_type("application/octet-stream")
       |> send_file(200, block_path)
     else
-      send_resp(conn, 404, "")
+      if vid == :persistent_term.get(:vid) |> to_string do
+        miner = :persistent_term.get(:miner)
+        node = ClusterNodes.info(miner)
+        url = Block.cluster_decode_url(node.hostname, vid, height)
+
+        case Download.await(url, block_path) do
+          :ok ->
+            conn
+            |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+            |> put_resp_content_type("application/octet-stream")
+            |> send_file(200, block_path)
+
+          _e ->
+            send_resp(conn, 404, "")
+        end
+      else
+        send_resp(conn, 404, "")
+      end
     end
+
+    # if File.exists?(block_path) do
+    #   conn
+    #   |> put_resp_content_type("application/octet-stream")
+    #   |> send_file(200, block_path)
+    # else
+    #   send_resp(conn, 404, "")
+    # end
   end
 
   match _ do
