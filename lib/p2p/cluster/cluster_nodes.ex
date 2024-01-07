@@ -28,8 +28,6 @@ defmodule Ippan.ClusterNodes do
     test = System.get_env("test")
 
     if is_nil(test) do
-      IO.inspect("here go")
-
       miner = :persistent_term.get(:miner)
 
       case Node.fetch(miner) do

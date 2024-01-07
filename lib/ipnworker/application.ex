@@ -1,6 +1,7 @@
 defmodule Ipnworker.Application do
   @moduledoc false
   use Application
+  require Logger
   alias Ippan.{ClusterNodes, DetsSup}
 
   @app Mix.Project.config()[:app]
@@ -30,7 +31,12 @@ defmodule Ipnworker.Application do
   end
 
   defp check_install do
-    {_, 0} = System.cmd("git", ["version"])
+    try do
+      System.cmd("git", ["version"])
+    catch
+      _ ->
+        Logger.error("Git is not installed")
+    end
   end
 
   defp start_node do

@@ -74,7 +74,7 @@ defmodule Sqlite do
     end
   end
 
-  defmacro fetch(name, args, default \\ nil) do
+  defmacro fetch(name, args \\ [], default \\ nil) do
     quote bind_quoted: [name: name, args: args, default: default],
           location: :keep do
       stmt = :persistent_term.get({:stmt, name})

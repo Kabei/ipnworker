@@ -23,8 +23,7 @@ defmodule Ipnworker.MixProject do
     if System.otp_release() |> String.to_integer() < @min_otp,
       do: raise(RuntimeError, "OTP invalid version. Required minimum v#{@min_otp}")
 
-    # load env file
-    System.get_env("ENV_FILE", "env_file") |> load_env_file()
+    load_env_file()
 
     [
       extra_applications: [:crypto, :syntax_tools, :logger],
@@ -64,7 +63,9 @@ defmodule Ipnworker.MixProject do
     ]
   end
 
-  defp load_env_file(path) do
+  defp load_env_file do
+    path = System.get_env("ENV_FILE", "env_file")
+
     if File.exists?(path) do
       File.stream!(path, [], :line)
       |> Enum.each(fn text ->
