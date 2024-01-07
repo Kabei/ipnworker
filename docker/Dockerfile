@@ -15,6 +15,7 @@ WORKDIR /usr/src/ipnworker
 
 COPY env_file ./env_file
 COPY options.exs ./config/options.exs
+COPY masterlist ./masterlist
 COPY scripts/run.sh run.sh
 
 RUN mix local.hex --force && mix deps.get && mix local.rebar --force
