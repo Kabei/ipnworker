@@ -50,7 +50,7 @@ import Config
 config :ipnworker, :history, true
 # Query API enable (default: true)
 config :ipnworker, :api, true
-# Call API enable (default: true)
+# API Call enable (default: true)
 config :ipnworker, :call, true
 " > config/options.exs
 ```
