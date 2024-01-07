@@ -202,7 +202,8 @@ defmodule Ippan.Func.Validator do
     validator = Validator.get(id)
 
     cond do
-      validator.owner != account_id ->
+      validator.owner != account_id and
+          validator.owner != EnvStore.owner() ->
         raise IppanError, "Invalid owner"
 
       not Map.has_key?(validator.env, name) ->
