@@ -97,7 +97,8 @@ defmodule Ippan.Func.Validator do
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_hostname_or_ip(:hostname)
         |> MapUtil.validate_length_range(:name, 1..20)
-        |> MapUtil.validate_url(:url)
+        |> MapUtil.validate_url(:avatar)
+        |> MapUtil.validate_text(:class)
         |> MapUtil.validate_value(:fa, :gte, 0)
         |> MapUtil.validate_value(:fb, :gte, 1)
         |> MapUtil.transform(:pubkey, fn x ->

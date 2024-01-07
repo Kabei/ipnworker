@@ -13,7 +13,7 @@ defmodule Ipnworker.NodeSync do
     write_concurrency: true
   ]
 
-  @offset 50
+  @offset 200
   @opts timeout: 10_000, retry: 10
 
   def start_link do

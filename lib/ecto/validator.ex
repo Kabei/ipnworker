@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Validator do
   require Validator
 
   @table "validator"
-  @select ~w(id hostname port name owner pubkey net_pubkey avatar fa fb active failures env created_at updated_at)a
+  @select ~w(id hostname port name owner class pubkey net_pubkey avatar fa fb active failures env created_at updated_at)a
 
   def me do
     db_ref = :persistent_term.get(:main_ro)
@@ -51,6 +51,7 @@ defmodule Ippan.Ecto.Validator do
       |> filter_offset(params)
       |> filter_limit(params)
       |> filter_search(params)
+      |> filter_class(params)
       |> filter_active(params)
       |> filter_while(params)
       |> filter_select()
@@ -85,6 +86,14 @@ defmodule Ippan.Ecto.Validator do
   end
 
   defp filter_search(query, _), do: query
+
+  defp filter_class(query, %{"class" => class}) do
+    q = "%#{class}%"
+
+    where(query, [v], like(fragment("UPPER(?)", v.class), ^q))
+  end
+
+  defp filter_class(query, _), do: query
 
   defp filter_while(query, %{"last_updated" => time}) do
     where(query, [t], t.updated_at > ^time)

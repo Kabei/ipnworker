@@ -6,6 +6,7 @@ cpus = System.schedulers_online()
 # Environment variables setup
 cluster_port = System.get_env("CLUSTER_PORT", "4848") |> String.to_integer()
 http_port = System.get_env("HTTP_PORT", "8080") |> String.to_integer()
+x_http_port = System.get_env("X_HTTP_PORT", "8080") |> String.to_integer()
 
 # HTTP server
 config :ipnworker, :http,
@@ -62,3 +63,5 @@ config :ipnworker, Ipnworker.Repo,
   wsize: System.get_env("WPOOL", "2") |> String.to_integer(),
   prepare: :unnamed,
   parameters: [plan_cache_mode: "force_custom_plan"]
+
+config :ipncore, :x_http_port, x_http_port
