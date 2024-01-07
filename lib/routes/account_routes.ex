@@ -11,20 +11,6 @@ defmodule Ipnworker.AccountRoutes do
   plug(:match)
   plug(:dispatch)
 
-  get "/balance/:id" do
-    Balance.all(fetch_query(conn), id)
-    |> send_json()
-  end
-
-  get "/balance/:id/:token" do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :cache_balance)
-    key = DetsPlux.tuple(id, token)
-    {balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
-
-    %{"balance" => balance, "map" => map} |> json()
-  end
-
   get "/:id" do
     dets = DetsPlux.get(:wallet)
     tx = DetsPlux.tx(dets, :cache_wallet)
@@ -46,6 +32,20 @@ defmodule Ipnworker.AccountRoutes do
       _ ->
         send_resp(conn, 204, "")
     end
+  end
+
+  get "/:id/balance" do
+    Balance.all(fetch_query(conn), id)
+    |> send_json()
+  end
+
+  get "/:id/balance/:token" do
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :cache_balance)
+    key = DetsPlux.tuple(id, token)
+    {balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+
+    %{"balance" => balance, "map" => map} |> json()
   end
 
   get "/:id/nonce" do
