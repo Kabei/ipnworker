@@ -1,17 +1,16 @@
 FROM elixir:1.16.0-slim
 
 ENV PATH="/root/.cargo/bin:${PATH}" \
-    MIX_ENV=prod \
-    DATA_DIR=/var/data
+    MIX_ENV=prod
 
-WORKDIR /usr/src
+VOLUME ["/src", "/data"]
 
 RUN apt-get update && apt-get install -y git curl cmake
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-RUN git clone --branch dev https://kabei@github.com/kabei/ipnworker.git
+WORKDIR /src
 
-WORKDIR /usr/src/ipnworker
+RUN git clone --branch dev https://kabei@github.com/kabei/ipnworker.git
 
 COPY env_file ./env_file
 COPY options.exs ./config/options.exs
