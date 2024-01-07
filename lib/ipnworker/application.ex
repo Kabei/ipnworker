@@ -55,7 +55,6 @@ defmodule Ipnworker.Application do
   defp load_keys do
     seed_kem = System.get_env("CLUSTER_KEY") |> Fast64.decode64()
     seed = System.get_env("SECRET_KEY") |> Fast64.decode64()
-    auth = System.get_env("AUTH") || raise RuntimeError, "variable AUTH is missing"
 
     {:ok, net_pubkey, net_privkey} = NtruKem.gen_key_pair_from_seed(seed_kem)
     {:ok, {pubkey, privkey}} = Cafezinho.Impl.keypair_from_seed(seed)
@@ -64,7 +63,6 @@ defmodule Ipnworker.Application do
     :persistent_term.put(:privkey, privkey)
     :persistent_term.put(:net_pubkey, net_pubkey)
     :persistent_term.put(:net_privkey, net_privkey)
-    :persistent_term.put(:auth, auth)
   end
 
   defp make_folders do
