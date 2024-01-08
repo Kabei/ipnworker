@@ -99,6 +99,8 @@ defmodule Ippan.Func.Validator do
         |> MapUtil.validate_length_range(:name, 1..20)
         |> MapUtil.validate_url(:avatar)
         |> MapUtil.validate_text(:class)
+        |> MapUtil.validate_integer(:fa)
+        |> MapUtil.validate_integer(:fb)
         |> MapUtil.validate_value(:fa, :gte, 0)
         |> MapUtil.validate_value(:fb, :gte, 1)
         |> MapUtil.transform(:pubkey, fn x ->
@@ -202,7 +204,8 @@ defmodule Ippan.Func.Validator do
     validator = Validator.get(id)
 
     cond do
-      validator.owner != account_id ->
+      validator.owner != account_id and
+          validator.owner != EnvStore.owner() ->
         raise IppanError, "Invalid owner"
 
       not Map.has_key?(validator.env, name) ->
