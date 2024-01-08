@@ -11,15 +11,11 @@ defmodule Ipnworker.EventRoutes do
   plug(:dispatch)
 
   get "/rounds" do
-    SSE.stream(conn, @pubsub, "round.new", once: false, timeout: 45_000)
+    SSE.stream(conn, @pubsub, "round.new", once: false, timeout: 30_000)
   end
 
   get "/blocks" do
-    SSE.stream(conn, @pubsub, "block.new", once: false, timeout: 45_000)
-  end
-
-  get "/jackpot" do
-    SSE.stream(conn, @pubsub, "jackpot", once: false, timeout: 515_000)
+    SSE.stream(conn, @pubsub, "block.new", once: false, timeout: 30_000)
   end
 
   get "/validators" do
@@ -36,6 +32,10 @@ defmodule Ipnworker.EventRoutes do
 
   get "/block/:id" do
     SSE.stream(conn, @pubsub, "block:#{id}", timeout: 20_000)
+  end
+
+  get "/tx/:account_id/:nonce" do
+    SSE.stream(conn, @pubsub, "tx", once: false, timeout: 90_000)
   end
 
   match _ do
