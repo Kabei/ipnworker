@@ -179,6 +179,9 @@ defmodule Ippan.Func.Validator do
       map_size(validator.env) >= 10 ->
         raise IppanError, "Invalid variables map size"
 
+      name == "changes" ->
+        raise IppanError, "Variable #{name} reservada"
+
       validator.owner != account_id ->
         raise IppanError, "Invalid owner"
 

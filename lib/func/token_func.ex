@@ -220,6 +220,9 @@ defmodule Ippan.Func.Token do
       map_size(token.env) >= 10 ->
         raise IppanError, "Invalid token variables map size"
 
+      name == "changes" ->
+        raise IppanError, "Variable #{name} reservada"
+
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
