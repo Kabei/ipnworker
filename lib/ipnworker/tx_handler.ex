@@ -82,7 +82,6 @@ defmodule Ippan.TxHandler do
       {wallet_pk, sig_type} =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
 
-      # [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
 
       # Check nonce
@@ -167,7 +166,6 @@ defmodule Ippan.TxHandler do
           var!(creator_id)
         )
 
-      # [sig_type, _] = String.split(var!(from), "x", parts: 2)
       TxHandler.check_signature!(sig_type, wallet_pk)
 
       Wallet.gte_nonce!(var!(nonce_dets), var!(nonce_tx), var!(from), var!(nonce))
@@ -272,7 +270,6 @@ defmodule Ippan.TxHandler do
   end
 
   # only deferred transactions
-  # def run_deferred_txs(conn, stmts, balance_pid, balance_tx, wallets) do
   defmacro run_deferred_txs do
     quote location: :keep do
       :ets.tab2list(:dtx)
