@@ -37,13 +37,14 @@ defmodule SSE do
   defp loop(conn, pubsub, topic, once, timeout) do
     tRef =
       if timeout > @ping do
-        {:ok, tref} = :timer.send_after(@ping, self(), :ping)
+        {:ok, tref} = :timer.send_after(@ping, :ping)
         tref
       end
 
     receive do
       :ping ->
         IO.inspect("PING")
+        :timer.cancel(tRef)
 
         conn
         |> chunk("event:message\ndata:\n\n")
