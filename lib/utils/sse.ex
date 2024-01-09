@@ -35,9 +35,11 @@ defmodule SSE do
 
   @ping 5_000
   defp loop(conn, pubsub, topic, once, timeout) do
-    if timeout > @ping do
-      :timer.send_after(@ping, :ping)
-    end
+    tRef =
+      if timeout > @ping do
+        {:ok, tref} = :timer.send_after(@ping, self(), :ping)
+        tref
+      end
 
     receive do
       :ping ->
@@ -55,6 +57,7 @@ defmodule SSE do
 
       message when not is_tuple(message) and not is_atom(message) ->
         Logger.debug(inspect(message))
+        :timer.cancel(tRef)
 
         conn
         |> chunk("event:message\ndata:#{Jason.encode!(message)}\n\n")
@@ -74,6 +77,7 @@ defmodule SSE do
 
       {:halt, message} ->
         Logger.debug(message)
+        :timer.cancel(tRef)
 
         conn
         |> chunk("event:message\ndata:#{Jason.encode!(message)}\n\n")
@@ -86,10 +90,12 @@ defmodule SSE do
         end
 
       {:tcp_closed, _socket} ->
+        :timer.cancel(tRef)
         Logger.debug("TCP closed")
         shutdown(conn, pubsub, topic)
 
       {:tcp_error, _socket, _reason} ->
+        :timer.cancel(tRef)
         Logger.debug("TCP error")
         shutdown(conn, pubsub, topic)
 
@@ -98,17 +104,21 @@ defmodule SSE do
         loop(conn, pubsub, topic, once, timeout)
 
       {:EXIT, _from, _reason} ->
+        :timer.cancel(tRef)
         PubSub.unsubscribe(pubsub, topic)
         Process.exit(conn.owner, :normal)
 
-      {:DOWN, _reference, :process, _pid, _type} ->
+      {:DOWN, _reference, _process, _pid, _type} ->
+        :timer.cancel(tRef)
         PubSub.unsubscribe(pubsub, topic)
 
       other ->
+        :timer.cancel(tRef)
         Logger.debug("Other: #{inspect(other)}")
         send_close(conn, pubsub, topic, :shutdown)
     after
       timeout ->
+        :timer.cancel(tRef)
         send_close(conn, pubsub, topic, :timeout)
     end
   end
