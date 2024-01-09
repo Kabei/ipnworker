@@ -33,8 +33,24 @@ defmodule SSE do
     halt(conn)
   end
 
+  @ping 60_000
   defp loop(conn, pubsub, topic, once, timeout) do
+    if timeout > @ping do
+      :timer.send_after(@ping, :ping)
+    end
+
     receive do
+      :ping ->
+        conn
+        |> chunk("event:ping\ndata:\n\n")
+        |> case do
+          {:ok, conn} ->
+            loop(conn, pubsub, topic, once, timeout)
+
+          _error ->
+            shutdown(conn, pubsub, topic)
+        end
+
       message when not is_tuple(message) and not is_atom(message) ->
         Logger.debug(inspect(message))
 
