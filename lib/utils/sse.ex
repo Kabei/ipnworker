@@ -33,7 +33,7 @@ defmodule SSE do
     halt(conn)
   end
 
-  @ping_time 55_000
+  @ping_time 30_000
   defp loop(conn, pubsub, topic, once, timeout) do
     tRef =
       if timeout > @ping_time do
