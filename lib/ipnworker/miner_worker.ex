@@ -13,7 +13,8 @@ defmodule MinerWorker do
   @pubsub :pubsub
   @version Application.compile_env(@app, :version)
   @json Application.compile_env(@app, :json)
-  @history Application.compile_env(@app, :history)
+  @history Application.compile_env(@app, :history, false)
+  @notify Application.compile_env(@app, :notify, false)
   @cjson Ippan.Ecto.Tx.cjson()
 
   def start_link(_) do
@@ -135,6 +136,12 @@ defmodule MinerWorker do
               TxHandler.regular()
           end
 
+        status = tx_status(result)
+
+        if @notify do
+          PubSub.broadcast(@pubsub, "tx:#{from}:#{nonce}", %{"status" => status})
+        end
+
         if @history do
           ix = :counters.get(cref, 1)
 
@@ -169,6 +176,12 @@ defmodule MinerWorker do
               TxHandler.insert_deferred(dtx, dtmp)
           end
 
+        status = tx_status(result)
+
+        if @notify do
+          PubSub.broadcast(@pubsub, "tx:#{from}:#{nonce}", %{"status" => status})
+        end
+
         if @history do
           PgStore.insert_tx(pg_conn, [
             from,
@@ -177,7 +190,7 @@ defmodule MinerWorker do
             block_id,
             hash,
             type,
-            tx_status(result),
+            status,
             size,
             @cjson,
             @json.encode!(args),

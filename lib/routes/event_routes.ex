@@ -35,7 +35,7 @@ defmodule Ipnworker.EventRoutes do
   end
 
   get "/tx/:account_id/:nonce" do
-    SSE.stream(conn, @pubsub, "tx", once: false, timeout: 90_000)
+    SSE.stream(conn, @pubsub, "tx:#{account_id}/#{nonce}", once: false, timeout: 90_000)
   end
 
   match _ do

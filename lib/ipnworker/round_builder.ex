@@ -11,7 +11,7 @@ defmodule RoundBuilder do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @pubsub :pubsub
-  @history Application.compile_env(@app, :history)
+  @history Application.compile_env(@app, :history, false)
   @maintenance Application.compile_env(@app, :maintenance)
 
   def start_link do

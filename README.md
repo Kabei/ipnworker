@@ -46,11 +46,13 @@ cd ipnworker
 echo "
 import Config
 
-# History mode enable. (default: false)
+# History mode (default: false)
 config :ipnworker, :history, true
-# Query API enable (default: true)
+# Query API (default: true)
 config :ipnworker, :api, true
-# API Call enable (default: true)
+# API Call (default: true)
+config :ipnworker, :call, true
+# Notify each tx (default: false)
 config :ipnworker, :call, true
 " > config/options.exs
 ```

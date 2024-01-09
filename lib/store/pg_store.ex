@@ -14,7 +14,7 @@ defmodule PgStore do
   # DB Pool connections
   @pool :pg_pool
   @repo Ipnworker.Repo
-  @history Application.compile_env(@app, :history)
+  @history Application.compile_env(@app, :history, false)
 
   def child_spec(_args) do
     %{

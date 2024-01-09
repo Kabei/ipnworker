@@ -15,7 +15,7 @@ defmodule RegPay do
   # 303. drop coins
 
   @app Mix.Project.config()[:app]
-  @history Application.compile_env(@app, :history)
+  @history Application.compile_env(@app, :history, false)
 
   if @history do
     def init do
