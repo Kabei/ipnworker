@@ -58,7 +58,7 @@ defmodule SSE do
         Logger.debug(message)
 
         conn
-        |> chunk("event: #{topic}\ndata: #{Jason.encode!(message)}\n\n")
+        |> chunk("event: message\ndata: #{Jason.encode!(message)}\n\n")
         |> case do
           {:ok, conn} ->
             send_close(conn, pubsub, topic, :end)
