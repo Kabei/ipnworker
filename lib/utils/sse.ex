@@ -39,7 +39,7 @@ defmodule SSE do
         Logger.debug(inspect(message))
 
         conn
-        |> chunk("event: message\ndata: #{Jason.encode!(message)}\n\n")
+        |> chunk("event:message\ndata:#{Jason.encode!(message)}\n\n")
         |> case do
           {:ok, conn} ->
             case once do
@@ -58,7 +58,7 @@ defmodule SSE do
         Logger.debug(message)
 
         conn
-        |> chunk("event: message\ndata: #{Jason.encode!(message)}\n\n")
+        |> chunk("event:message\ndata:#{Jason.encode!(message)}\n\n")
         |> case do
           {:ok, conn} ->
             send_close(conn, pubsub, topic, :end)
@@ -100,7 +100,7 @@ defmodule SSE do
     PubSub.unsubscribe(pubsub, topic)
 
     conn
-    |> chunk("event: close\ndata: #{reason}\n\n")
+    |> chunk("event:close\ndata:#{reason}\n\n")
     |> case do
       {:ok, conn} ->
         halt(conn)
