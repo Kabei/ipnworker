@@ -10,9 +10,9 @@ defmodule SSE do
 
     conn =
       conn
-      |> put_resp_header("cache-control", "no-cache")
-      |> put_resp_header("content-type", "text/event-stream")
-      |> put_resp_header("connection", "keep-alive")
+      |> put_resp_header("Cache-Control", "no-cache")
+      |> put_resp_header("Content-Type", "text/event-stream")
+      |> put_resp_header("Connection", "keep-alive")
       |> send_chunked(200)
 
     PubSub.subscribe(pubsub, topic)
