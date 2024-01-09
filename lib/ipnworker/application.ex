@@ -8,7 +8,7 @@ defmodule Ipnworker.Application do
 
   @impl true
   def start(_type, _args) do
-    check_install()
+    check_branch()
     start_node()
     make_folders()
     load_keys()
@@ -30,9 +30,10 @@ defmodule Ipnworker.Application do
     Supervisor.start_link(children, opts)
   end
 
-  defp check_install do
+  defp check_branch do
     try do
-      System.cmd("git", ["version"])
+      {branch, 0} = System.cmd("git", ["branch", "--show-current"])
+      :persistent_term.put(:branch, String.trim(branch))
     catch
       _ ->
         Logger.error("Git is not installed")

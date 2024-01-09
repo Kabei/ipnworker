@@ -1,21 +1,26 @@
 defmodule RegPay do
-  # Event Transf
-  # 0. Coinbase
-  # 1. Round Reward
-  # 2. Jackpot
-  # 3. Reload
-  # 100. Pay
-  # 101. Refund
-  # 200. Fees
-  # 201. Reserve
-  # 202. Expired
-  # 300. Burn
-  # 301. lock
-  # 302. unlock
-  # 303. drop coins
+  @moduledoc """
+  Payments types:
+  0. Coinbase
+  1. Round Reward
+  2. Jackpot
+  3. Reload
+  100. Pay
+  101. Refund
+  200. Fees
+  201. Reserve
+  202. Expired
+  300. Burn
+  301. lock
+  302. unlock
+  303. drop coins
+  """
 
+  alias Phoenix.PubSub
   @app Mix.Project.config()[:app]
   @history Application.compile_env(@app, :history, false)
+  @notify Application.compile_env(@app, :notify, false)
+  @pubsub :pubsub
 
   if @history do
     def init do
@@ -102,11 +107,27 @@ defmodule RegPay do
 
   def commit(pg_conn, round_id) do
     tid = :persistent_term.get(:payment)
+    data = :ets.tab2list(tid)
 
-    :ets.tab2list(tid)
-    |> Enum.each(fn {from, nonce, to, type, token, amount} ->
-      PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
-    end)
+    if @notify do
+      Enum.each(data, fn {from, nonce, to, type, token, amount} ->
+        PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
+
+        if to do
+          PubSub.broadcast(@pubsub, "payments:#{to}", %{
+            "nonce" => nonce,
+            "type" => type,
+            "from" => from,
+            "amount" => amount,
+            "token" => token
+          })
+        end
+      end)
+    else
+      Enum.each(data, fn {from, nonce, to, type, token, amount} ->
+        PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
+      end)
+    end
 
     :ets.delete_all_objects(tid)
   end

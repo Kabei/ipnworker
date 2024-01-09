@@ -139,7 +139,7 @@ defmodule MinerWorker do
         status = tx_status(result)
 
         if @notify do
-          PubSub.broadcast(@pubsub, "tx:#{from}:#{nonce}", %{"status" => status})
+          PubSub.broadcast(@pubsub, "payments:#{from}", %{"status" => status, "nonce" => nonce})
         end
 
         if @history do
@@ -179,7 +179,7 @@ defmodule MinerWorker do
         status = tx_status(result)
 
         if @notify do
-          PubSub.broadcast(@pubsub, "tx:#{from}:#{nonce}", %{"status" => status})
+          PubSub.broadcast(@pubsub, "payments:#{from}", %{"status" => status, "nonce" => nonce})
         end
 
         if @history do

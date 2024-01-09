@@ -34,8 +34,8 @@ defmodule Ipnworker.EventRoutes do
     SSE.stream(conn, @pubsub, "block:#{id}", timeout: 20_000)
   end
 
-  get "/tx/:account_id/:nonce" do
-    SSE.stream(conn, @pubsub, "tx:#{account_id}/#{nonce}", once: false, timeout: 90_000)
+  get "/payments/:account" do
+    SSE.stream(conn, @pubsub, "payments:#{account}", once: false, timeout: :infinity)
   end
 
   match _ do
