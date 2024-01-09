@@ -64,4 +64,4 @@ config :ipnworker, Ipnworker.Repo,
   prepare: :unnamed,
   parameters: [plan_cache_mode: "force_custom_plan"]
 
-config :ipncore, :x_http_port, x_http_port
+config :ipnworker, :x_http_port, x_http_port

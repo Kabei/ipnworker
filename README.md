@@ -53,7 +53,7 @@ config :ipnworker, :api, true
 # API Call (default: true)
 config :ipnworker, :call, true
 # Notify each tx (default: false)
-config :ipnworker, :call, true
+config :ipnworker, :notify, true
 " > config/options.exs
 ```
 
