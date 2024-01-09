@@ -33,7 +33,7 @@ defmodule SSE do
     halt(conn)
   end
 
-  @ping 60_000
+  @ping 5_000
   defp loop(conn, pubsub, topic, once, timeout) do
     if timeout > @ping do
       :timer.send_after(@ping, :ping)
@@ -42,6 +42,7 @@ defmodule SSE do
     receive do
       :ping ->
         IO.inspect("PING")
+
         conn
         |> chunk("event:message\ndata:\n\n")
         |> case do
