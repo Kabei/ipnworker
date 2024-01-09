@@ -33,17 +33,16 @@ defmodule SSE do
     halt(conn)
   end
 
-  @ping 5_000
+  @ping_time 55_000
   defp loop(conn, pubsub, topic, once, timeout) do
     tRef =
-      if timeout > @ping do
-        {:ok, tref} = :timer.send_after(@ping, :ping)
+      if timeout > @ping_time do
+        {:ok, tref} = :timer.send_after(@ping_time, :ping)
         tref
       end
 
     receive do
       :ping ->
-        IO.inspect("PING")
         :timer.cancel(tRef)
 
         conn
@@ -91,8 +90,8 @@ defmodule SSE do
         end
 
       {:tcp_closed, _socket} ->
-        :timer.cancel(tRef)
         Logger.debug("TCP closed")
+        :timer.cancel(tRef)
         shutdown(conn, pubsub, topic)
 
       {:tcp_error, _socket, _reason} ->
@@ -102,6 +101,7 @@ defmodule SSE do
 
       {:plug_conn, msg} ->
         Logger.debug("plug_conn #{inspect(msg)}")
+        :timer.cancel(tRef)
         loop(conn, pubsub, topic, once, timeout)
 
       {:EXIT, _from, _reason} ->
