@@ -58,7 +58,7 @@ defmodule SSE do
         :timer.cancel(tRef)
 
         conn
-        |> chunk("event:message\ndata:#{Jason.encode!(message)}\n\n")
+        |> chunk("event:message\ndata:#{Jason.encode!(MapUtil.drop_nils(message))}\n\n")
         |> case do
           {:ok, conn} ->
             case once do
@@ -78,7 +78,7 @@ defmodule SSE do
         :timer.cancel(tRef)
 
         conn
-        |> chunk("event:message\ndata:#{Jason.encode!(message)}\n\n")
+        |> chunk("event:message\ndata:#{Jason.encode!(MapUtil.drop_nils(message))}\n\n")
         |> case do
           {:ok, conn} ->
             send_close(conn, pubsub, topic, :end)
