@@ -1,6 +1,7 @@
 defmodule MinerWorker do
   use GenServer
   require RegPay
+  alias Ippan.Utils
   alias Ippan.{Block, TxHandler, Validator, Wallet}
   alias Phoenix.PubSub
   require Sqlite
@@ -140,7 +141,7 @@ defmodule MinerWorker do
 
         if @notify do
           PubSub.broadcast(@pubsub, "payments:#{from}", %{
-            "hash" => hash,
+            "hash" => Utils.encode16(hash),
             "nonce" => nonce,
             "status" => status,
             "type" => type
@@ -185,7 +186,7 @@ defmodule MinerWorker do
 
         if @notify do
           PubSub.broadcast(@pubsub, "payments:#{from}", %{
-            "hash" => hash,
+            "hash" => Utils.encode16(hash),
             "nonce" => nonce,
             "status" => status,
             "type" => type
