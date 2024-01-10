@@ -139,7 +139,7 @@ defmodule MinerWorker do
 
         status = tx_status(result)
 
-        if @notify do
+        if @notify and type != 307 do
           PubSub.broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
@@ -184,7 +184,7 @@ defmodule MinerWorker do
 
         status = tx_status(result)
 
-        if @notify do
+        if @notify and type != 307 do
           PubSub.broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
