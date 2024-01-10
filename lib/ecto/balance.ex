@@ -44,6 +44,7 @@ defmodule Ippan.Ecto.Balance do
   end
 
   defp sort(query, %{"sort" => "most_value"}), do: order_by(query, [x], desc: x.balance)
+  defp sort(query, %{"sort" => "less_value"}), do: order_by(query, [x], asc: x.balance)
   defp sort(query, _), do: order_by(query, [x], desc: x.balance)
 
   defp data(results, %{"extra" => _}) do

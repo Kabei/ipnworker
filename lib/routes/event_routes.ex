@@ -1,5 +1,6 @@
 defmodule Ipnworker.EventRoutes do
   use Plug.Router
+  import Ippan.Utils, only: [fetch_query: 1]
 
   @pubsub :pubsub
 
@@ -32,6 +33,19 @@ defmodule Ipnworker.EventRoutes do
 
   get "/block/:id" do
     SSE.stream(conn, @pubsub, "block:#{id}", timeout: 20_000)
+  end
+
+  get "/payments" do
+    params = fetch_query(conn)
+
+    case params do
+      %{"accounts" => array} ->
+        accounts = Jason.decode!(array)
+        SSE.stream(conn, @pubsub, "payments", accounts, once: false, timeout: :infinity)
+
+      _ ->
+        send_resp(conn, 400, "Bad request")
+    end
   end
 
   get "/payments/:account" do

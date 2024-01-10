@@ -28,8 +28,41 @@ defmodule SSE do
     loop(conn, pubsub, topic, once, timeout)
   end
 
+  # multiples
+  def stream(conn, pubsub, suffix, topics, opts) do
+    timeout = Keyword.get(opts, :timeout, @timeout)
+    once = Keyword.get(opts, :once, true)
+
+    conn =
+      conn
+      |> put_resp_header("Cache-Control", "no-cache")
+      |> put_resp_header("Content-Type", "text/event-stream")
+      |> put_resp_header("Connection", "keep-alive")
+      |> send_chunked(200)
+
+    result_topics =
+      topics
+      |> Enum.take(5)
+      |> Enum.map(fn txt ->
+        topic = "#{suffix}:#{txt}"
+        PubSub.subscribe(pubsub, topic)
+        topic
+      end)
+
+    Process.flag(:trap_exit, true)
+
+    {_, adapter} = conn.adapter
+    socket = adapter.socket.socket
+    transport = adapter.socket.transport_module
+
+    transport.controlling_process(socket, self())
+    transport.setopts(socket, [{:active, true}])
+
+    loop(conn, pubsub, result_topics, once, timeout)
+  end
+
   def shutdown(conn, pubsub, topic) do
-    PubSub.unsubscribe(pubsub, topic)
+    unsubscribe(pubsub, topic)
     halt(conn)
   end
 
@@ -104,12 +137,12 @@ defmodule SSE do
 
       {:EXIT, _from, _reason} ->
         :timer.cancel(tRef)
-        PubSub.unsubscribe(pubsub, topic)
+        unsubscribe(pubsub, topic)
         Process.exit(conn.owner, :normal)
 
       {:DOWN, _reference, _process, _pid, _type} ->
         :timer.cancel(tRef)
-        PubSub.unsubscribe(pubsub, topic)
+        unsubscribe(pubsub, topic)
 
       other ->
         :timer.cancel(tRef)
@@ -124,7 +157,7 @@ defmodule SSE do
 
   defp send_close(conn, pubsub, topic, reason) do
     Logger.debug("close")
-    PubSub.unsubscribe(pubsub, topic)
+    unsubscribe(pubsub, topic)
 
     conn
     |> chunk("event:close\ndata:#{reason}\n\n")
@@ -135,5 +168,16 @@ defmodule SSE do
       _error ->
         halt(conn)
     end
+  end
+
+  defp unsubscribe(_pubsub, []), do: :ok
+
+  defp unsubscribe(pubsub, [topic | rest]) do
+    PubSub.subscribe(pubsub, topic)
+    unsubscribe(pubsub, rest)
+  end
+
+  defp unsubscribe(pubsub, topic) do
+    PubSub.subscribe(pubsub, topic)
   end
 end
