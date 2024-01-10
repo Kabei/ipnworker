@@ -113,7 +113,7 @@ defmodule RegPay do
       Enum.each(data, fn {from, nonce, to, type, token, amount} ->
         PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
 
-        if to do
+        if from != to do
           PubSub.broadcast(@pubsub, "payments:#{to}", %{
             "nonce" => nonce,
             "type" => type,
