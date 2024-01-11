@@ -77,7 +77,7 @@ defmodule SSE do
     receive do
       :ping ->
         conn
-        |> chunk("event:ping\ndata:\n\n")
+        |> chunk("event:message\ndata:\n\n")
         |> case do
           {:ok, conn} ->
             loop(conn, pubsub, topic, once, timeout)
