@@ -80,6 +80,7 @@ defmodule SSE do
         |> chunk("event:message\ndata:\n\n")
         |> case do
           {:ok, conn} ->
+            Logger.debug("Ping")
             loop(conn, pubsub, topic, once, timeout)
 
           _error ->
