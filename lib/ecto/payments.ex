@@ -25,6 +25,8 @@ defmodule Ippan.Ecto.Payments do
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
   def all(params) do
+    IO.inspect(params)
+
     from(Payments)
     |> filter_offset(params)
     |> filter_limit(params)
@@ -32,6 +34,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_type(params)
     |> filter_token(params)
     |> filter_range(params)
+    |> filter_date(params)
     |> filter_select(params)
     |> sort(params)
     |> Repo.all()
@@ -87,29 +90,28 @@ defmodule Ippan.Ecto.Payments do
     where(query, [p], p.round <= ^id)
   end
 
-  defp filter_range(query, %{"dateEnd" => fin, "dateStart" => start}) do
-    start = Utils.date_start_to_time(start)
-    fin = Utils.date_end_to_time(fin)
-
-    join(query, :inner, [p], r in Round, on: p.round == r.id)
-    |> where([_p, r], r.timestamp >= ^start and r.timestamp <= ^fin)
-  end
-
-  defp filter_range(query, %{"dateEnd" => fin}) do
-    fin = Utils.date_end_to_time(fin)
-
-    join(query, :inner, [p], r in Round, on: p.round == r.id)
-    |> where([_p, r], r.timestamp <= ^fin)
-  end
-
-  defp filter_range(query, %{"dateStart" => start}) do
-    start = Utils.date_start_to_time(start)
-
-    join(query, :inner, [p], r in Round, on: p.round == r.id)
-    |> where([_p, r], r.timestamp >= ^start)
-  end
-
   defp filter_range(query, _), do: query
+
+  defp filter_date(query, %{"dateEnd" => fin, "dateStart" => start, "times" => _}) do
+    start = Utils.date_start_to_time(start)
+    fin = Utils.date_end_to_time(fin)
+
+    where(query, [_p, r], r.timestamp >= ^start and r.timestamp <= ^fin)
+  end
+
+  defp filter_date(query, %{"dateEnd" => fin, "times" => _}) do
+    fin = Utils.date_end_to_time(fin)
+
+    where(query, [_p, r], r.timestamp <= ^fin)
+  end
+
+  defp filter_date(query, %{"dateStart" => start, "times" => _}) do
+    start = Utils.date_start_to_time(start)
+
+    where(query, [_p, r], r.timestamp >= ^start)
+  end
+
+  defp filter_date(query, _), do: query
 
   defp filter_while(query, %{"target" => address}) do
     where(query, [p], p.from == ^address or p.to == ^address)
