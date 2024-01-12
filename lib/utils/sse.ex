@@ -77,7 +77,7 @@ defmodule SSE do
     receive do
       :ping ->
         conn
-        |> chunk("event:message\ndata:\n\n")
+        |> chunk("event:ping\ndata:\n\n")
         |> case do
           {:ok, conn} ->
             Logger.debug("Ping")
