@@ -80,6 +80,8 @@ defmodule SSE do
 
     receive do
       :ping ->
+        :timer.cancel(tRef)
+
         conn
         |> chunk("event:ping\ndata:\n\n")
         |> case do
