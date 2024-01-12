@@ -29,6 +29,10 @@ defmodule SSE do
   end
 
   # multiples
+  def stream(conn, _pubsub, _suffix, [], _opts) do
+    Plug.Conn.send_resp(conn, 400, "Bad request")
+  end
+
   def stream(conn, pubsub, suffix, topics, opts) do
     timeout = Keyword.get(opts, :timeout, @timeout)
     once = Keyword.get(opts, :once, true)
