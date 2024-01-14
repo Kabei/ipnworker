@@ -1,6 +1,7 @@
 defmodule Ipnworker.NetworkRoutes do
   use Plug.Router
   require Ippan.{Block, Round, Token, Validator}
+  alias Ippan.Ecto.Tx
   alias Ippan.{Block, Round, Token, Validator, Utils}
   require Sqlite
   import Ippan.Utils, only: [json: 1]
@@ -60,6 +61,7 @@ defmodule Ipnworker.NetworkRoutes do
       "supply" => TokenSupply.get(supply),
       "token" => @token,
       "tokens" => tokens,
+      "txs" => Tx.count(),
       "validators" => validators
     }
     |> json()

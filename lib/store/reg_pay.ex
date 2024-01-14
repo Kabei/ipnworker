@@ -118,6 +118,7 @@ defmodule RegPay do
             "nonce" => nonce,
             "type" => type,
             "from" => from,
+            "to" => to,
             "amount" => amount,
             "token" => token
           })

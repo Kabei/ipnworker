@@ -60,6 +60,17 @@ defmodule Ippan.Ecto.Tx do
     end
   end
 
+  @spec count() :: integer()
+  def count do
+    case Ecto.Adapters.SQL.query(
+           Repo,
+           "SELECT n_live_tup FROM pg_stat_all_tables where relname = 'txs'"
+         ) do
+      {:ok, %{rows: [[count]]}} -> count
+      _ -> 0
+    end
+  end
+
   def all(params) do
     from(Tx)
     |> filter_offset(params)
@@ -111,11 +122,22 @@ defmodule Ippan.Ecto.Tx do
   defp sort(query, _), do: order_by(query, [tx], desc: tx.block)
 
   defp fun(x = %{args: nil, hash: hash, ctype: ctype, signature: signature}) do
-    %{x | ctype: content_type(ctype), hash: Utils.encode16(hash), signature: Utils.encode64(signature)}
+    %{
+      x
+      | ctype: content_type(ctype),
+        hash: Utils.encode16(hash),
+        signature: Utils.encode64(signature)
+    }
   end
 
   defp fun(x = %{args: args, ctype: 0, hash: hash, signature: signature}) do
-    %{x | args: args, ctype: @craw, hash: Utils.encode16(hash), signature: Utils.encode64(signature)}
+    %{
+      x
+      | args: args,
+        ctype: @craw,
+        hash: Utils.encode16(hash),
+        signature: Utils.encode64(signature)
+    }
   end
 
   defp fun(x = %{args: args, ctype: 1, hash: hash, signature: signature}) do
