@@ -38,7 +38,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_select(params)
     |> sort(params)
     |> Repo.all()
-    |> data(params)
+    # |> data(params)
   end
 
   defp filter_select(query, %{"times" => _}) do
