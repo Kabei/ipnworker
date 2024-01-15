@@ -1,6 +1,6 @@
 defmodule Ippan.Ecto.Tx do
   use Ecto.Schema
-  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
+  import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3, join: 5]
   alias Ippan.Ecto.Block
   alias Ippan.Utils
   alias Ipnworker.Repo
@@ -35,7 +35,7 @@ defmodule Ippan.Ecto.Tx do
 
   def one(from, nonce) do
     from(tx in Tx, where: tx.from == ^from and tx.nonce == ^nonce, limit: 1)
-    |> filter_select()
+    |> filter_select(%{"times" => nil})
     |> Repo.one()
     |> case do
       nil -> nil
@@ -52,7 +52,7 @@ defmodule Ippan.Ecto.Tx do
           tx.ix == ^ix,
       limit: 1
     )
-    |> filter_select()
+    |> filter_select(%{"times" => nil})
     |> Repo.one()
     |> case do
       nil -> nil
@@ -78,13 +78,30 @@ defmodule Ippan.Ecto.Tx do
     |> filter_address(params)
     |> filter_type(params)
     |> filter_block(params)
-    |> filter_select()
+    |> filter_select(params)
     |> sort(params)
     |> Repo.all()
     |> Enum.map(&fun(&1))
   end
 
-  defp filter_select(query) do
+  defp filter_select(query, %{"times" => _}) do
+    join(query, :inner, [tx], b in Block, on: tx.block == b.id)
+    |> select([tx, b], %{
+      from: tx.from,
+      nonce: tx.nonce,
+      block: tx.block,
+      hash: tx.hash,
+      type: tx.type,
+      status: tx.status,
+      size: tx.size,
+      timestamp: b.timestamp,
+      ctype: tx.ctype,
+      args: tx.args,
+      signature: tx.signature
+    })
+  end
+
+  defp filter_select(query, _) do
     select(query, [tx], map(tx, @select))
   end
 
