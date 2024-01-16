@@ -1,5 +1,6 @@
 import Config
 
+prod = config_env() == :prod
 http_port = System.get_env("HTTP_PORT", "8080") |> String.to_integer()
 data_dir = System.get_env("DATA_DIR", "data")
 kem_dir = System.get_env("KEM_DIR", "priv/kem.key")
@@ -44,14 +45,14 @@ config :ipnworker, :http,
   ]
 
 # Blockchain setup
-config :ipnworker, :name, "IPPAN"
+config :ipnworker, :name, "IPPAN" <> if(prod, do: "", else: "-dev")
 config :ipnworker, :token, System.get_env("NATIVE_TOKEN", "IPN")
 config :ipnworker, :message_max_size, 8192
 config :ipnworker, :version, 0
 config :ipnworker, :block_max_size, 10_485_760
 config :ipnworker, :block_data_max_size, 10_000_000
 config :ipnworker, :round_timeout, :timer.seconds(20)
-config :ipnworker, :block_extension, "blo"
+config :ipnworker, :block_extension, "bk"
 config :ipnworker, :decode_extension, "dec"
 config :ipnworker, :note_max_size, 255
 config :ipnworker, :max_tx_amount, 1_000_000_000_000_000

@@ -65,7 +65,7 @@ defmodule SSE do
     loop(conn, pubsub, result_topics, once, timeout)
   end
 
-  def shutdown(conn, pubsub, topic) do
+  defp shutdown(conn, pubsub, topic) do
     unsubscribe(pubsub, topic)
     halt(conn)
   end
@@ -180,11 +180,11 @@ defmodule SSE do
   defp unsubscribe(_pubsub, []), do: :ok
 
   defp unsubscribe(pubsub, [topic | rest]) do
-    PubSub.subscribe(pubsub, topic)
+    PubSub.unsubscribe(pubsub, topic)
     unsubscribe(pubsub, rest)
   end
 
   defp unsubscribe(pubsub, topic) do
-    PubSub.subscribe(pubsub, topic)
+    PubSub.unsubscribe(pubsub, topic)
   end
 end

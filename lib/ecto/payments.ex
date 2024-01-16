@@ -25,8 +25,6 @@ defmodule Ippan.Ecto.Payments do
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 
   def all(params) do
-    IO.inspect(params)
-
     from(Payments)
     |> filter_offset(params)
     |> filter_limit(params)
