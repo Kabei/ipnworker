@@ -78,6 +78,7 @@ defmodule Ippan.Ecto.Tx do
     |> filter_address(params)
     |> filter_type(params)
     |> filter_block(params)
+    |> filter_search(params)
     |> filter_select(params)
     |> sort(params)
     |> Repo.all()
@@ -122,6 +123,12 @@ defmodule Ippan.Ecto.Tx do
   end
 
   defp filter_block(query, _), do: query
+
+  defp filter_search(query, %{"q" => q}) when byte_size(q) == 64 do
+    where(query, [tx], tx.hash == ^Base.decode16!(q, case: :mixed))
+  end
+
+  defp filter_search(query, _), do: query
 
   defp filter_address(query, %{"from" => address}) do
     where(query, [tx], tx.from == ^address)
