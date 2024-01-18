@@ -9,7 +9,6 @@ defmodule Ipnworker.NetworkRoutes do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @name Application.compile_env(@app, :name)
-  @jackpot "jackpot"
 
   @options %{
     "app_version" => Ipnworker.MixProject.version(),
@@ -48,7 +47,7 @@ defmodule Ipnworker.NetworkRoutes do
     dets = DetsPlux.get(:wallet)
     accounts = DetsPlux.info(dets, nil, :size)
     supply = TokenSupply.new(@token)
-    jackpot = TokenSupply.new(@jackpot)
+    jackpot = TokenSupply.cache("jackpot|supply")
 
     %{
       "accounts" => accounts,

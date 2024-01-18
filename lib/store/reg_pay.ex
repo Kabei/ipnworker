@@ -56,15 +56,15 @@ defmodule RegPay do
     end
 
     def reserve(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 201, token, -amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 201, token, -amount})
     end
 
     def expired(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 202, token, -amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 202, token, -amount})
     end
 
     def drop(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 303, token, -amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 303, token, -amount})
     end
 
     def burn(%{id: from, nonce: nonce}, to, token, amount) do
@@ -105,31 +105,43 @@ defmodule RegPay do
 
   def commit(nil, _), do: nil
 
-  def commit(pg_conn, round_id) do
-    tid = :persistent_term.get(:payment)
-    data = :ets.tab2list(tid)
+  if @notify do
+    def commit(pg_conn, round_id) do
+      tid = :persistent_term.get(:payment)
+      data = :ets.tab2list(tid)
 
-    if @notify do
       Enum.each(data, fn {from, nonce, to, type, token, amount} ->
         PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
 
         if to do
-          PubSub.broadcast(@pubsub, "payments:#{to}", %{
-            "nonce" => nonce,
-            "type" => type,
-            "from" => from,
-            "to" => to,
-            "amount" => amount,
-            "token" => token
-          })
+          payload =
+            %{
+              "amount" => amount,
+              "from" => from,
+              "nonce" => nonce,
+              "round" => round_id,
+              "to" => to,
+              "token" => token,
+              "type" => type
+            }
+            |> MapUtil.drop_nils()
+
+          PubSub.broadcast(@pubsub, "payments:#{to}", payload)
         end
       end)
-    else
+
+      :ets.delete_all_objects(tid)
+    end
+  else
+    def commit(pg_conn, round_id) do
+      tid = :persistent_term.get(:payment)
+      data = :ets.tab2list(tid)
+
       Enum.each(data, fn {from, nonce, to, type, token, amount} ->
         PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
       end)
-    end
 
-    :ets.delete_all_objects(tid)
+      :ets.delete_all_objects(tid)
+    end
   end
 end
