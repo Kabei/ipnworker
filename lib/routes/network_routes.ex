@@ -47,7 +47,7 @@ defmodule Ipnworker.NetworkRoutes do
     dets = DetsPlux.get(:wallet)
     accounts = DetsPlux.info(dets, nil, :size)
     supply = TokenSupply.new(@token)
-    jackpot = TokenSupply.cache("jackpot|supply")
+    jackpot = TokenSupply.get("jackpot|supply")
 
     %{
       "accounts" => accounts,
