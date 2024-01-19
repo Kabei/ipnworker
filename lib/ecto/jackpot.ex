@@ -33,7 +33,7 @@ defmodule Ippan.Ecto.Jackpot do
     from(Jackpot)
     |> filter_offset(params)
     |> filter_limit(params)
-    |> filter_range(params)
+    |> filter_round(params)
     |> filter_select()
     |> sort(params)
     |> Repo.all()
@@ -43,19 +43,23 @@ defmodule Ippan.Ecto.Jackpot do
     select(query, [j], map(j, @select))
   end
 
-  defp filter_range(query, %{"end" => fin, "start" => start}) do
+  defp filter_round(query, %{"round" => id}) do
+    where(query, [j], j.round_id == ^id)
+  end
+
+  defp filter_round(query, %{"end" => fin, "start" => start}) do
     where(query, [j], j.round_id >= ^start and j.round_id <= ^fin)
   end
 
-  defp filter_range(query, %{"end" => id}) do
+  defp filter_round(query, %{"end" => id}) do
     where(query, [j], j.round_id <= ^id)
   end
 
-  defp filter_range(query, %{"start" => id}) do
+  defp filter_round(query, %{"start" => id}) do
     where(query, [j], j.round_id >= ^id)
   end
 
-  defp filter_range(query, _), do: query
+  defp filter_round(query, _), do: query
 
   defp sort(query, %{"sort" => "oldest"}), do: order_by(query, [j], asc: j.round_id)
   defp sort(query, _), do: order_by(query, [j], desc: j.round_id)
