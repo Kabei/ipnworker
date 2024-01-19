@@ -43,10 +43,6 @@ defmodule Ippan.Ecto.Jackpot do
     select(query, [j], map(j, @select))
   end
 
-  defp filter_round(query, %{"round" => id}) do
-    where(query, [j], j.round_id == ^id)
-  end
-
   defp filter_round(query, %{"end" => fin, "start" => start}) do
     where(query, [j], j.round_id >= ^start and j.round_id <= ^fin)
   end
