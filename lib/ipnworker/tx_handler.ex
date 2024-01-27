@@ -51,20 +51,20 @@ defmodule Ippan.TxHandler do
         0 ->
           # verify ed25519 signature
           if Cafezinho.Impl.verify(var!(signature), var!(hash), pk) != :ok,
-            do: raise(IppanError, "Invalid signature verify")
+            do: raise(IppanHighError, "Invalid signature verify")
 
         1 ->
           # verify secp256k1 signature
           if ExSecp256k1.Impl.verify(var!(hash), var!(signature), pk) != :ok,
-            do: raise(IppanError, "Invalid signature verify")
+            do: raise(IppanHighError, "Invalid signature verify")
 
         2 ->
           # verify falcon-512 signature
           if Falcon.verify(var!(hash), var!(signature), pk) != :ok,
-            do: raise(IppanError, "Invalid signature verify")
+            do: raise(IppanHighError, "Invalid signature verify")
 
         _ ->
-          raise(IppanError, "Signature type: #{sig_type} is not supported")
+          raise(IppanHighError, "Signature type: #{sig_type} is not supported")
       end
     end
   end

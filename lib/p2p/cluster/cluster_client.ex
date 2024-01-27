@@ -10,7 +10,9 @@ defmodule Ippan.ClusterClient do
   @ping_interval 45_000
   @app Mix.Project.config()[:app]
   @opts Application.compile_env(@app, :p2p_client)
+  @time_to_connect 5_000
   @time_to_reconnect 1_000
+  @via :client
 
   def start_link(_, args) do
     start_link(args)
@@ -54,7 +56,7 @@ defmodule Ippan.ClusterClient do
     from_id = :persistent_term.get(@id)
 
     with {:ok, ip_addr} <- Utils.getaddr(hostname),
-         {:ok, socket} <- @adapter.connect(ip_addr, port, @opts),
+         {:ok, socket} <- @adapter.connect(ip_addr, port, @opts, @time_to_connect),
          false <- @node.alive?(node_id) do
       case P2P.client_handshake(socket, from_id, net_pubkey, :persistent_term.get(:privkey)) do
         {:ok, sharedkey} ->
@@ -66,7 +68,7 @@ defmodule Ippan.ClusterClient do
             |> Map.put(:socket, socket)
             |> Map.put(:sharedkey, sharedkey)
 
-          @node.on_connect(node_id, new_state)
+          @node.on_connect(node_id, new_state, @via)
           {:ok, tRef} = :timer.send_after(@ping_interval, :ping)
 
           # callback
@@ -135,7 +137,7 @@ defmodule Ippan.ClusterClient do
   def handle_info({:tcp_closed, socket}, %{id: id} = state) do
     Logger.debug("tcp_closed | #{id}")
     @adapter.close(socket)
-    @node.on_disconnect(state, 1)
+    @node.on_disconnect(state, 1, @via)
     {:stop, :normal, state}
   end
 

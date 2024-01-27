@@ -36,7 +36,7 @@ defmodule Ippan.Ecto.Payments do
     |> filter_select(params)
     |> sort(params)
     |> Repo.all()
-    |> data(params)
+    |> data()
   end
 
   defp filter_select(query, %{"times" => _}) do
@@ -57,7 +57,7 @@ defmodule Ippan.Ecto.Payments do
     select(query, [p], map(p, @select))
   end
 
-  defp data(results, _) do
+  defp data(results) do
     db_ref = :persistent_term.get(:main_conn)
 
     Enum.filter(results, fn

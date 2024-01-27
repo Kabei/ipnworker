@@ -12,9 +12,11 @@ defmodule Ippan.ClusterNodes do
     app: @app,
     name: :cluster,
     table: :cnw,
+    bag: :cnb,
     server: Ippan.ClusterNodes.Server,
     pubsub: @pubsub,
     topic: "cluster",
+    opts: Application.compile_env(@app, :p2p_client),
     conn_opts: [reconnect: true, retry: :infinity],
     sup: Ippan.ClusterSup
 
@@ -63,16 +65,17 @@ defmodule Ippan.ClusterNodes do
           hostname: _hostname,
           net_pubkey: _net_pubkey
         } =
-          map
+          map,
+        via
       ) do
     client_conn = Map.has_key?(map, :opts)
     Logger.debug("On connect #{node_id} opts: #{client_conn}")
 
-    if client_conn do
+    if via == :client do
       :ets.insert(@table, {node_id, map})
-    else
-      :ets.insert_new(@table, {node_id, map})
     end
+
+    :ets.insert(@bag, {node_id, map.socket})
 
     if node_id == :persistent_term.get(:miner) do
       NodeSync.start_link()
@@ -80,12 +83,16 @@ defmodule Ippan.ClusterNodes do
   end
 
   @impl Network
+  def handle_request("check_block", data, _state) do
+    BlockHandler.check(data)
+  end
+
   def handle_request("verify_block", data, _state) do
-    case BlockHandler.verify_file!(data) do
+    case BlockHandler.verify_block(data) do
       :ok ->
         true
 
-      :error ->
+      {:error, _} ->
         false
     end
   end

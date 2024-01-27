@@ -93,7 +93,7 @@ defmodule Ipnworker.Router do
                   send_resp(conn, 400, "Transaction already exists")
               end
             rescue
-              e in IppanError ->
+              e in [IppanError, IppanHighError] ->
                 Logger.debug(Exception.format(:error, e, __STACKTRACE__))
                 send_resp(conn, 400, e.message)
 

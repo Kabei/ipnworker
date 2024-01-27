@@ -34,8 +34,6 @@ defmodule Download do
   @module __MODULE__
 
   def await(url, path, retry \\ @retry, max_file_size \\ @max_file_size, timeout \\ @timeout) do
-    File.rm(path)
-
     Task.async(fn ->
       try_from(url, path, retry, max_file_size, timeout)
     end)

@@ -1,6 +1,6 @@
 defmodule Ippan.Network do
-  @callback on_connect(node_id :: term(), map :: map()) :: any()
-  @callback on_disconnect(state :: term(), action :: integer()) :: any()
+  @callback on_connect(node_id :: term(), map :: map(), via :: atom()) :: any()
+  @callback on_disconnect(state :: term(), action :: integer(), via :: atom()) :: any()
   @callback on_message(packet :: term(), state :: term()) :: any()
   @callback connect(node :: term(), opts :: keyword()) :: port() | false
   @callback connect_async(node :: term(), opts :: keyword()) ::
@@ -65,6 +65,7 @@ defmodule Ippan.Network do
       @otp_app opts[:app]
       @name opts[:name]
       @table opts[:table]
+      @bag opts[:bag]
       @server opts[:server] || opts[:name]
       @pubsub opts[:pubsub]
       @topic opts[:topic]
@@ -82,6 +83,21 @@ defmodule Ippan.Network do
             :undefined ->
               :ets.new(@table, [
                 :set,
+                :named_table,
+                :public,
+                read_concurrency: false,
+                write_concurrency: false
+              ])
+
+            ref ->
+              ref
+          end
+
+        bag_table =
+          case :ets.whereis(@bag) do
+            :undefined ->
+              :ets.new(@bag, [
+                :bag,
                 :named_table,
                 :public,
                 read_concurrency: false,
@@ -121,7 +137,7 @@ defmodule Ippan.Network do
 
         PubSub.subscribe(@pubsub, @topic)
 
-        state = %{sup: sup, server: server, ets: table}
+        state = %{sup: sup, server: server, ets: table, bag: bag_table}
         on_init(state)
         {:ok, state, {:continue, :init}}
       end
@@ -151,10 +167,11 @@ defmodule Ippan.Network do
       # end
 
       @impl true
-      def terminate(_reason, %{ets: ets, server: server, sup: sup}) do
+      def terminate(_reason, %{bag: bag_ets, ets: ets, server: server, sup: sup}) do
         ThousandIsland.stop(server, :infinity)
         PubSub.unsubscribe(@pubsub, @topic)
         :ets.delete(ets)
+        :ets.delete(bag_ets)
         DynamicSupervisor.stop(sup)
       end
 
@@ -162,67 +179,51 @@ defmodule Ippan.Network do
       def on_connect(
             node_id,
             %{
-              socket: _socket,
+              socket: socket,
               sharedkey: _sharedkey,
               hostname: _hostname,
               net_pubkey: _net_pubkey
             } =
-              map
+              map,
+            via
           ) do
-        client_conn = Map.has_key?(map, :opts)
-        Logger.debug("On connect #{node_id} opts: #{client_conn}")
+        Logger.debug("On connect #{node_id} via: #{via}")
 
-        if client_conn do
+        if via == :client do
           :ets.insert(@table, {node_id, map})
-        else
-          :ets.insert_new(@table, {node_id, map})
         end
+
+        :ets.insert(@bag, {node_id, socket})
       end
 
       @impl Network
-      def on_disconnect(%{id: node_id, socket: socket} = node, action) do
-        # match = [
-        #   {{:"$1", %{socket: :"$2"}}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
-        #    [true]}
-        # ]
+      def on_disconnect(%{id: node_id, socket: socket} = node, action, via) do
+        case via do
+          :client ->
+            case alive?(node_id) do
+              false ->
+                Logger.debug("On disconnect #{node_id} #{via}")
+                false
 
-        # case :ets.select(@table, match) do
-        #   [] ->
-        #     Logger.debug("On disconnect #{node_id}")
-        #     false
+              true ->
+                # unexpected disconnection
+                Logger.debug("On disconnect #{node_id} unexpected disconnection #{via}")
 
-        #   [found | _] ->
-        #     # unexpected disconnection
-        #     Logger.debug("On disconnect #{node_id} unexpected disconnection")
+                :ets.delete(@table, node_id)
+                opts = Map.get(node, :opts, [])
 
-        #     :ets.select_delete(@table, match)
-
-        #     if (action == 1 or Keyword.get(opts, :reconnect, false)) and exists?(node_id) do
-        #       connect_async(state, opts)
-        #     end
-        # end
-
-        case alive?(node_id) do
-          false ->
-            Logger.debug("On disconnect #{node_id}")
-            false
-
-          true ->
-            # unexpected disconnection
-            Logger.debug("On disconnect #{node_id} unexpected disconnection")
-
-            :ets.delete(@table, node_id)
-            opts = Map.get(node, :opts)
-
-            if (action == 1 or
-                  (is_list(opts) and opts and Keyword.get(opts, :reconnect, false))) and
-                 exists?(node_id) do
-              connect_async(node, opts)
+                if (action == 1 or Keyword.get(opts, :reconnect, false)) and
+                     exists?(node_id) do
+                  connect_async(node, opts)
+                end
             end
+
+          _server ->
+            Logger.debug("On disconnect #{node_id}")
         end
       end
 
-      def on_disconnect(_, _), do: :ok
+      def on_disconnect(_, _, _), do: :ok
 
       @impl Network
       def on_message(packet, %{sharedkey: sharedkey} = state) do
@@ -256,7 +257,6 @@ defmodule Ippan.Network do
 
           m ->
             Logger.debug(inspect(m))
-            :ok
         end
       end
 
@@ -293,25 +293,22 @@ defmodule Ippan.Network do
       end
 
       # :ets.fun2ms(fn {id, %{socket: socket}} when id == 1 and socket == 2 -> true end)
+      # :ets.fun2ms(fn {id, socket} when id == 1 and socket == 2 -> true end)
       @impl Network
       def disconnect(%{id: node_id, socket: socket}) do
-        match = [
-          {{:"$1", %{socket: :"$2"}}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
-           [true]}
-        ]
+        match = [{{:"$1", :"$2"}, [{:andalso, {:==, :"$1", 1}, {:==, :"$2", 2}}], [true]}]
 
-        :ets.select_delete(@table, match)
+        :ets.delete(@table, node_id)
+        :ets.select_delete(@bag, match)
         @adapter.close(socket)
       end
 
       @impl Network
       def disconnect(node_id, socket) do
-        match = [
-          {{:"$1", %{socket: :"$2"}}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
-           [true]}
-        ]
+        match = [{{:"$1", :"$2"}, [{:andalso, {:==, :"$1", 1}, {:==, :"$2", 2}}], [true]}]
 
-        :ets.select_delete(@table, match)
+        :ets.delete(@table, node_id)
+        :ets.select_delete(@bag, match)
         @adapter.close(socket)
       end
 
@@ -321,10 +318,11 @@ defmodule Ippan.Network do
       end
 
       def disconnect_all(node_id) do
-        data = :ets.lookup(@table, node_id)
+        data = :ets.lookup(@bag, node_id)
         :ets.delete(@table, node_id)
+        :ets.delete(@bag, node_id)
 
-        Enum.each(data, fn {_, %{socket: socket}} ->
+        Enum.each(data, fn {_, socket} ->
           @adapter.close(socket)
         end)
       end
@@ -439,7 +437,7 @@ defmodule Ippan.Network do
       @impl Network
       def broadcast(message) do
         list()
-        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        # |> Enum.uniq_by(fn {node_id, _} -> node_id end)
         |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
           @adapter.send(socket, encode(message, sharedkey))
         end)
@@ -450,7 +448,7 @@ defmodule Ippan.Network do
         data = :ets.select(@table, [{{:_, %{role: :"$1"}}, [{:==, :"$1", role}], [:"$_"]}])
 
         data
-        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        # |> Enum.uniq_by(fn {node_id, _} -> node_id end)
         |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
           @adapter.send(socket, encode(message, sharedkey))
         end)
@@ -459,7 +457,7 @@ defmodule Ippan.Network do
       @impl Network
       def broadcast_except(message, ids) do
         list()
-        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        # |> Enum.uniq_by(fn {node_id, _} -> node_id end)
         |> Enum.each(fn {id, %{sharedkey: sharedkey, socket: socket}} ->
           if id not in ids do
             @adapter.send(socket, encode(message, sharedkey))
@@ -477,8 +475,8 @@ defmodule Ippan.Network do
 
       defoverridable on_init: 1,
                      on_continue: 1,
-                     on_connect: 2,
-                     on_disconnect: 2,
+                     on_connect: 3,
+                     on_disconnect: 3,
                      on_message: 2
     end
   end

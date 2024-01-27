@@ -20,7 +20,7 @@ defmodule Ippan.Func.Wallet do
 
     cond do
       id != account_id ->
-        raise IppanError, "Invalid sender"
+        raise IppanError, "Invalid account ID"
 
       validator_id != validator.id ->
         raise IppanError, "Invalid validator"

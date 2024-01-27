@@ -13,18 +13,19 @@ defmodule Ipnworker.Application do
     make_folders()
     load_keys()
 
-    children = [
-      MemTables,
-      DetsSup,
-      MainStore,
-      LocalStore,
-      PgStore,
-      Ipnworker.Repo,
-      :poolboy.child_spec(:minerpool, miner_config()),
-      {Phoenix.PubSub, [name: :pubsub]},
-      ClusterNodes,
-      {Bandit, Application.get_env(@app, :http)}
-    ]
+    children =
+      [
+        MemTables,
+        DetsSup,
+        MainStore,
+        LocalStore,
+        PgStore,
+        Ipnworker.Repo,
+        :poolboy.child_spec(:minerpool, miner_config()),
+        {Phoenix.PubSub, [name: :pubsub]},
+        ClusterNodes
+      ] ++
+        http_service()
 
     opts = [strategy: :one_for_one, name: Ipnworker.Supervisor]
     Supervisor.start_link(children, opts)
@@ -85,6 +86,19 @@ defmodule Ipnworker.Application do
     File.mkdir(block_dir)
     File.mkdir(decode_dir)
     File.mkdir(save_dir)
+  end
+
+  defp http_service do
+    config = Application.get_env(@app, :http)
+    port = Keyword.get(config, :port, 0)
+
+    case port do
+      x when x > 0 ->
+        [{Bandit, config}]
+
+      _ ->
+        []
+    end
   end
 
   defp miner_config do
