@@ -36,6 +36,7 @@ defmodule RoundBuilder do
     {:reply, :ok, state}
   end
 
+  @spec prepare_build(round :: map, hostname :: String.t(), check_sync :: boolean()) :: any()
   if @history do
     defp prepare_build(round, hostname, false) do
       pgid = PgStore.pool()
@@ -65,12 +66,12 @@ defmodule RoundBuilder do
   else
     defp prepare_build(round, hostname, true) do
       unless node_syncing?(round) do
-        build_round(round, hostname, conn)
+        build_round(round, hostname, nil)
       end
     end
 
     defp prepare_build(round, hostname, false) do
-      build_round(round, hostname, conn)
+      build_round(round, hostname, nil)
     end
   end
 
