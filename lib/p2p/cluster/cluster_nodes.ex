@@ -32,13 +32,11 @@ defmodule Ippan.ClusterNodes do
     if is_nil(test) do
       miner = :persistent_term.get(:miner)
 
-      case Node.fetch(miner) do
+      case Node.get(miner) do
         nil ->
           :ok
 
-        node_raw ->
-          node = Node.list_to_map(node_raw)
-
+        node ->
           spawn_link(fn -> connect(node) end)
       end
     end
