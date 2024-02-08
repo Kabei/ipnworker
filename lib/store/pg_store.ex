@@ -14,7 +14,6 @@ defmodule PgStore do
   # DB Pool connections
   @pool :pg_pool
   @repo Ipnworker.Repo
-  @history Application.compile_env(@app, :history, false)
 
   def child_spec(_args) do
     %{
@@ -25,25 +24,42 @@ defmodule PgStore do
     }
   end
 
-  def start do
-    if @history do
-      opts =
-        Application.get_env(@app, @repo)
-        |> then(fn opts ->
-          writers = Keyword.get(opts, :wsize, 1)
-          Keyword.put(opts, :pool_size, writers)
-        end)
+  defp prepare_state(pid) do
+    Postgrex.transaction(
+      pid,
+      fn conn ->
+        for sql <- @prepares do
+          Postgrex.query(conn, sql, [])
+        end
+      end,
+      timeout: :infinity
+    )
+  end
 
-      {:ok, pid} = Postgrex.start_link(opts)
-      :persistent_term.put(@pool, pid)
+  cond do
+    Application.compile_env(@app, :history, false) ->
+      def start do
+        opts = Application.get_env(@app, @repo)
+        {:ok, pid} = Postgrex.start_link(opts ++ [after_connect: &prepare_state/1])
+        :persistent_term.put(@pool, pid)
 
-      init(pid, opts)
-      print(opts)
+        init(pid, opts)
+        print(opts)
 
-      {:ok, pid}
-    else
-      :ignore
-    end
+        {:ok, pid}
+      end
+
+    Application.compile_env(@app, :api, true) ->
+      def start do
+        {:ok, pid} = Postgrex.start_link(opts)
+        :persistent_term.put(@pool, pid)
+        {:ok, pid}
+      end
+
+    true ->
+      def start do
+        :ignore
+      end
   end
 
   def pool do
@@ -71,14 +87,6 @@ defmodule PgStore do
       []
     )
   end
-
-  # def pre_insert_tx(conn, params) do
-  #   Postgrex.query(
-  #     conn,
-  #     query_parse("EXECUTE insert_tx($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", params),
-  #     []
-  #   )
-  # end
 
   def insert_pay(conn, params) do
     Postgrex.query(
@@ -135,37 +143,50 @@ defmodule PgStore do
   defp init(pid, opts) do
     pool_size = Keyword.get(opts, :pool_size, 1)
 
-    Postgrex.transaction(
-      pid,
-      fn conn ->
-        # Create initial data if not exists and prepared statements
-        for sql <- @creations do
-          {:ok, _result} = Postgrex.query(conn, sql, [])
-        end
+    Postgrex.transaction(pid, fn conn ->
+      case Postgrex.query(
+             conn,
+             "SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'history');",
+             []
+           ) do
+        {:ok, %{rows: [[false]]}} ->
+          Postgrex.transaction(
+            pid,
+            fn conn ->
+              # Create initial data if not exists and prepared statements
+              for sql <- @creations do
+                {:ok, _result} = Postgrex.query(conn, sql, [])
+              end
 
-        # Execute alter tables if exists new version
-        for sql <- @alter do
-          {:ok, _result} = Postgrex.query(conn, sql, [])
-        end
-      end,
-      timeout: :infinity
-    )
+              # Execute alter tables if exists new version
+              for sql <- @alter do
+                {:ok, _result} = Postgrex.query(conn, sql, [])
+              end
+            end,
+            timeout: :infinity
+          )
 
-    # Prepare statements
-    Enum.map(1..pool_size, fn _ ->
-      Task.async(fn ->
-        Postgrex.transaction(
-          pid,
-          fn conn ->
-            for sql <- @prepares do
-              {:ok, _result} = Postgrex.query(conn, sql, [])
-            end
-          end,
-          timeout: :infinity
-        )
-      end)
+          # Prepare statements
+          Enum.map(1..pool_size, fn _ ->
+            Task.async(fn ->
+              Postgrex.transaction(
+                pid,
+                fn conn ->
+                  for sql <- @prepares do
+                    # {:ok, _result} =
+                    Postgrex.query(conn, sql, [])
+                  end
+                end,
+                timeout: :infinity
+              )
+            end)
+          end)
+          |> Task.await_many(:infinity)
+
+        _ ->
+          nil
+      end
     end)
-    |> Task.await_many(:infinity)
   end
 
   defmacro text?(value) do
