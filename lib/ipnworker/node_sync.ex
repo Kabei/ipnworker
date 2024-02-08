@@ -36,6 +36,7 @@ defmodule Ipnworker.NodeSync do
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
+    builder_pid = Process.whereis(RoundBuilder)
     {local_round_id, _hash} = Round.last({-1, nil})
 
     if is_nil(node) do
@@ -56,6 +57,7 @@ defmodule Ipnworker.NodeSync do
 
         {:noreply,
          %{
+           builder: builder_pid,
            db_ref: db_ref,
            node: node.id,
            hostname: node.hostname,
@@ -75,6 +77,7 @@ defmodule Ipnworker.NodeSync do
   def handle_continue(
         :fetch,
         state = %{
+          builder: builder_pid,
           hostname: hostname,
           node: node_id,
           offset: offset,
@@ -94,7 +97,7 @@ defmodule Ipnworker.NodeSync do
 
       Enum.each(new_rounds, fn new_round ->
         round = MapUtil.to_atoms(new_round)
-        build(round, hostname)
+        build(builder_pid, round, hostname)
       end)
 
       len = length(new_rounds)
@@ -117,10 +120,13 @@ defmodule Ipnworker.NodeSync do
     {:stop, :normal, state}
   end
 
-  def handle_continue({:next, key}, state = %{hostname: hostname, queue: ets_queue}) do
+  def handle_continue(
+        {:next, key},
+        state = %{builder: builder_pid, hostname: hostname, queue: ets_queue}
+      ) do
     IO.inspect("Queue | round: ##{key}")
     [{_key, round}] = :ets.lookup(ets_queue, key)
-    build(round, hostname)
+    build(builder_pid, round, hostname)
     :ets.delete(ets_queue, key)
 
     {:noreply, state, {:continue, {:next, :ets.next(ets_queue, key)}}}
@@ -141,7 +147,7 @@ defmodule Ipnworker.NodeSync do
     :ets.insert(:sync, {round.id, round})
   end
 
-  defp build(round, hostname) do
-    GenServer.call(RoundBuilder, {:build, round, hostname, false}, :infinity)
+  defp build(pid, round, hostname) do
+    GenServer.call(pid, {:build, round, hostname, false}, :infinity)
   end
 end

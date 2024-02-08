@@ -47,6 +47,14 @@ defmodule EnvStore do
     :persistent_term.get({:env, "block.limit"}, 1)
   end
 
+  def min_fa do
+    :persistent_term.get({:env, "fees.fa"}, 0)
+  end
+
+  def min_fb do
+    :persistent_term.get({:env, "fees.fb"}, 1)
+  end
+
   defp transform("owner", x) when byte_size(x) <= 255, do: x
   defp transform("owner", _x), do: nil
 

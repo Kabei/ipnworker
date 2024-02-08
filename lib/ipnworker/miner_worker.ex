@@ -45,6 +45,7 @@ defmodule MinerWorker do
             height: height,
             round: round_id,
             count: count,
+            status: status,
             vsn: version
           } = block,
           hostname,
@@ -88,11 +89,15 @@ defmodule MinerWorker do
     rescue
       err ->
         Logger.error(Exception.format(:error, err, __STACKTRACE__))
-        # delete player
-        Validator.delete(creator_id)
-        PubSub.broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
-        b = Block.cancel(block, round_id, count, 1)
-        :done = Block.insert(Block.to_list(b))
+
+        if status > 0 do
+          # delete validator
+          Validator.delete(creator_id)
+          PubSub.broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
+          b = Block.cancel(block, round_id, count, 1)
+          :done = Block.insert(Block.to_list(b))
+        end
+
         {:reply, :error, state}
     after
       IO.inspect("Bstep 4")
@@ -125,11 +130,42 @@ defmodule MinerWorker do
     dtx = :ets.whereis(:dtx)
     dtmp = :ets.new(:tmp, [:set])
     cref = :counters.new(1, [])
+    synced = :persistent_term.get(:status) == :synced
 
     Enum.each(transactions, fn
+      ["error", hash, type, from, nonce, args, sig, size] ->
+        if @history do
+          ix = :counters.get(cref, 1)
+
+          PgStore.insert_tx(pg_conn, [
+            from,
+            nonce,
+            ix,
+            block_id,
+            hash,
+            type,
+            1,
+            size,
+            @cjson,
+            @json.encode!(args),
+            sig
+          ])
+        end
+
+        if @notify and synced and type != 307 do
+          PubSub.broadcast(@pubsub, "payments:#{from}", %{
+            "hash" => Utils.encode16(hash),
+            "nonce" => nonce,
+            "from" => from,
+            "args" => args,
+            "status" => 1,
+            "type" => type
+          })
+        end
+
       [hash, type, from, nonce, args, sig, size] ->
         result =
-          case Wallet.gte_nonce(nonce_dets, nonce_tx, from, nonce) do
+          case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
             :error ->
               :error
 
@@ -139,7 +175,7 @@ defmodule MinerWorker do
 
         status = tx_status(result)
 
-        if @notify and type != 307 do
+        if @notify and synced and type != 307 do
           PubSub.broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
@@ -176,7 +212,7 @@ defmodule MinerWorker do
         ix = :counters.get(cref, 1)
 
         result =
-          case Wallet.gte_nonce(nonce_dets, nonce_tx, from, nonce) do
+          case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
             :error ->
               :error
 
@@ -186,7 +222,7 @@ defmodule MinerWorker do
 
         status = tx_status(result)
 
-        if @notify and type != 307 do
+        if @notify and synced and type != 307 do
           PubSub.broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,

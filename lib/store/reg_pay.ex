@@ -109,11 +109,12 @@ defmodule RegPay do
     def commit(pg_conn, round_id) do
       tid = :persistent_term.get(:payment)
       data = :ets.tab2list(tid)
+      synced = :persistent_term.get(:status) == :synced
 
       Enum.each(data, fn {from, nonce, to, type, token, amount} ->
         PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
 
-        if to do
+        if synced and to do
           payload =
             %{
               "amount" => amount,

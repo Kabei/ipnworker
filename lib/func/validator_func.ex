@@ -8,7 +8,7 @@ defmodule Ippan.Func.Validator do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @max_validators Application.compile_env(@app, :max_validators)
-  @max_fees 1_000_000_000_000
+  @max_fees 1_000_000_000_000_000
 
   def join(
         %{id: account_id},
@@ -32,8 +32,11 @@ defmodule Ippan.Func.Validator do
     next_id = Validator.next_id()
 
     cond do
-      fa < 0 or fa > @max_fees or fb < 1 or fb > @max_fees ->
-        raise IppanError, "Invalid fees"
+      fa < EnvStore.min_fa() or fa > @max_fees ->
+        raise IppanError, "Invalid FA"
+
+      fb < EnvStore.min_fb() or fb > @max_fees ->
+        raise IppanError, "Invalid FB"
 
       byte_size(net_pubkey) > 1138 ->
         raise IppanError, "Invalid net_pubkey size #{byte_size(net_pubkey)}"
@@ -101,8 +104,8 @@ defmodule Ippan.Func.Validator do
         |> MapUtil.validate_text(:class)
         |> MapUtil.validate_integer(:fa)
         |> MapUtil.validate_integer(:fb)
-        |> MapUtil.validate_value(:fa, :gte, 0)
-        |> MapUtil.validate_value(:fb, :gte, 1)
+        |> MapUtil.validate_value(:fa, :gte, EnvStore.min_fa())
+        |> MapUtil.validate_value(:fb, :gte, EnvStore.min_fb())
         |> MapUtil.transform(:pubkey, fn x ->
           case Fast64.decode64(x) do
             j when byte_size(j) > 897 ->

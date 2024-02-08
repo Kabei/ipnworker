@@ -10,8 +10,8 @@ defmodule Ippan.Func.Wallet do
   def new(
         %{id: account_id, validator: validator},
         pubkey,
-        validator_id,
-        sig_type
+        sig_type,
+        %{"vid" => validator_id, "fa" => fa, "fb" => fb}
       ) do
     pubkey = Fast64.decode64(pubkey)
     id = Address.hash(sig_type, pubkey)
@@ -32,6 +32,12 @@ defmodule Ippan.Func.Wallet do
         (sig_type == 1 and byte_size(pubkey) == 65) or
           (sig_type == 2 and byte_size(pubkey) != 897) ->
         raise IppanError, "Invalid pubkey size"
+
+      not is_integer(fa) or fa < EnvStore.min_fa() ->
+        raise IppanError, "Invalid FA"
+
+      not is_integer(fb) or fb < EnvStore.min_fb() ->
+        raise IppanError, "Invalid FB"
 
       DetsPlux.member_tx?(dets, tx, id) ->
         raise IppanError, "Wallet #{id} already exists"
