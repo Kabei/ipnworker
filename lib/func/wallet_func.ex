@@ -48,9 +48,12 @@ defmodule Ippan.Func.Wallet do
   end
 
   def subscribe(
-        %{id: account_id, validator: %{fa: fa, fb: fb}, size: size},
-        validator_id
-      ) do
+        %{id: account_id, validator: %{fa: vfa, fb: vfb}, size: size},
+        validator_id,
+        fa,
+        fb
+      )
+      when vfa == fa and vfb == fb do
     wallet_dets = DetsPlux.get(:wallet)
     wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
