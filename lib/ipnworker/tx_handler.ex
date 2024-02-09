@@ -81,16 +81,15 @@ defmodule Ippan.TxHandler do
       wallet_dets = DetsPlux.get(:wallet)
       wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
-      {wallet_pk, sig_type, map} =
+      {wallet_pk, sig_type, account_map} =
         TxHandler.get_public_key!(wallet_dets, wallet_cache, type_of_verification, var!(vid))
 
-      account_map =
-        if map != nil do
-          %{"fa" => fa, "fb" => fb} = map
-          %{fa: vfa, fb: vfb} = var!(validator)
+      if account_map != nil do
+        %{"fa" => fa, "fb" => fb} = account_map
+        %{fa: vfa, fb: vfb} = var!(validator)
 
-          if fb > vfb or fa > vfa, do: raise(IppanError, "Invalid fees")
-        end
+        if fb != vfb or fa != vfa, do: raise(IppanError, "Invalid fees")
+      end
 
       TxHandler.check_signature!(sig_type, wallet_pk)
 
@@ -102,7 +101,6 @@ defmodule Ippan.TxHandler do
       source = %{
         id: var!(from),
         hash: var!(hash),
-        map: account_map,
         nonce: var!(nonce),
         size: var!(size),
         type: var!(type),
@@ -169,7 +167,7 @@ defmodule Ippan.TxHandler do
       %{deferred: deferred, mod: mod, fun: fun, check: type_of_verification, key: key_unique} =
         Funcs.lookup(var!(type))
 
-      {wallet_pk, sig_type, map} =
+      {wallet_pk, sig_type, account_map} =
         TxHandler.get_public_key!(
           var!(wallet_dets),
           var!(wallet_tx),
@@ -177,13 +175,12 @@ defmodule Ippan.TxHandler do
           var!(creator_id)
         )
 
-      account_map =
-        if map != nil do
-          %{"fa" => fa, "fb" => fb} = map
-          %{fa: vfa, fb: vfb} = var!(validator)
+      if account_map != nil do
+        %{"fa" => fa, "fb" => fb} = account_map
+        %{fa: vfa, fb: vfb} = var!(validator)
 
-          if fb > vfb or fa > vfa, do: raise(IppanError, "Invalid fees")
-        end
+        if fb != vfb or fa != vfa, do: raise(IppanError, "Invalid fees")
+      end
 
       TxHandler.check_signature!(sig_type, wallet_pk)
 
@@ -192,7 +189,6 @@ defmodule Ippan.TxHandler do
       source = %{
         id: var!(from),
         hash: var!(hash),
-        map: account_map,
         nonce: var!(nonce),
         size: var!(size),
         type: var!(type),

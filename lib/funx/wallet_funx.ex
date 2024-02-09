@@ -10,7 +10,12 @@ defmodule Ippan.Funx.Wallet do
   end
 
   def subscribe(
-        source = %{id: from, validator: %{fa: fa, fb: fb, owner: vOwner}, size: size},
+        source = %{
+          id: from,
+          map: %{"fa" => fa, "fb" => fb},
+          validator: %{owner: vOwner},
+          size: size
+        },
         validator_id
       ) do
     dets = DetsPlux.get(:balance)
