@@ -26,51 +26,18 @@ defmodule Download do
       { :ok, "/custom/absolute/file/path.db" }
 
   """
-  require Logger
+
   # 1 GB
   @max_file_size 1024 * 1024 * 1000
   @timeout 60_000
-  @retry 10
   @module __MODULE__
 
-  def await(url, path, retry \\ @retry, max_file_size \\ @max_file_size, timeout \\ @timeout) do
-    Task.async(fn ->
-      try_from(url, path, retry, max_file_size, timeout)
-    end)
-    |> Task.await(timeout)
-  end
-
-  defp try_from(_url, _path, 0, _max_file_size, _timeout) do
-    {:error, :many_retry}
-  end
-
-  defp try_from(
-         url,
-         path,
-         retry,
-         max_file_size,
-         timeout
-       ) do
-    try do
-      with {:ok, file} <- create_file(path),
-           {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
-           {:ok, _pid} <- start_download(url, response_parsing_pid, path),
-           :ok <- wait_for_download() do
-        :ok
-      else
-        {:error, :file_size_is_too_big} ->
-          {:error, :file_size_is_too_big}
-
-        _ ->
-          Process.sleep(50)
-          try_from(url, path, retry - 1, max_file_size, timeout)
-      end
-    rescue
-      err ->
-        Logger.warning(Exception.format(:error, err, __STACKTRACE__))
-        Process.sleep(200)
-        try_from(url, path, retry, max_file_size, timeout)
-    end
+  def from(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
+    with {:ok, file} <- create_file(path),
+         {:ok, response_parsing_pid} <- create_process(file, path, max_file_size, timeout),
+         {:ok, _pid} <- start_download(url, response_parsing_pid, path),
+         :ok <- wait_for_download(),
+         do: :ok
   end
 
   defp create_file(path), do: File.open(path, [:write, :exclusive])
@@ -108,7 +75,6 @@ defmodule Download do
     end
   end
 
-  require Logger
   alias HTTPoison.{AsyncHeaders, AsyncStatus, AsyncChunk, AsyncEnd}
   require Logger
   @doc false
@@ -153,12 +119,13 @@ defmodule Download do
 
   defp handle_async_response_chunk(%AsyncEnd{}, opts), do: finish_download(:ok, opts)
 
-  defp handle_async_response_chunk(%HTTPoison.Error{reason: reason}, opts), do: finish_download({:error, reason}, opts)
+  defp handle_async_response_chunk(%HTTPoison.Error{reason: reason}, opts),
+    do: finish_download({:error, reason}, opts)
 
   # Uncomment one line below if you are prefer to test not "Content-Length" header response, but a real file size
   # defp do_handle_content_length(_, opts), do: do_download(opts)
   defp do_handle_content_length({"Content-Length", content_length}, opts) do
-    if :erlang.binary_to_integer(content_length) > opts.max_file_size do
+    if String.to_integer(content_length) > opts.max_file_size do
       finish_download({:error, :file_size_is_too_big}, opts)
     else
       do_download(opts)
@@ -175,5 +142,34 @@ defmodule Download do
     end
 
     send(opts.controlling_pid, reason)
+  end
+end
+
+defmodule DownloadTask do
+  use GenServer
+
+  @max_file_size 1024 * 1024 * 1000
+  @timeout 60_000
+  @module __MODULE__
+
+  def start_link do
+    GenServer.start_link(@module, [], [])
+  end
+
+  @impl true
+  def init(_) do
+    {:ok, nil}
+  end
+
+  def start(url, path, max_file_size \\ @max_file_size, timeout \\ @timeout) do
+    {:ok, pid} = start_link()
+
+    :gen_server.call(pid, {:download, url, path, max_file_size, timeout}, :infinity)
+  end
+
+  @impl true
+  def handle_call({:download, url, path, max_file_size, timeout}, _from, state) do
+    result = Download.from(url, path, max_file_size, timeout)
+    {:stop, :normal, result, state}
   end
 end

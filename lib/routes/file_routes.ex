@@ -28,7 +28,7 @@ defmodule Ipnworker.FileRoutes do
       node = ClusterNodes.info(miner)
       url = Block.cluster_block_url(node.hostname, vid, height)
 
-      case Download.await(url, block_path) do
+      case DownloadTask.start(url, block_path) do
         :ok ->
           conn
           |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
@@ -56,7 +56,7 @@ defmodule Ipnworker.FileRoutes do
       node = ClusterNodes.info(miner)
       url = Block.cluster_decode_url(node.hostname, vid, height)
 
-      case Download.await(url, block_path) do
+      case DownloadTask.start(url, block_path) do
         :ok ->
           conn
           |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")

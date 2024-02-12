@@ -71,7 +71,7 @@ defmodule MinerWorker do
       else
         # Download from Cluster node
         url = Block.cluster_decode_url(hostname, creator_id, height)
-        :ok = Download.await(url, decode_path, -1)
+        :ok = Download.from(url, decode_path, -1)
       end
 
       IO.inspect("Bstep 3")

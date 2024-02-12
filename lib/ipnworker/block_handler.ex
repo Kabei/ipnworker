@@ -41,10 +41,10 @@ defmodule Ippan.BlockHandler do
 
         if filestat.size != size do
           File.rm(output_path)
-          Download.await(remote_url, output_path, @max_block_size)
+          DownloadTask.start(remote_url, output_path, @max_block_size)
         end
       else
-        Download.await(remote_url, output_path, @max_block_size)
+        DownloadTask.start(remote_url, output_path, @max_block_size)
       end
       |> case do
         :ok ->
