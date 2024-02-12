@@ -1,4 +1,4 @@
-defmodule Ippan.Func.Wallet do
+defmodule Ippan.Func.Account do
   alias Ippan.Utils
   alias Ippan.{Address, Validator}
   require Validator
@@ -16,12 +16,15 @@ defmodule Ippan.Func.Wallet do
         fb
       ) do
     pubkey = Fast64.decode64(pubkey)
-    id = Address.hash(sig_type, pubkey)
+    address = Address.hash(sig_type, pubkey)
     dets = DetsPlux.get(:wallet)
     tx = DetsPlux.tx(dets, :cache_wallet)
 
     cond do
-      id != account_id ->
+      not Match.account?(account_id) ->
+        raise IppanError, "Invalid account ID format"
+
+      Match.wallet_address?(account_id) and address != account_id ->
         raise IppanError, "Invalid account ID"
 
       validator_id != validator.id ->
@@ -41,8 +44,8 @@ defmodule Ippan.Func.Wallet do
       not is_integer(fb) or fb < EnvStore.min_fb() ->
         raise IppanError, "Invalid FB"
 
-      DetsPlux.member_tx?(dets, tx, id) ->
-        raise IppanError, "Wallet #{id} already exists"
+      DetsPlux.member_tx?(dets, tx, account_id) ->
+        raise IppanError, "Wallet #{account_id} already exists"
 
       true ->
         :ok

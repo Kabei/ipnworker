@@ -2,7 +2,7 @@ defmodule MinerWorker do
   use GenServer
   require RegPay
   alias Ippan.Utils
-  alias Ippan.{Block, TxHandler, Validator, Wallet}
+  alias Ippan.{Block, TxHandler, Validator, Account}
   alias Phoenix.PubSub
   require Sqlite
   require TxHandler
@@ -165,7 +165,7 @@ defmodule MinerWorker do
 
       [hash, type, from, nonce, args, sig, size] ->
         result =
-          case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
+          case Account.update_nonce(nonce_dets, nonce_tx, from, nonce) do
             :error ->
               :error
 
@@ -212,7 +212,7 @@ defmodule MinerWorker do
         ix = :counters.get(cref, 1)
 
         result =
-          case Wallet.update_nonce(nonce_dets, nonce_tx, from, nonce) do
+          case Account.update_nonce(nonce_dets, nonce_tx, from, nonce) do
             :error ->
               :error
 

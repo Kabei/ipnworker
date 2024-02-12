@@ -1,6 +1,6 @@
 defmodule Ipnworker.Router do
   use Plug.Router
-  alias Ippan.{ClusterNodes, TxHandler, Validator, Wallet}
+  alias Ippan.{ClusterNodes, TxHandler, Validator, Account}
   require Ippan.{Validator, TxHandler}
   require Sqlite
   require Logger
@@ -55,7 +55,7 @@ defmodule Ipnworker.Router do
                         false ->
                           :ets.delete(:hash, from_nonce)
                           tx = DetsPlux.tx(:nonce, :cache_nonce)
-                          Wallet.revert_nonce(tx, from)
+                          Account.revert_nonce(tx, from)
                           raise IppanError, "Deferred transaction already exists"
                       end
                     end
