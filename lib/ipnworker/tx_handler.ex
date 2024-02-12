@@ -4,7 +4,7 @@ defmodule Ippan.TxHandler do
   defmacro get_public_key!(dets, tx, type, vid) do
     quote location: :keep, bind_quoted: [dets: dets, tx: tx, type: type, vid: vid] do
       case type do
-        # check from variable
+        # check from variable (check redirect)
         0 ->
           {pk, sig_type, %{"vid" => v} = account_map} =
             DetsPlux.get_cache(dets, tx, var!(from))
@@ -21,7 +21,7 @@ defmodule Ippan.TxHandler do
           sig_type = var!(args) |> Enum.at(pos + 1)
           {Fast64.decode64(pk), sig_type, nil}
 
-        # get from variable not redirect
+        # get from variable
         2 ->
           DetsPlux.get_cache(dets, tx, var!(from))
       end

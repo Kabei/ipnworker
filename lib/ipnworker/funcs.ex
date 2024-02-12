@@ -11,7 +11,7 @@ defmodule Ippan.Funcs do
       fun: :new,
       deferred: true,
       check: {1, 0},
-      key: 2
+      key: 1
     }
   end
 
