@@ -106,7 +106,7 @@ defmodule Builder do
     {pk, sk, Address.hash(2, pk)}
   end
 
-  # Builder.wallet_new(client, 0, %{"fa" => fa, "fb" => fb, "vid" => vid}) |> Builder.print
+  # Builder.wallet_new(client, 0, 0, 1) |> Builder.print
   def wallet_new(
         client = %Client{
           id: account_id,

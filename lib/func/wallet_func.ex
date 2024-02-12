@@ -11,7 +11,9 @@ defmodule Ippan.Func.Wallet do
         %{id: account_id, validator: validator},
         pubkey,
         sig_type,
-        %{"vid" => validator_id, "fa" => fa, "fb" => fb}
+        validator_id,
+        fa,
+        fb
       ) do
     pubkey = Fast64.decode64(pubkey)
     id = Address.hash(sig_type, pubkey)
