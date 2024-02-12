@@ -16,7 +16,7 @@ defmodule Ippan.TxHandler do
           {pk, sig_type, account_map}
 
         # get from argument and not check (wallet.new)
-        {1, pos} ->
+        {:arg, pos} ->
           pk = var!(args) |> Enum.at(pos)
           sig_type = var!(args) |> Enum.at(pos + 1)
           {Fast64.decode64(pk), sig_type, nil}

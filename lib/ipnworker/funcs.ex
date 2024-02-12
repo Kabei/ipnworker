@@ -10,7 +10,7 @@ defmodule Ippan.Funcs do
       modx: Funx.Wallet,
       fun: :new,
       deferred: true,
-      check: {1, 0},
+      check: {:arg, 0},
       key: 1
     }
   end
