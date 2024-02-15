@@ -245,4 +245,19 @@ defmodule Ippan.Funx.Coin do
   defp calc_reload_mult(round_id, init_round, last_round, times) do
     div(round_id - init_round, times) - div(last_round - init_round, times)
   end
+
+  def stream(source = %{id: from, round: round_id}, to, token_id, amount) do
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    balance = BalanceStore.load(to, token_id)
+
+    BalanceStore.pay balance, amount do
+      key_to = DetsPlux.tuple(to, token_id)
+      {_balance, map} = DetsPlux.get_cache(dets, tx, key_to, {0, %{}})
+
+      BalanceStore.stream(key_to, amount)
+
+      DetsPlux.update_element(tx, key_to, 2, Map.put(map, "lastStream", round_id))
+    end
+  end
 end

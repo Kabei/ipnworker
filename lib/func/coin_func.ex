@@ -129,52 +129,6 @@ defmodule Ippan.Func.Coin do
     |> BalanceTrace.output()
   end
 
-  def reload(%{id: account_id}, token_id) do
-    db_ref = :persistent_term.get(:main_conn)
-
-    %{env: env, props: props} = Token.get(token_id)
-
-    if "reload" not in props, do: raise(IppanError, "Reload property is missing")
-
-    acc_type = Map.get(env, "reload.accType")
-
-    if acc_type do
-      cond do
-        acc_type == "anon" and not Match.wallet_address?(account_id) ->
-          raise IppanError, "Your account type is not allowed"
-
-        acc_type == "public" and not Match.username?(account_id) ->
-          raise IppanError, "Your account type is not allowed"
-      end
-    end
-
-    {round_id, _} = Round.last()
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :cache_balance)
-    %{env: %{"reload.times" => times}} = Token.get(token_id)
-
-    key = DetsPlux.tuple(account_id, token_id)
-    {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
-    last_reload = Map.get(map, "lastReload", 0)
-    req_time = last_reload + times
-
-    if last_reload > 0 and round_id < req_time,
-      do: raise(IppanError, "It's already recharged #{round_id} #{req_time}")
-
-    price = Map.get(env, "reload.price", 0)
-
-    ret =
-      if price != 0 do
-        BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(@token, price)
-        |> BalanceTrace.output()
-      end
-
-    DetsPlux.update_element(tx, key, 3, Map.put(map, "lastReload", round_id))
-
-    ret
-  end
-
   def refund(%{id: account_id}, hash16)
       when byte_size(hash16) == 64 do
     db_ref = :persistent_term.get(:main_conn)
@@ -264,6 +218,90 @@ defmodule Ippan.Func.Coin do
         BalanceTrace.new(to)
         |> BalanceTrace.requires!(token_id, amount)
         |> BalanceTrace.output()
+    end
+  end
+
+  def reload(%{id: account_id}, token_id) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    %{env: env, props: props} = Token.get(token_id)
+
+    if "reload" not in props, do: raise(IppanError, "Reload property is missing")
+
+    acc_type = Map.get(env, "reload.accType")
+
+    if acc_type do
+      cond do
+        acc_type == "anon" and not Match.wallet_address?(account_id) ->
+          raise IppanError, "Your account type is not allowed"
+
+        acc_type == "public" and not Match.username?(account_id) ->
+          raise IppanError, "Your account type is not allowed"
+      end
+    end
+
+    {round_id, _} = Round.last()
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :cache_balance)
+    %{env: %{"reload.times" => times}} = Token.get(token_id)
+
+    key = DetsPlux.tuple(account_id, token_id)
+    {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    last_reload = Map.get(map, "lastReload", 0)
+    req_time = last_reload + times
+
+    if last_reload > 0 and round_id < req_time,
+      do: raise(IppanError, "It's already recharged. Wait for #{req_time}")
+
+    price = Map.get(env, "reload.price", 0)
+
+    ret =
+      if price != 0 do
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, price)
+        |> BalanceTrace.output()
+      end
+
+    DetsPlux.update_element(tx, key, 3, Map.put(map, "lastReload", round_id))
+
+    ret
+  end
+
+  def stream(%{id: account_id}, payer, token_id, amount) do
+    case SubPay.get(payer, account_id, token_id) do
+      nil ->
+        raise IppanError, "Payment not authorized"
+
+      data ->
+        max_amount = Map.get(data, "max_amount", 0)
+
+        cond do
+          max_amount != 0 and max_amount < amount ->
+            raise IppanError, "Exceeded amount"
+
+          true ->
+            db_ref = :persistent_term.get(:main_conn)
+
+            %{env: %{"stream.times" => times}, props: props} = Token.get(token_id)
+
+            if "stream" not in props, do: raise(IppanError, "Stream property is missing")
+
+            dets = DetsPlux.get(:balance)
+            tx = DetsPlux.tx(dets, :balance)
+            key = DetsPlux.tuple(account_id, token_id)
+            {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+            {round_id, _} = Round.last()
+            last_round = Map.get(map, "lastStream", 0)
+
+            req_round = last_round + times
+
+            if last_round != 0 and round_id < req_round,
+              do: raise(IppanError, "it's already used. Wait for round ##{req_round}")
+
+            BalanceTrace.new(payer)
+            |> BalanceTrace.requires!(token_id, amount)
+            |> BalanceTrace.output()
+        end
     end
   end
 end

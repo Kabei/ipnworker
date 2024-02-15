@@ -19,6 +19,6 @@ defmodule Ippan.Func do
     :fun,
     :key,
     deferred: false,
-    check: 0
+    check: 1
   ]
 end

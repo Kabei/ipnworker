@@ -8,6 +8,7 @@ defmodule MainStore do
     "assets" => SQL.readFile!("lib/sql/assets.sql"),
     "blockchain" => SQL.readFile!("lib/sql/blockchain.sql"),
     "dns" => SQL.readFile!("lib/sql/dns.sql"),
+    "pay" => SQL.readFile!("lib/sql/pay.sql"),
     "main" => SQL.readFile!("lib/sql/main.sql")
   }
 
@@ -19,6 +20,7 @@ defmodule MainStore do
   @attaches %{
     "account" => "accounts.db",
     "assets" => "assets.db",
+    "pay" => "pay.db",
     "dns" => "dns.db",
     "blockchain" => "blockchain.db"
   }

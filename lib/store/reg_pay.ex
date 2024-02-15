@@ -14,6 +14,7 @@ defmodule RegPay do
   301. lock
   302. unlock
   303. drop coins
+  400. PayStream
   """
 
   alias Phoenix.PubSub
@@ -86,6 +87,10 @@ defmodule RegPay do
     def jackpot(to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {nil, nil, to, 2, token, amount})
     end
+
+    def stream(%{nonce: nonce}, from, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 400, token, amount})
+    end
   else
     def init, do: :ok
     def coinbase(_, _, _, _), do: true
@@ -101,6 +106,7 @@ defmodule RegPay do
     def unlock(_, _, _, _), do: true
     def reward(_, _, _), do: true
     def jackpot(_, _, _), do: true
+    def stream(_, _, _), do: true
   end
 
   def commit(nil, _), do: nil

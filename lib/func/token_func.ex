@@ -56,13 +56,16 @@ defmodule Ippan.Func.Token do
           for {name, value} <- env do
             case name do
               "reload.times" ->
-                if not is_integer(value) and value <= 0, do: raise(IppanError, "Invalid value")
+                if not is_integer(value) and value < 12, do: raise(IppanError, "Invalid value")
 
               "reload.amount" ->
                 if not is_integer(value) and value < 60, do: raise(IppanError, "Invalid value")
 
               "reload.expiry" ->
                 if not is_integer(value) and value < 120, do: raise(IppanError, "Invalid value")
+
+              "stream.times" ->
+                if not is_integer(value) and value < 12, do: raise(IppanError, "Invalid value")
 
               _ ->
                 :ok
