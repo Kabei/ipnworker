@@ -268,7 +268,9 @@ defmodule Ippan.Func.Coin do
   end
 
   def stream(%{id: account_id}, payer, token_id, amount) do
-    case SubPay.get(payer, account_id, token_id) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    case SubPay.get(db_ref, payer, account_id, token_id) do
       nil ->
         raise IppanError, "Payment not authorized"
 
@@ -280,8 +282,6 @@ defmodule Ippan.Func.Coin do
             raise IppanError, "Exceeded amount"
 
           true ->
-            db_ref = :persistent_term.get(:main_conn)
-
             %{env: %{"stream.times" => times}, props: props} = Token.get(token_id)
 
             if "stream" not in props, do: raise(IppanError, "Stream property is missing")
@@ -302,6 +302,41 @@ defmodule Ippan.Func.Coin do
             |> BalanceTrace.requires!(token_id, amount)
             |> BalanceTrace.output()
         end
+    end
+  end
+
+  def auth(
+        %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        token_id,
+        to,
+        auth
+      )
+      when is_boolean(auth) do
+    db_ref = :persistent_term.get(:main_conn)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    token = Token.get(token_id)
+
+    cond do
+      token.owner != account_id ->
+        raise IppanError, "Unauthorized"
+
+      not Token.has_prop?(token, "auth") ->
+        raise IppanError, "Property auth not exists"
+
+      DetsPlux.member_tx?(dets, tx, to) == false ->
+        raise IppanError, "#{to} account not exists"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(token_id, fees)
+        |> BalanceTrace.output()
     end
   end
 end

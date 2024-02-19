@@ -257,7 +257,40 @@ defmodule Ippan.Funx.Coin do
 
       BalanceStore.stream(key_to, amount)
 
-      DetsPlux.update_element(tx, key_to, 2, Map.put(map, "lastStream", round_id))
+      DetsPlux.update_element(tx, key_to, 3, Map.put(map, "lastStream", round_id))
+    end
+  end
+
+  def auth(
+        source = %{
+          id: account_id,
+          size: size,
+          validator: %{fa: fa, fb: fb}
+        },
+        token_id,
+        to,
+        auth
+      ) do
+    fees = Utils.calc_fees(fa, fb, size)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+
+    case BalanceStore.pay_fee(account_id, account_id, fees) do
+      :error ->
+        :error
+
+      _ ->
+        key_to = DetsPlux.tuple(to, token_id)
+        {_balance, map} = DetsPlux.get_cache(dets, tx, key_to, {0, %{}})
+
+        new_map =
+          if auth do
+            Map.put(map, "auth", true)
+          else
+            Map.delete(map, "auth")
+          end
+
+        DetsPlux.update_element(tx, key_to, 3, new_map)
     end
   end
 end

@@ -1,31 +1,32 @@
 defmodule PayService do
   require Sqlite
 
-  def get(id) do
-    db_ref = :persistent_term.get(:main_conn)
-
+  def get(db_ref, id) do
     case Sqlite.fetch("get_paysrv", [id]) do
       nil ->
         nil
 
-      [name, extra] ->
+      [id, name, extra, created_at, updated_at] ->
         extras = :erlang.element(1, CBOR.Decoder.decode(extra))
-        %{id: id, name: name} |> Map.merge(extras)
+
+        %{id: id, name: name, created_at: created_at, updated_at: updated_at}
+        |> Map.merge(extras)
     end
   end
 
-  def create(id, name, extra) do
-    db_ref = :persistent_term.get(:main_conn)
+  def exists?(db_ref, id) do
+    Sqlite.exists?("exists_paysrv", [id])
+  end
+
+  def create(db_ref, id, name, extra) do
     Sqlite.step("insert_paysrv", [id, name, extra])
   end
 
-  def update(map, id) do
-    db_ref = :persistent_term.get(:main_conn)
+  def update(db_ref, map, id) do
     Sqlite.update("pay.serv", map, id: id)
   end
 
-  def remove(id) do
-    db_ref = :persistent_term.get(:main_conn)
+  def delete(db_ref, id) do
     Sqlite.step("delete_paysrv", [id])
     Sqlite.step("delete_all_subpay", [id])
   end
@@ -34,22 +35,22 @@ end
 defmodule SubPay do
   require Sqlite
 
-  def subscribe(id, payer, token, extra) do
-    db_ref = :persistent_term.get(:main_conn)
+  def subscribe(db_ref, id, payer, token, extra) do
     Sqlite.step("insert_subpay", [id, payer, token, CBOR.encode(extra)])
   end
 
-  def get(id, payer, token) do
-    db_ref = :persistent_term.get(:main_conn)
+  def has?(db_ref, id, payer, token) do
+    Sqlite.exists?("exists_subpay", [id, payer, token])
+  end
 
+  def get(db_ref, id, payer, token) do
     case Sqlite.fetch("get_subpay", [id, payer, token]) do
       nil -> nil
       extra -> :erlang.element(1, CBOR.Decoder.decode(extra))
     end
   end
 
-  def unsubscribe(id, payer, token) do
-    db_ref = :persistent_term.get(:main_conn)
+  def unsubscribe(db_ref, id, payer, token) do
     Sqlite.step("delete_subpay", [id, payer, token])
   end
 end

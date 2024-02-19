@@ -205,6 +205,9 @@ INSERT INTO pay.serv VALUES(?1,?2,?3);
 --name: get_paysrv
 SELECT id, name, extra FROM pay.serv WHERE id = ? LIMIT 1;
 
+--name: exists_paysrv
+SELECT 1 FROM pay.serv WHERE id = ? LIMIT 1;
+
 --name: delete_paysrv
 DELETE FROM pay.serv WHERE id = ?;
 
@@ -212,8 +215,14 @@ DELETE FROM pay.serv WHERE id = ?;
 --name: insert_subpay
 INSERT INTO pay.subpay VALUES(?1,?2,?3,?4);
 
+--name: exists_subpay
+SELECT 1 FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3 LIMIT 1;
+
 --name: get_subpay
 SELECT extra FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3 LIMIT 1;
+
+--name: up_subpay
+UPDATE pay.subpay SET last_round=?4 WHERE id=?1 AND payer=?2 AND token=?3
 
 --name: delete_subpay
 DELETE FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3;

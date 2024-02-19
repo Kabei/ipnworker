@@ -198,17 +198,6 @@ defmodule Ippan.Funcs do
     }
   end
 
-  def lookup(207) do
-    %Func{
-      id: 207,
-      name: "token.auth",
-      mod: Func.Token,
-      modx: Funx.Token,
-      fun: :auth,
-      key: 1
-    }
-  end
-
   def lookup(300) do
     %Func{
       id: 300,
@@ -308,6 +297,17 @@ defmodule Ippan.Funcs do
     }
   end
 
+  def lookup(309) do
+    %Func{
+      id: 309,
+      name: "coin.auth",
+      mod: Func.Coin,
+      modx: Funx.Coin,
+      fun: :auth,
+      key: 1
+    }
+  end
+
   # def lookup(400) do
   #   %Func{
   #     id: 400,
@@ -382,9 +382,9 @@ defmodule Ippan.Funcs do
   def lookup(600) do
     %Func{
       id: 600,
-      name: "srv.new",
-      mod: Func.Pay,
-      modx: Funx.Pay,
+      name: "service.new",
+      mod: Func.Service,
+      modx: Funx.Service,
       fun: :new
     }
   end
@@ -392,9 +392,9 @@ defmodule Ippan.Funcs do
   def lookup(601) do
     %Func{
       id: 601,
-      name: "srv.update",
-      mod: Func.Pay,
-      modx: Funx.Pay,
+      name: "service.update",
+      mod: Func.Service,
+      modx: Funx.Service,
       fun: :update
     }
   end
@@ -402,9 +402,9 @@ defmodule Ippan.Funcs do
   def lookup(602) do
     %Func{
       id: 602,
-      name: "srv.delete",
-      mod: Func.Pay,
-      modx: Funx.Pay,
+      name: "service.delete",
+      mod: Func.Service,
+      modx: Funx.Service,
       fun: :update
     }
   end
@@ -412,9 +412,9 @@ defmodule Ippan.Funcs do
   def lookup(610) do
     %Func{
       id: 610,
-      name: "srv.subscribe",
-      mod: Func.Pay,
-      modx: Funx.Pay,
+      name: "service.subscribe",
+      mod: Func.Service,
+      modx: Funx.Service,
       fun: :subscribe
     }
   end
@@ -422,9 +422,9 @@ defmodule Ippan.Funcs do
   def lookup(611) do
     %Func{
       id: 611,
-      name: "srv.unsubscribe",
-      mod: Func.Pay,
-      modx: Funx.Pay,
+      name: "service.unsubscribe",
+      mod: Func.Service,
+      modx: Funx.Service,
       fun: :unsubscribe
     }
   end

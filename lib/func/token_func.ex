@@ -240,6 +240,9 @@ defmodule Ippan.Func.Token do
           "reload.expiry" ->
             if not is_integer(value) and value < 120, do: raise(IppanError, "Invalid value")
 
+          "auth" ->
+            if not is_boolean(value), do: raise(IppanError, "Invalid value")
+
           _ ->
             :ok
         end
