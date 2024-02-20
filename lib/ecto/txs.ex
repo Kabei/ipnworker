@@ -60,16 +60,16 @@ defmodule Ippan.Ecto.Tx do
     end
   end
 
-  @spec count() :: integer()
-  def count do
-    case Ecto.Adapters.SQL.query(
-           Repo,
-           "SELECT n_live_tup FROM pg_stat_all_tables where relname = 'txs'"
-         ) do
-      {:ok, %{rows: [[count]]}} -> count
-      _ -> 0
-    end
-  end
+  # @spec count() :: integer()
+  # def count do
+  #   case Ecto.Adapters.SQL.query(
+  #          Repo,
+  #          "SELECT n_live_tup FROM pg_stat_all_tables where relname = 'txs'"
+  #        ) do
+  #     {:ok, %{rows: [[count]]}} -> count
+  #     _ -> 0
+  #   end
+  # end
 
   def all(params) do
     from(Tx)

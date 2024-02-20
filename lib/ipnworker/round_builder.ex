@@ -78,6 +78,7 @@ defmodule RoundBuilder do
   defp build_round(
          round = %{
            id: round_id,
+           hash: hash,
            blocks: blocks,
            creator: round_creator_id,
            status: status,
@@ -150,6 +151,7 @@ defmodule RoundBuilder do
       Stats.count_blocks(stats_tx, length(blocks))
       Stats.count_txs(stats_tx, tx_count)
       Stats.put_round(stats_tx, round_id)
+      Stats.put_last_hash(stats_tx, hash)
 
       RegPay.commit(pg_conn, round_id)
 

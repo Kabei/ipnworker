@@ -1,8 +1,7 @@
 defmodule Ipnworker.NetworkRoutes do
   use Plug.Router
   require Ippan.{Block, Round, Token, Validator}
-  alias Ippan.Ecto.Tx
-  alias Ippan.{Block, Round, Token, Validator, Utils}
+  alias Ippan.{Token, Validator, Utils}
   require Sqlite
   import Ippan.Utils, only: [json: 1]
 
@@ -40,13 +39,17 @@ defmodule Ipnworker.NetworkRoutes do
 
   get "/status" do
     db_ref = :persistent_term.get(:main_conn)
-    {id, hash} = Round.last()
-    blocks = Block.total()
+    dets = DetsPlux.get(:wallet)
+    stats = Stats.new()
+    supply = TokenSupply.new(@token)
+
+    id = Stats.rounds(stats)
+    hash = Stats.last_hash(stats)
+    blocks = Stats.blocks(stats)
+    txs = Stats.txs(stats)
     validators = Validator.total()
     tokens = Token.total()
-    dets = DetsPlux.get(:wallet)
     accounts = DetsPlux.info(dets, nil, :size)
-    supply = TokenSupply.new(@token)
     jackpot = TokenSupply.new("jackpot")
 
     %{
@@ -60,7 +63,7 @@ defmodule Ipnworker.NetworkRoutes do
       "supply" => TokenSupply.get(supply),
       "token" => @token,
       "tokens" => tokens,
-      "txs" => Tx.count(),
+      "txs" => txs,
       "validators" => validators
     }
     |> json()
