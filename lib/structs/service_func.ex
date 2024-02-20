@@ -64,23 +64,27 @@ defmodule Ippan.Func.Service do
         %{id: account_id, size: size, validator: %{fa: fa, fb: fb}},
         service_id,
         token_id,
-        extras
-      ) do
+        max_amount
+      )
+      when is_integer(max_amount) and max_amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
 
-    cond do
-      map_size(extras) > 3 ->
-        raise IppanError, "Error extra data format"
+    case PayService.get(db_ref, service_id) do
+      nil ->
+        raise IppanError, "Service ID not exists"
 
-      SubPay.has?(db_ref, service_id, token_id, account_id) ->
-        raise IppanError, "Already subscribed"
+      _service ->
+        cond do
+          SubPay.has?(db_ref, service_id, token_id, account_id) ->
+            raise IppanError, "Already subscribed"
 
-      true ->
-        fees = Utils.calc_fees(fa, fb, size)
+          true ->
+            fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(@token, fees)
-        |> BalanceTrace.output()
+            BalanceTrace.new(account_id)
+            |> BalanceTrace.requires!(@token, fees)
+            |> BalanceTrace.output()
+        end
     end
   end
 
