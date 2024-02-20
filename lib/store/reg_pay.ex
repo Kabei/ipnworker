@@ -17,11 +17,9 @@ defmodule RegPay do
   400. PayStream
   """
 
-  alias Phoenix.PubSub
   @app Mix.Project.config()[:app]
   @history Application.compile_env(@app, :history, false)
   @notify Application.compile_env(@app, :notify, false)
-  @pubsub :pubsub
 
   if @history do
     def init do
@@ -109,9 +107,13 @@ defmodule RegPay do
     def stream(_, _, _), do: true
   end
 
+
   def commit(nil, _), do: nil
 
   if @notify do
+    alias Phoenix.PubSub
+    @pubsub :pubsub
+
     def commit(pg_conn, round_id) do
       tid = :persistent_term.get(:payment)
       data = :ets.tab2list(tid)
