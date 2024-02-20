@@ -8,7 +8,7 @@ defmodule Ippan.Func.Account do
   @token Application.compile_env(@app, :token)
 
   def new(
-        %{id: account_id, validator: validator},
+        %{id: account_id, validator: %{id: vid, fa: vfa, fb: vfb}},
         pubkey,
         sig_type,
         validator_id,
@@ -27,8 +27,11 @@ defmodule Ippan.Func.Account do
       Match.wallet_address?(account_id) and address != account_id ->
         raise IppanError, "Invalid account ID"
 
-      validator_id != validator.id ->
+      validator_id != vid ->
         raise IppanError, "Invalid validator"
+
+      vfa != fa or vfb != fb ->
+        raise IppanError, "Invalid fees"
 
       sig_type not in 0..2 ->
         raise IppanError, "Invalid signature type"
@@ -57,8 +60,7 @@ defmodule Ippan.Func.Account do
         validator_id,
         fa,
         fb
-      )
-      when vfa == fa and vfb == fb do
+      ) do
     wallet_dets = DetsPlux.get(:wallet)
     wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
@@ -68,6 +70,33 @@ defmodule Ippan.Func.Account do
     cond do
       validator_id == vid ->
         raise IppanError, "Already subscribe"
+
+      vfa != fa or vfb != fb ->
+        raise IppanError, "Invalid fees"
+
+      true ->
+        fees = Utils.calc_fees(fa, fb, size)
+
+        BalanceTrace.new(account_id)
+        |> BalanceTrace.requires!(@token, fees)
+        |> BalanceTrace.output()
+    end
+  end
+
+  def edit_key(%{id: account_id, validator: %{fa: fa, fb: fb}, size: size}, pubkey, sig_type) do
+    pubkey = Fast64.decode64(pubkey)
+
+    cond do
+      not Match.username?(account_id) ->
+        raise IppanError, "Only nicknames can edit pubkey"
+
+      (sig_type == 0 and byte_size(pubkey) != 32) or
+        (sig_type == 1 and byte_size(pubkey) == 65) or
+          (sig_type == 2 and byte_size(pubkey) != 897) ->
+        raise IppanError, "Invalid pubkey size"
+
+      sig_type not in 0..2 ->
+        raise IppanError, "Invalid signature type"
 
       true ->
         fees = Utils.calc_fees(fa, fb, size)

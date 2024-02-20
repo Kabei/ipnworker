@@ -37,4 +37,29 @@ defmodule Ippan.Funx.Wallet do
         DetsPlux.update_element(wtx, from, 4, %{"fa" => fa, "fb" => fb, "vid" => validator_id})
     end
   end
+
+  def edit_key(
+        source = %{
+          id: from,
+          validator: %{fa: fa, fb: fb, owner: vOwner},
+          size: size
+        },
+        pubkey,
+        sig_type
+      ) do
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(dets, :balance)
+    fees = Utils.calc_fees(fa, fb, size)
+    pubkey = Fast64.decode64(pubkey)
+
+    case BalanceStore.pay_fee(from, vOwner, fees) do
+      :error ->
+        :error
+
+      _ ->
+        wtx = DetsPlux.tx(:wallet)
+        DetsPlux.update_element(wtx, from, 2, pubkey)
+        DetsPlux.update_element(wtx, from, 3, sig_type)
+    end
+  end
 end
