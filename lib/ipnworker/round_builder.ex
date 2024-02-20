@@ -145,6 +145,12 @@ defmodule RoundBuilder do
       # Save balances
       run_save_balances(balance_tx, pg_conn)
 
+      # update stats
+      stats_tx = Stats.new()
+      Stats.count_blocks(stats_tx, blocks)
+      Stats.count_txs(stats_tx, tx_count)
+      Stats.put_round(stats_tx, round_id)
+
       RegPay.commit(pg_conn, round_id)
 
       RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
