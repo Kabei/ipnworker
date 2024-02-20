@@ -18,8 +18,8 @@ defmodule PayService do
     Sqlite.exists?("exists_paysrv", [id])
   end
 
-  def create(db_ref, id, name, extra) do
-    Sqlite.step("insert_paysrv", [id, name, extra])
+  def create(db_ref, id, name, extra, round_id) do
+    Sqlite.step("insert_paysrv", [id, name, extra, round_id])
   end
 
   def update(db_ref, map, id) do
@@ -35,8 +35,8 @@ end
 defmodule SubPay do
   require Sqlite
 
-  def subscribe(db_ref, id, payer, token, extra) do
-    Sqlite.step("insert_subpay", [id, payer, token, CBOR.encode(extra)])
+  def subscribe(db_ref, id, payer, token, extra, last_round) do
+    Sqlite.step("insert_subpay", [id, payer, token, CBOR.encode(extra), last_round, last_round])
   end
 
   def has?(db_ref, id, payer, token) do

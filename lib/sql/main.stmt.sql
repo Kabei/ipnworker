@@ -200,7 +200,7 @@ SELECT winner, amount FROM blockchain.jackpot WHERE round_id=? LIMIT 1;
 
 
 --name: insert_paysrv
-INSERT INTO pay.serv VALUES(?1,?2,?3);
+INSERT INTO pay.serv VALUES(?1,?2,?3,?4,?4);
 
 --name: get_paysrv
 SELECT id, name, extra FROM pay.serv WHERE id = ? LIMIT 1;
@@ -213,7 +213,7 @@ DELETE FROM pay.serv WHERE id = ?;
 
 
 --name: insert_subpay
-INSERT INTO pay.subpay VALUES(?1,?2,?3,?4);
+INSERT INTO pay.subpay VALUES(?1,?2,?3,?4,?5,?5);
 
 --name: exists_subpay
 SELECT 1 FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3 LIMIT 1;
@@ -222,7 +222,7 @@ SELECT 1 FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3 LIMIT 1;
 SELECT extra FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3 LIMIT 1;
 
 --name: up_subpay
-UPDATE pay.subpay SET last_round=?4 WHERE id=?1 AND payer=?2 AND token=?3
+UPDATE pay.subpay SET last_round=?4 WHERE id=?1 AND payer=?2 AND token=?3;
 
 --name: delete_subpay
 DELETE FROM pay.subpay WHERE id=?1 AND payer=?2 AND token=?3;
