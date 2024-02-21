@@ -1,6 +1,4 @@
 defmodule Ippan.Func.Coin do
-  require Ippan.Round
-  alias Ippan.Round
   alias Ippan.{Token, Utils}
   require Sqlite
   require BalanceStore
@@ -240,7 +238,8 @@ defmodule Ippan.Func.Coin do
       end
     end
 
-    {round_id, _} = Round.last()
+    stats = Stats.new()
+    round_id = Stats.rounds(stats)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :cache_balance)
     %{env: %{"reload.times" => times}} = Token.get(token_id)
@@ -290,7 +289,8 @@ defmodule Ippan.Func.Coin do
             tx = DetsPlux.tx(dets, :balance)
             key = DetsPlux.tuple(account_id, token_id)
             {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
-            {round_id, _} = Round.last()
+            stats = Stats.new()
+            round_id = Stats.rounds(stats)
             last_round = Map.get(map, "lastStream", 0)
 
             req_round = last_round + times

@@ -1,6 +1,6 @@
 defmodule Ipnworker.NodeSync do
   use GenServer, restart: :trasient
-  alias Ippan.{Node, ClusterNodes, Round}
+  alias Ippan.{Node, ClusterNodes}
   require Ippan.{Node, Round}
   require Sqlite
   require Logger
@@ -37,7 +37,8 @@ defmodule Ipnworker.NodeSync do
     db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
     builder_pid = Process.whereis(RoundBuilder)
-    {local_round_id, _hash} = Round.last({-1, nil})
+    stats = Stats.new()
+    local_round_id = Stats.rounds(stats, -1)
 
     if is_nil(node) do
       IO.puts("NodeSync no init")

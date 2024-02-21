@@ -8,10 +8,15 @@ defmodule Ippan.Func.Service do
 
   def new(%{id: account_id}, id, name, extras) do
     db_ref = :persistent_term.get(:main_conn)
+    dets = DetsPlux.get(:wallet)
+    tx = DetsPlux.tx(dets, :cache_wallet)
 
     cond do
       not Match.account?(id) ->
         raise IppanError, "Invalid ID"
+
+      DetsPlux.member_tx?(dets, tx, id) ->
+        raise IppanError, "Wallet #{id} already exists"
 
       byte_size(name) > 50 ->
         raise IppanError, "Invalid name length"
