@@ -16,17 +16,17 @@ defmodule Ipnworker.AccountRoutes do
     tx = DetsPlux.tx(dets, :cache_wallet)
 
     case DetsPlux.get_cache(dets, tx, id) do
-      {pk, v, sig_type} ->
+      {pk, sig_type, map} ->
         dets = DetsPlux.get(:nonce)
         tx = DetsPlux.tx(dets, :cache_nonce)
         nonce = DetsPlux.get_cache(dets, tx, id, 0)
 
-        %{
+        map
+        |> Map.merge(%{
           "nonce" => nonce,
           "pubkey" => Utils.encode64(pk),
           "sig_type" => sig_type,
-          "validator" => v
-        }
+        })
         |> json
 
       _ ->
