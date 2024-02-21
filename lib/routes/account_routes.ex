@@ -27,7 +27,7 @@ defmodule Ipnworker.AccountRoutes do
           "pubkey" => Utils.encode64(pk),
           "sig_type" => sig_type,
         })
-        |> json
+        |> json()
 
       _ ->
         send_resp(conn, 204, "")
