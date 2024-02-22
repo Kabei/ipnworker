@@ -54,12 +54,12 @@ defmodule Ippan.Funx.Account do
 
     case BalanceStore.pay_fee(from, vOwner, fees) do
       :error ->
-        IO.puts("error edit")
         :error
 
       _ ->
-        IO.puts("ok edit")
+        wdets = DetsPlux.get(:wallet)
         wtx = DetsPlux.tx(:wallet)
+        DetsPlux.get_cache(wdets, wtx, from)
         DetsPlux.update_element(wtx, from, 2, pubkey)
         DetsPlux.update_element(wtx, from, 3, sig_type)
     end
