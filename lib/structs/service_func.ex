@@ -15,7 +15,7 @@ defmodule Ippan.Func.Service do
       not Match.account?(id) ->
         raise IppanError, "Invalid ID"
 
-      DetsPlux.member_tx?(dets, tx, id) ->
+      not DetsPlux.member_tx?(dets, tx, id) ->
         raise IppanError, "Wallet #{id} already exists"
 
       byte_size(name) > 50 ->
