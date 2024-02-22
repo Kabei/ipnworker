@@ -5,6 +5,7 @@ defmodule Ippan.Func.Service do
 
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
+  @name_max_length 50
 
   def new(%{id: account_id}, id, name, extras) do
     db_ref = :persistent_term.get(:main_conn)
@@ -18,7 +19,7 @@ defmodule Ippan.Func.Service do
       not DetsPlux.member_tx?(dets, tx, id) ->
         raise IppanError, "Account \"#{id}\" not exists"
 
-      byte_size(name) > 50 ->
+      byte_size(name) > @name_max_length ->
         raise IppanError, "Invalid name length"
 
       map_size(extras) > 5 ->
@@ -37,8 +38,8 @@ defmodule Ippan.Func.Service do
   end
 
   def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map) do
-    extra = Map.get(map, "extra")
-    MapUtil.validate_length(map, :name, 50)
+    extra = Map.delete(map, "name")
+    MapUtil.validate_length(map, :name, @name_max_length)
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
@@ -48,7 +49,7 @@ defmodule Ippan.Func.Service do
       not PayService.exists?(db_ref, id) ->
         raise IppanError, "Not exists service: #{id}"
 
-      map_size(extra) > 2 ->
+      extra != nil and map_size(extra) > 2 ->
         raise IppanError, "Invalid second parameter"
 
       not is_nil(extra) and map_size(extra) > 5 ->
