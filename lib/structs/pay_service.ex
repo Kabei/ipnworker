@@ -25,7 +25,10 @@ defmodule PayService do
 
   def delete(db_ref, id) do
     Sqlite.step("delete_paysrv", [id])
+    |> IO.inspect()
+
     Sqlite.step("delete_all_subpay", [id])
+    |> IO.inspect()
   end
 
   def to_map([id, name, extra, created_at, updated_at]) do
