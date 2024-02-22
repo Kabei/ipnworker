@@ -108,10 +108,12 @@ defmodule BalanceStore do
 
   defmacro reserve(amount) do
     quote bind_quoted: [token: @token, amount: amount], location: :keep do
-      supply = TokenSupply.jackpot()
-      TokenSupply.add(supply, amount)
+      if amount > 0 do
+        supply = TokenSupply.jackpot()
+        TokenSupply.add(supply, amount)
 
-      RegPay.reserve(var!(source), token, amount)
+        RegPay.reserve(var!(source), token, amount)
+      end
     end
   end
 
