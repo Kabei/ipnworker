@@ -283,7 +283,7 @@ defmodule Ippan.Func.Coin do
           max_amount != 0 and max_amount < amount ->
             raise IppanError, "Exceeded amount"
 
-          last_round + interval < round_id ->
+          last_round + interval > round_id ->
             raise IppanError, "Paystream already used"
 
           true ->
