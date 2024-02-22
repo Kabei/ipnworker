@@ -25,16 +25,12 @@ defmodule PayService do
 
   def delete(db_ref, id) do
     Sqlite.step("delete_paysrv", [id])
-    |> IO.inspect()
-
     Sqlite.step("delete_all_subpay", [id])
-    |> IO.inspect()
   end
 
   def to_map([id, name, extra, created_at, updated_at]) do
     extra = :erlang.element(1, CBOR.Decoder.decode(extra))
 
-    %{id: id, name: name, created_at: created_at, updated_at: updated_at}
-    |> Map.merge(extra)
+    %{id: id, name: name, created_at: created_at, extra: extra, updated_at: updated_at}
   end
 end
