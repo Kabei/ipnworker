@@ -269,7 +269,7 @@ defmodule Ippan.Func.Coin do
   def stream(%{id: account_id}, payer, token_id, amount) do
     db_ref = :persistent_term.get(:main_conn)
 
-    case SubPay.get(db_ref, payer, account_id, token_id) do
+    case SubPay.get(db_ref, account_id, payer, token_id) do
       nil ->
         raise IppanError, "Payment not authorized"
 
