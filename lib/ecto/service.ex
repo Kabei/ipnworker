@@ -4,7 +4,7 @@ defmodule Ippan.Ecto.Service do
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
 
-  @table "service"
+  @table "serv"
   @select ~w(id name extra created_at updated_at)a
 
   def one(id) do
