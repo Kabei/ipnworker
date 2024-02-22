@@ -274,7 +274,7 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "Payment not authorized"
 
       %{extra: extra, last_round: last_round} ->
-        max_amount = Map.get(data.extra, "max_amount", 0)
+        max_amount = Map.get(extra, "max_amount", 0)
         stats = Stats.new()
         round_id = Stats.rounds(stats)
         %{env: %{"stream.times" => interval}} = Token.get(token_id)
