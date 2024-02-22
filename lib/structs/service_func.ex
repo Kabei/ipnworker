@@ -39,10 +39,14 @@ defmodule Ippan.Func.Service do
   def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map) do
     extra = Map.get(map, "extra")
     MapUtil.validate_length(map, :name, 50)
+    db_ref = :persistent_term.get(:main_conn)
 
     cond do
       id != account_id ->
         raise IppanError, "Unauthorized"
+
+      not PayService.exists?(db_ref, id) ->
+        raise IppanError, "Not exists service: #{id}"
 
       map_size(extra) > 2 ->
         raise IppanError, "Invalid second parameter"
@@ -60,8 +64,16 @@ defmodule Ippan.Func.Service do
   end
 
   def delete(%{id: account_id}, id) do
-    if account_id != id or account_id != EnvStore.owner() do
-      raise IppanError, "Unauthorized"
+    db_ref = :persistent_term.get(:main_conn)
+
+    cond do
+      not PayService.exists?(db_ref, id) ->
+        raise IppanError, "Not exists service: #{id}"
+
+      account_id != id or account_id != EnvStore.owner() ->
+        raise IppanError, "Unauthorized"
+
+      true -> :ok
     end
   end
 
