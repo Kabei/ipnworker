@@ -5,7 +5,7 @@ defmodule Ippan.Ecto.SubPay do
   require Sqlite
 
   @table "subpay"
-  @select ~w(id payer token created_at last_round extra)a
+  @select ~w(id payer token extra created_at last_round)a
 
   def one(id, payer, token) do
     db_ref = :persistent_term.get(:main_ro)
