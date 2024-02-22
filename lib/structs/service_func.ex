@@ -16,7 +16,7 @@ defmodule Ippan.Func.Service do
         raise IppanError, "Invalid ID"
 
       not DetsPlux.member_tx?(dets, tx, id) ->
-        raise IppanError, "Wallet #{id} already exists"
+        raise IppanError, "Account \"#{id}\" not exists"
 
       byte_size(name) > 50 ->
         raise IppanError, "Invalid name length"
