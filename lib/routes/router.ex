@@ -169,6 +169,7 @@ defmodule Ipnworker.Router do
     forward("/v1/network", to: Ipnworker.NetworkRoutes)
     forward("/v1/account", to: Ipnworker.AccountRoutes)
     forward("/v1/event", to: Ipnworker.EventRoutes)
+    forward("/v1/service", to: Ipnworker.ServiceRoutes)
     # forward "/v1/snap", to: Ipnworker.SnapRoutes
   end
 

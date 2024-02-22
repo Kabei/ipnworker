@@ -18,7 +18,7 @@ defmodule Builder do
 
     @spec new(binary, 0 | 1 | 2) :: t()
     def new(seed, sig_type \\ 0) do
-      {pk, sk, account_id} =
+      {pk, sk, address} =
         case sig_type do
           0 ->
             Builder.gen_ed25519(seed)
@@ -30,7 +30,24 @@ defmodule Builder do
             Builder.gen_falcon(seed)
         end
 
-      %Client{secret: sk, pk: pk, seed: seed, id: account_id, sig_type: sig_type}
+      %Client{secret: sk, pk: pk, seed: seed, id: address, sig_type: sig_type}
+    end
+
+    @spec new(binary, binary, 0 | 1 | 2) :: t()
+    def new(nickname, seed, sig_type) do
+      {pk, sk, _address} =
+        case sig_type do
+          0 ->
+            Builder.gen_ed25519(seed)
+
+          1 ->
+            Builder.gen_secp256k1(seed)
+
+          2 ->
+            Builder.gen_falcon(seed)
+        end
+
+      %Client{secret: sk, pk: pk, seed: seed, id: nickname, sig_type: sig_type}
     end
 
     @spec cont(t) :: t
@@ -534,7 +551,7 @@ defmodule Builder do
     {Client.cont(client), body, sig}
   end
 
-  # Builder.coin_burn(client, client2.id, "IPN", 1000) |> Builder.print()
+  # Builder.coin_burn(client, "IPN", client2.id, 1000) |> Builder.print()
   def coin_burn(client = %Client{id: account_id, nonce: nonce}, to, token, amount) do
     body =
       [305, nonce, account_id, to, token, amount]
@@ -751,10 +768,10 @@ defmodule Builder do
     {Client.cont(client), body, sig}
   end
 
-  # service_subscribe(client, "@ippan", %{"max_amount" => 50000})
-  def service_subscribe(client = %Client{id: account_id, nonce: nonce}, service_id, extra) do
+  # service_subscribe(client, "@ippan", "XPN", %{"max_amount" => 50000})
+  def service_subscribe(client = %Client{id: account_id, nonce: nonce}, service_id, token_id, extra) do
     body =
-      [603, nonce, account_id, service_id, extra]
+      [610, nonce, account_id, service_id, token_id, extra]
       |> encode_fun!()
 
     hash = hash_fun(body)
@@ -765,9 +782,9 @@ defmodule Builder do
   end
 
   # service_unsubscribe(client, "@ippan", %{"max_amount" => 50000})
-  def service_unsubscribe(client = %Client{id: account_id, nonce: nonce}, service_id) do
+  def service_unsubscribe(client = %Client{id: account_id, nonce: nonce}, service_id, token_id) do
     body =
-      [604, nonce, account_id, service_id]
+      [611, nonce, account_id, service_id, token_id]
       |> encode_fun!()
 
     hash = hash_fun(body)
