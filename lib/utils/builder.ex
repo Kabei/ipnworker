@@ -534,7 +534,7 @@ defmodule Builder do
     {Client.cont(client), body, sig}
   end
 
-  # Builder.coin_burn(client, "IPN", client2.id, 1000) |> Builder.print()
+  # Builder.coin_burn(client, client2.id, "IPN", 1000) |> Builder.print()
   def coin_burn(client = %Client{id: account_id, nonce: nonce}, to, token, amount) do
     body =
       [305, nonce, account_id, to, token, amount]

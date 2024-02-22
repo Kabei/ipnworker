@@ -191,7 +191,7 @@ defmodule Ippan.Func.Coin do
     token = Token.get(token_id)
 
     cond do
-      Token.has_prop?(token, "burn")  == false ->
+      Token.has_prop?(token, "burn") == false ->
         raise IppanError, "Burn property missing"
 
       true ->
