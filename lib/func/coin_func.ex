@@ -273,12 +273,18 @@ defmodule Ippan.Func.Coin do
       nil ->
         raise IppanError, "Payment not authorized"
 
-      data ->
-        max_amount = Map.get(data, "max_amount", 0)
+      %{extra: extra, last_round: last_round} ->
+        max_amount = Map.get(data.extra, "max_amount", 0)
+        stats = Stats.new()
+        round_id = Stats.rounds(stats)
+        %{env: %{"stream.times" => interval}} = Token.get(token_id)
 
         cond do
           max_amount != 0 and max_amount < amount ->
             raise IppanError, "Exceeded amount"
+
+          last_round + interval < round_id ->
+            raise IppanError, "Paystream already used"
 
           true ->
             %{env: %{"stream.times" => times}, props: props} = Token.get(token_id)
