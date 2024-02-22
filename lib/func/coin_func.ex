@@ -63,7 +63,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "Invalid owner"
 
-      not Token.has_prop?(token, "coinbase") ->
+      Token.has_prop?(token, "coinbase") == false ->
         raise IppanError, "Token property invalid"
 
       true ->
@@ -153,7 +153,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "Unauthorised"
 
-      not Token.has_prop?(token, "lock") ->
+      Token.has_prop?(token, "lock") == false ->
         raise IppanError, "lock property is missing"
 
       true ->
@@ -175,7 +175,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "Unauthorised"
 
-      not Token.has_prop?(token, "lock") ->
+      Token.has_prop?(token, "lock") == false ->
         raise IppanError, "lock property missing"
 
       true ->
@@ -191,8 +191,8 @@ defmodule Ippan.Func.Coin do
     token = Token.get(token_id)
 
     cond do
-      not Token.has_prop?(token, "drop") ->
-        raise IppanError, "Drop property missing"
+      Token.has_prop?(token, "burn")  == false ->
+        raise IppanError, "Burn property missing"
 
       true ->
         BalanceTrace.new(account_id)
@@ -206,7 +206,7 @@ defmodule Ippan.Func.Coin do
     token = Token.get(token_id)
 
     cond do
-      not Token.has_prop?(token, "burn") ->
+      Token.has_prop?(token, "burn") == false ->
         raise IppanError, "Burn property missing"
 
       token.owner != account_id ->
@@ -325,7 +325,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "Unauthorized"
 
-      not Token.has_prop?(token, "auth") ->
+      Token.has_prop?(token, "auth") == false ->
         raise IppanError, "Property auth not exists"
 
       DetsPlux.member_tx?(dets, tx, to) == false ->
