@@ -303,8 +303,8 @@ defmodule Ippan.Func.Coin do
           size: size,
           validator: %{fa: fa, fb: fb}
         },
-        token_id,
         to,
+        token_id,
         auth
       )
       when is_boolean(auth) do
@@ -314,6 +314,9 @@ defmodule Ippan.Func.Coin do
     token = Token.get(token_id)
 
     cond do
+      is_nil(token) ->
+        raise IppanError, "Token #{token_id} not exists"
+
       token.owner != account_id ->
         raise IppanError, "Unauthorized"
 
