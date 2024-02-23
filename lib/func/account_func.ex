@@ -48,7 +48,7 @@ defmodule Ippan.Func.Account do
         raise IppanError, "Invalid FB"
 
       DetsPlux.member_tx?(dets, tx, account_id) ->
-        raise IppanError, "Wallet #{account_id} already exists"
+        raise IppanError, "Account #{account_id} already exists"
 
       true ->
         :ok

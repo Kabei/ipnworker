@@ -37,8 +37,6 @@ defmodule Ippan.Func.Service do
     end
   end
 
-  def update(_source, _id, %{}), do: raise IppanError, "Last argument is empty"
-
   def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map) when is_map(map) do
     extra = Map.delete(map, "name")
     MapUtil.validate_length(map, :name, @name_max_length)
