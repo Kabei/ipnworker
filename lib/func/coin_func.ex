@@ -321,13 +321,13 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "Unauthorized"
 
       DetsPlux.member_tx?(dets, tx, to) == false ->
-        raise IppanError, "#{to} account not exists"
+        raise IppanError, "Account #{to} not exists"
 
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
         BalanceTrace.new(account_id)
-        |> BalanceTrace.requires!(token_id, fees)
+        |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
   end
