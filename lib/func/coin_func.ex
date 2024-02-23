@@ -242,7 +242,7 @@ defmodule Ippan.Func.Coin do
     round_id = Stats.rounds(stats)
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :cache_balance)
-    %{env: %{"reload.times" => times}} = Token.get(token_id)
+    %{"reload.times" => times} = env
 
     key = DetsPlux.tuple(account_id, token_id)
     {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
@@ -251,6 +251,9 @@ defmodule Ippan.Func.Coin do
 
     if last_reload > 0 and round_id < req_time,
       do: raise(IppanError, "It's already recharged. Wait for #{req_time}")
+
+    if Map.get(env, "auth", false) != Map.get(map, "auth", false),
+      do: raise IppanError, "Unauthorized account"
 
     price = Map.get(env, "reload.price", 0)
 
@@ -287,23 +290,6 @@ defmodule Ippan.Func.Coin do
             raise IppanError, "Paystream already used"
 
           true ->
-            %{env: %{"stream.times" => times}, props: props} = Token.get(token_id)
-
-            if "stream" not in props, do: raise(IppanError, "Stream property is missing")
-
-            dets = DetsPlux.get(:balance)
-            tx = DetsPlux.tx(dets, :balance)
-            key = DetsPlux.tuple(account_id, token_id)
-            {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
-            stats = Stats.new()
-            round_id = Stats.rounds(stats)
-            last_round = Map.get(map, "lastStream", 0)
-
-            req_round = last_round + times
-
-            if last_round != 0 and round_id < req_round,
-              do: raise(IppanError, "it's already used. Wait for round ##{req_round}")
-
             BalanceTrace.new(payer)
             |> BalanceTrace.requires!(token_id, amount)
             |> BalanceTrace.output()
@@ -330,9 +316,6 @@ defmodule Ippan.Func.Coin do
     cond do
       token.owner != account_id ->
         raise IppanError, "Unauthorized"
-
-      Token.has_prop?(token, "auth") == false ->
-        raise IppanError, "Property auth not exists"
 
       DetsPlux.member_tx?(dets, tx, to) == false ->
         raise IppanError, "#{to} account not exists"
