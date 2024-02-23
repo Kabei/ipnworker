@@ -109,7 +109,7 @@ defmodule Ippan.Func.Service do
   def unsubscribe(%{id: account_id}, service_id, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless SubPay.has?(db_ref, service_id, token_id, account_id),
+    unless SubPay.has?(db_ref, service_id, account_id, token_id),
       do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
   end
 end
