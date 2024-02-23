@@ -266,7 +266,7 @@ defmodule Ippan.Func.Coin do
     ret
   end
 
-  def stream(%{id: account_id}, payer, token_id, amount) do
+  def stream(%{id: account_id}, payer, token_id, amount) when amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
 
     case SubPay.get(db_ref, account_id, payer, token_id) do
@@ -281,7 +281,7 @@ defmodule Ippan.Func.Coin do
 
         cond do
           max_amount != 0 and max_amount < amount ->
-            raise IppanError, "Exceeded amount"
+            raise IppanError, "Exceeded max amount"
 
           last_round + interval > round_id ->
             raise IppanError, "Paystream already used"

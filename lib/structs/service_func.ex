@@ -91,10 +91,15 @@ defmodule Ippan.Func.Service do
       nil ->
         raise IppanError, "Service ID not exists"
 
-      _service ->
+      %{extra: extra} ->
+        min_amount = Map.get(extra, "min_amount", 0)
+
         cond do
-          SubPay.has?(db_ref, service_id, token_id, account_id) ->
+          SubPay.has?(db_ref, service_id, account_id, token_id) ->
             raise IppanError, "Already subscribed"
+
+          min_amount > max_amount ->
+            raise IppanError, "Set a max_amount mayor than #{min_amount}"
 
           true ->
             fees = Utils.calc_fees(fa, fb, size)
