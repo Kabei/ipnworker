@@ -309,8 +309,8 @@ defmodule Ippan.Func.Coin do
       )
       when is_boolean(auth) do
     db_ref = :persistent_term.get(:main_conn)
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :balance)
+    dets = DetsPlux.get(:wallet)
+    tx = DetsPlux.tx(dets, :cache_wallet)
     token = Token.get(token_id)
 
     cond do
