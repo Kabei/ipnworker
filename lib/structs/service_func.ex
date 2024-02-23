@@ -69,7 +69,7 @@ defmodule Ippan.Func.Service do
 
     cond do
       not PayService.exists?(db_ref, id) ->
-        raise IppanError, "Not exists service: #{id}"
+        raise IppanError, "Service #{id} not exists"
 
       account_id != id or account_id != EnvStore.owner() ->
         raise IppanError, "Unauthorized"
