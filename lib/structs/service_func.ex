@@ -82,9 +82,8 @@ defmodule Ippan.Func.Service do
         %{id: account_id, size: size, validator: %{fa: fa, fb: fb}},
         service_id,
         token_id,
-        max_amount
-      )
-      when is_integer(max_amount) and max_amount > 0 do
+        extra
+      ) when is_map(extra) do
     db_ref = :persistent_term.get(:main_conn)
 
     case PayService.get(db_ref, service_id) do
@@ -92,18 +91,20 @@ defmodule Ippan.Func.Service do
         raise IppanError, "Service ID not exists"
 
       %{extra: extra} ->
-        min_amount = Map.get(extra, "min_amount", 0)
-
         cond do
           SubPay.has?(db_ref, service_id, account_id, token_id) ->
             raise IppanError, "Already subscribed"
 
-          min_amount > max_amount ->
-            raise IppanError, "Set a max_amount mayor than #{min_amount}"
+            true ->
+            min_amount = Map.get(extra, "min_amount", 0)
 
-          true ->
+            extra
+            |> MapUtil.validate_integer("exp")
+            |> MapUtil.validate_integer("max_amount")
+            |> MapUtil.validate_value("exp", :gt, 0)
+            |> MapUtil.validate_value("max_amount", :gte, min_amount)
+
             fees = Utils.calc_fees(fa, fb, size)
-
             BalanceTrace.new(account_id)
             |> BalanceTrace.requires!(@token, fees)
             |> BalanceTrace.output()

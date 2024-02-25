@@ -278,6 +278,7 @@ defmodule Ippan.Func.Coin do
 
       %{extra: extra, last_round: last_round} ->
         max_amount = Map.get(extra, "max_amount", 0)
+        expiry = Map.get(extra, "exp", 0)
         stats = Stats.new()
         round_id = Stats.rounds(stats)
         %{env: %{"stream.times" => interval}} = Token.get(token_id)
@@ -285,6 +286,9 @@ defmodule Ippan.Func.Coin do
         cond do
           max_amount != 0 and max_amount < amount ->
             raise IppanError, "Exceeded max amount"
+
+          expiry != 0 and expiry < round_id ->
+            raise IppanError, "Subscription has expired"
 
           last_round + interval > round_id ->
             raise IppanError, "Paystream already used"
