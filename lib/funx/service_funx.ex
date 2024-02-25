@@ -3,7 +3,7 @@ defmodule Ippan.Funx.Service do
   alias Ippan.Utils
   require Sqlite
 
-  def new(source = %{id: account_id, round: round_id}, id, name, extra) do
+  def new(source = %{id: account_id, round: round_id}, id, name, image, extra) do
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(:balance)
     price = EnvStore.service_price()
@@ -14,7 +14,7 @@ defmodule Ippan.Funx.Service do
 
       _ ->
         db_ref = :persistent_term.get(:main_conn)
-        PayService.create(db_ref, id, name, extra, round_id)
+        PayService.create(db_ref, id, name, image, extra, round_id)
     end
   end
 
@@ -32,16 +32,22 @@ defmodule Ippan.Funx.Service do
           nil ->
             :error
 
-          %{name: current_name, extra: current_extra} ->
+          %{name: current_name, image: current_image, extra: current_extra} ->
             case BalanceStore.pay_fee(account_id, vOwner, fees) do
               :error ->
                 :error
 
               _ ->
                 name = Map.get(map, "name", current_name)
-                extra = Map.delete(map, "name") |> Map.merge(current_extra)
+                image = Map.get(map, "image", current_image)
+
+                extra =
+                  Map.drop(map, ["name", "image"])
+                  |> Map.merge(current_extra)
+
                 PayService.update(db_ref, %{
                   "name" => name,
+                  "image" => image,
                   "extra" => CBOR.encode(extra),
                   "updated_at" => round_id}, id)
             end

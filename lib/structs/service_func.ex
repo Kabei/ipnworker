@@ -7,7 +7,7 @@ defmodule Ippan.Func.Service do
   @token Application.compile_env(@app, :token)
   @name_max_length 50
 
-  def new(%{id: account_id}, id, name, extras) do
+  def new(%{id: account_id}, id, name, image, extras) do
     db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:wallet)
     tx = DetsPlux.tx(dets, :cache_wallet)
@@ -21,6 +21,9 @@ defmodule Ippan.Func.Service do
 
       byte_size(name) > @name_max_length ->
         raise IppanError, "Invalid name length"
+
+      not Match.url?(image) ->
+        raise IppanError, "Image is not a valid URL"
 
       map_size(extras) > 5 ->
         raise IppanError, "Invalid extras key size"
@@ -38,8 +41,12 @@ defmodule Ippan.Func.Service do
   end
 
   def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map) when is_map(map) do
-    extra = Map.delete(map, "name")
-    MapUtil.validate_length(map, :name, @name_max_length)
+    map
+    |> MapUtil.validate_length("name", @name_max_length)
+    |> MapUtil.validate_url("image")
+
+    extra = Map.drop(map, ["name", "image"])
+
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
