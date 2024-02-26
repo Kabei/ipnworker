@@ -6,11 +6,13 @@ defmodule Ippan.Func.Service do
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
   @name_max_length 50
+  @max_services Application.compile_env(@app, :max_services, 0)
 
   def new(%{id: account_id}, id, name, image, extras) do
     db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:wallet)
     tx = DetsPlux.tx(dets, :cache_wallet)
+    stats = Stats.new()
 
     cond do
       not Match.account?(id) ->
@@ -27,6 +29,9 @@ defmodule Ippan.Func.Service do
 
       map_size(extras) > 5 ->
         raise IppanError, "Invalid extras key size"
+
+      @max_services != 0 and @max_services <= Stats.services(stats) ->
+        raise IppanError, "Total services register exceeded"
 
       PayService.exists?(db_ref, id) ->
         raise IppanError, "Already exists service: #{id}"

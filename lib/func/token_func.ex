@@ -7,7 +7,7 @@ defmodule Ippan.Func.Token do
   @app Mix.Project.config()[:app]
   @max_number 1_000_000_000_000_000_000_000_000_000
   @token Application.compile_env(@app, :token)
-  @max_tokens Application.compile_env(@app, :max_tokens)
+  @max_tokens Application.compile_env(@app, :max_tokens, 0)
 
   def new(
         %{id: account_id},
@@ -40,7 +40,7 @@ defmodule Ippan.Func.Token do
       Token.exists?(id) ->
         raise IppanError, "Token already exists"
 
-      @max_tokens <= Token.total() ->
+      @max_tokens != 0 and @max_tokens <= Token.total() ->
         raise IppanError, "Maximum tokens exceeded"
 
       true ->

@@ -24,7 +24,8 @@ defmodule Ipnworker.NetworkRoutes do
     "message_max_size" => Application.compile_env(@app, :message_max_size),
     "message_timeout" => Application.compile_env(@app, :message_timeout),
     "max_validators" => Application.compile_env(@app, :max_validators),
-    "max_tokens" => Application.compile_env(@app, :max_tokens),
+    "max_services" => Application.compile_env(@app, :max_services, 0),
+    "max_tokens" => Application.compile_env(@app, :max_tokens, 0),
     "name" => @name,
     "timeout_refund" => Application.compile_env(@app, :timeout_refund),
     "token" => @token
@@ -60,6 +61,7 @@ defmodule Ipnworker.NetworkRoutes do
       "id" => id,
       "jackpot" => TokenSupply.get(jackpot),
       "name" => @name,
+      "services" => Stats.services(stats),
       "supply" => TokenSupply.get(supply),
       "token" => @token,
       "tokens" => tokens,
