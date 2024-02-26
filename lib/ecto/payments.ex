@@ -150,6 +150,17 @@ defmodule Ippan.Ecto.Payments do
     where(query, [p], p.type == ^type)
   end
 
+  defp filter_type(query, %{"types" => types}) do
+    array = get_array_of_types(types)
+    where(query, [p], p.type in ^array)
+  end
+
+  defp filter_type(query, %{"ntypes" => ntypes}) do
+    array = get_array_of_types(ntypes)
+
+    where(query, [p], p.type not in ^array)
+  end
+
   defp filter_type(query, _), do: query
 
   defp filter_token(query, %{"token" => token}) do
@@ -164,4 +175,10 @@ defmodule Ippan.Ecto.Payments do
     do: order_by(query, [p], desc: p.round, asc: p.from, asc: p.nonce)
 
   defp sort(query, _), do: order_by(query, [p], desc: p.round)
+
+  # Util functions
+  defp get_array_of_types(types) do
+    String.split(types, ",", trim: true)
+    |> Enum.map(& String.to_integer(&1))
+  end
 end
