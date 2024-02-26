@@ -79,6 +79,8 @@ defmodule Ippan.Ecto.SubPay do
   def filter_join(query, _), do: query
 
   defp sort(query, %{"sort" => "newest"}), do: order_by(query, [sp], desc: sp.created_at)
+  defp sort(query, %{"sort" => "moreActive"}), do: order_by(query, [sp], desc: sp.last_round)
+  defp sort(query, %{"sort" => "lessActive"}), do: order_by(query, [sp], asc: sp.last_round)
   defp sort(query, _), do: order_by(query, [sp], asc: sp.created_at)
 
   defp to_map([id, payer, token, extra, created_at, last_round]) do
