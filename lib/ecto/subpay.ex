@@ -13,6 +13,12 @@ defmodule Ippan.Ecto.SubPay do
     SubPay.get(db_ref, id, payer, token)
   end
 
+  def total(payer) do
+    db_ref = :persistent_term.get(:main_ro)
+
+    SubPay.total(db_ref, payer)
+  end
+
   def all(params) do
     q =
       from(@table)

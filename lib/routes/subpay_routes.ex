@@ -16,6 +16,11 @@ defmodule Ipnworker.SubPayRoutes do
     |> send_json()
   end
 
+  get "/:payer/total" do
+    SubPay.total(payer)
+    |> send_json()
+  end
+
   get "/:id/:payer/:token" do
     SubPay.one(id, payer, token)
     |> send_json()
