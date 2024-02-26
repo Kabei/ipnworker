@@ -18,9 +18,9 @@ defmodule Ippan.Ecto.SubPay do
       from(@table)
       |> filter_offset(params)
       |> filter_limit(params)
-      |> filter_search(params)
       |> filter_join(params)
-      |> filter_while(params)
+      |> filter_account(params)
+      |> filter_search(params)
       |> filter_select(params)
       |> sort(params)
 
@@ -58,11 +58,19 @@ defmodule Ippan.Ecto.SubPay do
 
   defp filter_search(query, _), do: query
 
-  defp filter_while(query, %{"last_updated" => time}) do
-    where(query, [sp], sp.updated_at > ^time)
+  defp filter_account(query, %{"id" => id}) do
+    where(query, [sp], sp.id == ^id)
   end
 
-  defp filter_while(query, _), do: query
+  defp filter_account(query, %{"payer" => payer}) do
+    where(query, [sp], sp.payer == ^payer)
+  end
+
+  defp filter_account(query, %{"id" => id, "payer" => payer}) do
+    where(query, [sp], sp.id == ^id and sp.payer == ^payer)
+  end
+
+  defp filter_account(query, _), do: query
 
   def filter_join(query, %{"service" => _}) do
     join(query, :inner, [sp], s in Service, on: sp.id == s.id)
