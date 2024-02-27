@@ -8,7 +8,7 @@ defmodule Ippan.Func.Service do
   @name_max_length 50
   @max_services Application.compile_env(@app, :max_services, 0)
 
-  def new(%{id: account_id}, id, name, image, extras) do
+  def new(%{id: account_id}, id, name, image, extra) do
     db_ref = :persistent_term.get(:main_conn)
     dets = DetsPlux.get(:wallet)
     tx = DetsPlux.tx(dets, :cache_wallet)
@@ -27,8 +27,8 @@ defmodule Ippan.Func.Service do
       not Match.url?(image) ->
         raise IppanError, "Image is not a valid URL"
 
-      map_size(extras) > 5 ->
-        raise IppanError, "Invalid extras key size"
+      map_size(extra) > 5 ->
+        raise IppanError, "Invalid extra key size"
 
       @max_services != 0 and @max_services <= Stats.services(stats) ->
         raise IppanError, "Total services register exceeded"
@@ -37,6 +37,12 @@ defmodule Ippan.Func.Service do
         raise IppanError, "Already exists service: #{id}"
 
       true ->
+        extra
+        |> MapUtil.only(~w(summary min_amount))
+        |> MapUtil.validate_bytes_range("summary", 1..255)
+        |> MapUtil.validate_integer("min_amount")
+        |> MapUtil.validate_value("min_amount", :gt, 0)
+
         price = EnvStore.service_price()
 
         BalanceTrace.new(account_id)
@@ -102,13 +108,13 @@ defmodule Ippan.Func.Service do
       nil ->
         raise IppanError, "Service ID not exists"
 
-      %{extra: extra} ->
+      %{extra: service_extra} ->
         cond do
           SubPay.has?(db_ref, service_id, account_id, token_id) ->
             raise IppanError, "Already subscribed"
 
             true ->
-            min_amount = Map.get(extra, "min_amount", 0)
+            min_amount = Map.get(service_extra, "min_amount", 0)
 
             extra
             |> MapUtil.validate_integer("exp")

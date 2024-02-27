@@ -111,7 +111,6 @@ defmodule RegPay do
   def commit(nil, _), do: nil
 
   if @notify do
-    alias Phoenix.PubSub
     @pubsub :pubsub
 
     def commit(pg_conn, round_id) do
@@ -135,7 +134,7 @@ defmodule RegPay do
             }
             |> MapUtil.drop_nils()
 
-          PubSub.broadcast(@pubsub, "payments:#{to}", payload)
+          Phoenix.PubSub.broadcast(@pubsub, "payments:#{to}", payload)
         end
       end)
 
