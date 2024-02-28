@@ -38,7 +38,7 @@ defmodule Ippan.Func.Service do
 
       true ->
         extra
-        |> MapUtil.only(~w(summary min_amount))
+        |> MapUtil.only(~w(only_auth min_amount summary))
         |> MapUtil.validate_bytes_range("summary", 1..255)
         |> MapUtil.validate_integer("min_amount")
         |> MapUtil.validate_value("min_amount", :gt, 0)
@@ -114,26 +114,30 @@ defmodule Ippan.Func.Service do
             raise IppanError, "Already subscribed"
 
             true ->
-            min_amount = Map.get(service_extra, "min_amount", 0)
+              only_auth = Map.get(service_extra, "only_auth", false)
+              min_amount = Map.get(service_extra, "min_amount", 0)
 
-            extra
-            |> MapUtil.validate_integer("exp")
-            |> MapUtil.validate_integer("max_amount")
-            |> MapUtil.validate_value("exp", :gt, 0)
-            |> MapUtil.validate_value("max_amount", :gte, min_amount)
+              extra
+              |> MapUtil.validate_integer("exp")
+              |> MapUtil.validate_integer("max_amount")
+              |> MapUtil.validate_value("exp", :gt, 0)
+              |> MapUtil.validate_value("max_amount", :gte, min_amount)
 
-            fees = Utils.calc_fees(fa, fb, size)
-            BalanceTrace.new(account_id)
-            |> BalanceTrace.requires!(@token, fees)
-            |> BalanceTrace.output()
+              fees = Utils.calc_fees(fa, fb, size)
+
+              BalanceTrace.new(account_id)
+              |> BalanceTrace.auth!(token_id, only_auth)
+              |> BalanceTrace.requires!(@token, fees)
+              |> BalanceTrace.output()
         end
     end
   end
 
-  def unsubscribe(%{id: account_id}, service_id, token_id) do
+  def unsubscribe(%{id: account_id}, id, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless SubPay.has?(db_ref, service_id, account_id, token_id),
-      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+    unless SubPay.has?(db_ref, id, account_id, token_id) or
+    SubPay.has?(db_ref, account_id, id, token_id),
+      do: raise(IppanError, "#{account_id} has not subscription with #{id}")
   end
 end

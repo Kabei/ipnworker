@@ -13,6 +13,18 @@ defmodule BalanceTrace do
     %BalanceTrace{db: db, tx: tx, from: from}
   end
 
+  def auth!(bt, _token, false), do: bt
+
+  def auth!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token, _check) do
+    key = DetsPlux.tuple(from, token)
+    {_, map} = DetsPlux.get_cache(db, tx, key, {0, %{}})
+
+    if Map.get(map, "auth", false) == false,
+      do: raise IppanError, "Account balance unauthorized"
+
+    bt
+  end
+
   def requires!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token, value) do
     key = DetsPlux.tuple(from, token)
     DetsPlux.get_cache(db, tx, key, {0, %{}})
