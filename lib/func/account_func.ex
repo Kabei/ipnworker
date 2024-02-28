@@ -36,9 +36,7 @@ defmodule Ippan.Func.Account do
       sig_type not in 0..2 ->
         raise IppanError, "Invalid signature type"
 
-      (sig_type == 0 and byte_size(pubkey) != 32) or
-        (sig_type == 1 and byte_size(pubkey) == 65) or
-          (sig_type == 2 and byte_size(pubkey) != 897) ->
+      invalid_pubkey_size?(pubkey, sig_type) ->
         raise IppanError, "Invalid pubkey size"
 
       not is_integer(fa) or fa < EnvStore.min_fa() ->
@@ -69,7 +67,7 @@ defmodule Ippan.Func.Account do
 
     cond do
       validator_id == vid ->
-        raise IppanError, "Already subscribe"
+        raise IppanError, "Already subscribed"
 
       vfa != fa or vfb != fb ->
         raise IppanError, "Invalid fees"
@@ -88,11 +86,9 @@ defmodule Ippan.Func.Account do
 
     cond do
       not Match.username?(account_id) ->
-        raise IppanError, "Only nicknames can edit pubkey"
+        raise IppanError, "Only account with username can edit pubkey"
 
-      (sig_type == 0 and byte_size(pubkey) != 32) or
-        (sig_type == 1 and byte_size(pubkey) == 65) or
-          (sig_type == 2 and byte_size(pubkey) != 897) ->
+      invalid_pubkey_size?(pubkey, sig_type) ->
         raise IppanError, "Invalid pubkey size"
 
       sig_type not in 0..2 ->
@@ -105,5 +101,11 @@ defmodule Ippan.Func.Account do
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
+  end
+
+  defp invalid_pubkey_size?(pubkey, sig_type) do
+    (sig_type == 0 and byte_size(pubkey) != 32) or
+        (sig_type == 1 and byte_size(pubkey) == 65) or
+          (sig_type == 2 and byte_size(pubkey) != 897)
   end
 end
