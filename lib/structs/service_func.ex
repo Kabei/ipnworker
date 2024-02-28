@@ -104,6 +104,8 @@ defmodule Ippan.Func.Service do
       ) when is_map(extra) do
     db_ref = :persistent_term.get(:main_conn)
 
+    if account_id == service_id, do: raise IppanError, "Ilegal subscription"
+
     case PayService.get(db_ref, service_id) do
       nil ->
         raise IppanError, "Service ID not exists"
@@ -133,11 +135,19 @@ defmodule Ippan.Func.Service do
     end
   end
 
-  def unsubscribe(%{id: account_id}, id, token_id) do
+  def unsubscribe(%{id: account_id}, service_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless SubPay.has?(db_ref, id, account_id, token_id) or
-    SubPay.has?(db_ref, account_id, id, token_id),
-      do: raise(IppanError, "#{account_id} has not subscription with #{id}")
+    unless SubPay.has?(db_ref, service_id, account_id) or
+    SubPay.has?(db_ref, account_id, service_id),
+      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+  end
+
+  def unsubscribe(%{id: account_id}, service_id, token_id) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    unless SubPay.has?(db_ref, service_id, account_id, token_id) or
+    SubPay.has?(db_ref, account_id, service_id, token_id),
+      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
   end
 end
