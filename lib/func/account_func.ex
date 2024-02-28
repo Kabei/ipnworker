@@ -64,7 +64,7 @@ defmodule Ippan.Func.Account do
     wallet_dets = DetsPlux.get(:wallet)
     wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
 
-    {_pk, vid, _sig_type} =
+    {_pk, _sig_type, %{"vid" => vid}} =
       DetsPlux.get_cache(wallet_dets, wallet_cache, account_id)
 
     cond do
