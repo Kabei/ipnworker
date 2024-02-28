@@ -1,5 +1,5 @@
 defmodule Ipnworker.SubPayRoutes do
-  alias Ippan.Ecto.SubPay
+  alias Ippan.Ecto.SubPay, as: SubPayEcto
   use Plug.Router
   import Ippan.Utils, only: [send_json: 1, fetch_query: 1]
 
@@ -12,17 +12,18 @@ defmodule Ipnworker.SubPayRoutes do
 
   get "/all" do
     fetch_query(conn)
-    |> SubPay.all()
+    |> SubPayEcto.all()
     |> send_json()
   end
 
   get "/:payer/total" do
-    SubPay.total(payer)
+    db_ref = :persistent_term.get(:main_ro)
+    SubPay.total(db_ref, payer)
     |> send_json()
   end
 
   get "/:id/:payer/:token" do
-    SubPay.one(id, payer, token)
+    SubPayEcto.one(id, payer, token)
     |> send_json()
   end
 
