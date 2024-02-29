@@ -1,4 +1,5 @@
 defmodule Ippan.Ecto.SubPay do
+  use Ecto.Schema
   alias Ipnworker.Repo
   alias Ippan.Ecto.Service
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3, join: 5]
