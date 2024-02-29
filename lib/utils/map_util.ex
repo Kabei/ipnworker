@@ -156,17 +156,17 @@ defmodule MapUtil do
 
     (not is_nil(val) and
        case op do
-         :gt -> value > val
-         :eq -> value == val
-         :lt -> value < val
-         :gte -> value >= val
-         :lte -> value <= val
+         :gt -> val > value
+         :eq -> val == value
+         :lt -> val < value
+         :gte -> val >= value
+         :lte -> val <= value
        end)
     |> case do
-      true ->
+      false ->
         raise ArgumentError, "Invalid key: #{key}"
 
-      false ->
+      _true ->
         map
     end
   end
