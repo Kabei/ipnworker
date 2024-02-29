@@ -79,7 +79,6 @@ defmodule Ippan.Funx.Coin do
         token_id,
         outputs
       ) do
-    is_validator = vOwner == from
     dets = DetsPlux.get(:balance)
     tx = DetsPlux.tx(dets, :balance)
     tfees = Utils.calc_fees(fa, fb, size)
@@ -89,8 +88,6 @@ defmodule Ippan.Funx.Coin do
         :error
 
       _ ->
-        balance = BalanceStore.make(from, @token)
-
         total =
           for [account, value] <- outputs do
             BalanceStore.coinbase(account, token_id, value)
@@ -100,19 +97,6 @@ defmodule Ippan.Funx.Coin do
 
         supply = TokenSupply.new(token_id)
         TokenSupply.add(supply, total)
-
-        reserve = Utils.calc_reserve(tfees)
-        fees = tfees - reserve
-
-        if is_validator do
-          supply = TokenSupply.new(@token)
-          BalanceStore.burn(balance, from, @token, fees)
-          BalanceStore.reserve(reserve)
-        else
-          validator_balance = BalanceStore.load(vOwner, @token)
-          BalanceStore.fees(validator_balance, fees)
-          BalanceStore.reserve(reserve)
-        end
     end
   end
 

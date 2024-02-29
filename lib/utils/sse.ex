@@ -86,7 +86,7 @@ defmodule SSE do
         |> chunk("event:ping\ndata:\n\n")
         |> case do
           {:ok, conn} ->
-            Logger.debug("Ping")
+            # Logger.debug("Ping")
             loop(conn, pubsub, topic, once, timeout)
 
           _error ->
@@ -94,7 +94,7 @@ defmodule SSE do
         end
 
       message when not is_tuple(message) and not is_atom(message) ->
-        Logger.debug(inspect(message))
+        # Logger.debug(inspect(message))
         :timer.cancel(tRef)
 
         conn
@@ -114,7 +114,7 @@ defmodule SSE do
         end
 
       {:halt, message} ->
-        Logger.debug(message)
+        # Logger.debug(message)
         :timer.cancel(tRef)
 
         conn
