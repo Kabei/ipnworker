@@ -45,7 +45,16 @@ defmodule Ippan.Ecto.SubPay do
   end
 
   defp filter_select(query, %{"service" => _}) do
-    select(query, [sp], map(sp, ~w(id payer token extra created_at last_round name image)a))
+    select(query, [sp, s], %{
+      id: sp.id,
+      payer: sp.payer,
+      token: sp.token,
+      extra: sp.extra,
+      created_at: sp.created_at,
+      last_round: sp.last_round,
+      name: s.name,
+      image: s.image
+    })
   end
 
   defp filter_select(query, _) do
