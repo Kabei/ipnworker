@@ -154,20 +154,21 @@ defmodule MapUtil do
   def validate_value(map, key, op, value) do
     val = Map.get(map, key)
 
-    (not is_nil(val) and
-       case op do
-         :gt -> val > value
-         :eq -> val == value
-         :lt -> val < value
-         :gte -> val >= value
-         :lte -> val <= value
-       end)
-    |> case do
-      false ->
-        raise ArgumentError, "Invalid key: #{key}"
+    if not is_nil(val) do
+      case op do
+        :gt -> val > value
+        :eq -> val == value
+        :lt -> val < value
+        :gte -> val >= value
+        :lte -> val <= value
+      end
+      |> case do
+        false ->
+          raise ArgumentError, "Invalid key: #{key}"
 
-      _true ->
-        map
+        _true ->
+          map
+      end
     end
   end
 
