@@ -87,7 +87,7 @@ defmodule RegPay do
     end
 
     def stream(%{nonce: nonce}, from, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 400, token, amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 400, token, -amount})
     end
   else
     def init, do: :ok
