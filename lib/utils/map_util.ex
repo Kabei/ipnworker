@@ -169,6 +169,8 @@ defmodule MapUtil do
         _true ->
           map
       end
+    else
+      map
     end
   end
 
