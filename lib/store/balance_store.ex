@@ -322,7 +322,7 @@ defmodule BalanceStore do
   defmacro stream(balance, amount) do
     quote bind_quoted: [amount: amount, balance: balance], location: :keep do
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.stream(var!(source), var!(to), var!(from), var!(token_id), amount)
+      RegPay.stream(var!(source), var!(from), var!(to), var!(token_id), amount)
     end
   end
 
