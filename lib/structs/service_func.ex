@@ -1,7 +1,8 @@
 defmodule Ippan.Func.Service do
   require BalanceStore
-  alias Ippan.Utils
+  alias Ippan.{Token, Utils}
   require Sqlite
+  require Token
 
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)
@@ -103,34 +104,42 @@ defmodule Ippan.Func.Service do
         extra
       ) when is_map(extra) do
     db_ref = :persistent_term.get(:main_conn)
+    token = Token.get(token_id)
 
-    if account_id == service_id, do: raise IppanError, "Ilegal subscription"
+    cond do
+      account_id == service_id ->
+        raise IppanError, "Ilegal subscription"
 
-    case PayService.get(db_ref, service_id) do
-      nil ->
-        raise IppanError, "Service ID not exists"
+      not Token.has_prop?(token, "stream") ->
+        raise IppanError, "Stream property missing in #{token_id}"
 
-      %{extra: service_extra} ->
-        cond do
-          SubPay.has?(db_ref, service_id, account_id, token_id) ->
-            raise IppanError, "Already subscribed"
+      true ->
+        case PayService.get(db_ref, service_id) do
+          nil ->
+            raise IppanError, "Service ID not exists"
 
-            true ->
-              only_auth = Map.get(service_extra, "only_auth", false)
-              min_amount = Map.get(service_extra, "min_amount", 0)
+          %{extra: service_extra} ->
+            cond do
+              SubPay.has?(db_ref, service_id, account_id, token_id) ->
+                raise IppanError, "Already subscribed"
 
-              extra
-              |> MapUtil.validate_integer("exp")
-              |> MapUtil.validate_integer("max_amount")
-              |> MapUtil.validate_value("exp", :gt, 0)
-              |> MapUtil.validate_value("max_amount", :gte, min_amount)
+                true ->
+                  only_auth = Map.get(service_extra, "only_auth", false)
+                  min_amount = Map.get(service_extra, "min_amount", 0)
 
-              fees = Utils.calc_fees(fa, fb, size)
+                  extra
+                  |> MapUtil.validate_integer("exp")
+                  |> MapUtil.validate_integer("max_amount")
+                  |> MapUtil.validate_value("exp", :gt, 0)
+                  |> MapUtil.validate_value("max_amount", :gte, min_amount)
 
-              BalanceTrace.new(account_id)
-              |> BalanceTrace.auth!(token_id, only_auth)
-              |> BalanceTrace.requires!(@token, fees)
-              |> BalanceTrace.output()
+                  fees = Utils.calc_fees(fa, fb, size)
+
+                  BalanceTrace.new(account_id)
+                  |> BalanceTrace.auth!(token_id, only_auth)
+                  |> BalanceTrace.requires!(@token, fees)
+                  |> BalanceTrace.output()
+            end
         end
     end
   end
