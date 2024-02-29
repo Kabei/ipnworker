@@ -1,5 +1,4 @@
 defmodule Ippan.Ecto.Service do
-  use Ecto.Schema
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]

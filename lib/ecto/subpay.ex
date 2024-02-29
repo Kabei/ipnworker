@@ -1,12 +1,11 @@
 defmodule Ippan.Ecto.SubPay do
-  use Ecto.Schema
   alias Ipnworker.Repo
-  alias Ippan.Ecto.Service
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3, join: 5]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
   require Sqlite
 
   @table "subpay"
+  @table_service "serv"
 
   def one(id, payer, token) do
     db_ref = :persistent_term.get(:main_ro)
@@ -80,7 +79,7 @@ defmodule Ippan.Ecto.SubPay do
   defp filter_account(query, _), do: query
 
   def filter_join(query, %{"service" => _}) do
-    join(query, :inner, [sp], s in Service, on: sp.id == s.id)
+    join(query, :inner, [sp], s in @table_service, on: sp.id == s.id)
   end
 
   def filter_join(query, _), do: query
