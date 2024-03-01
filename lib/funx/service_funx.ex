@@ -27,39 +27,49 @@ defmodule Ippan.Funx.Service do
   end
 
   def update(
-        source = %{id: account_id, round: round_id, size: size, validator: %{fa: fa, fb: fb, owner: vOwner}},
+        source = %{
+          id: account_id,
+          round: round_id,
+          size: size,
+          validator: %{fa: fa, fb: fb, owner: vOwner}
+        },
         id,
         map
       ) do
-        dets = DetsPlux.get(:balance)
-        tx = DetsPlux.tx(:balance)
-        fees = Utils.calc_fees(fa, fb, size)
-        db_ref = :persistent_term.get(:main_conn)
+    dets = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(:balance)
+    fees = Utils.calc_fees(fa, fb, size)
+    db_ref = :persistent_term.get(:main_conn)
 
-        case PayService.get(db_ref, id) do
-          nil ->
+    case PayService.get(db_ref, id) do
+      nil ->
+        :error
+
+      %{name: current_name, image: current_image, extra: current_extra} ->
+        case BalanceStore.pay_fee(account_id, vOwner, fees) do
+          :error ->
             :error
 
-          %{name: current_name, image: current_image, extra: current_extra} ->
-            case BalanceStore.pay_fee(account_id, vOwner, fees) do
-              :error ->
-                :error
+          _ ->
+            name = Map.get(map, "name", current_name)
+            image = Map.get(map, "image", current_image)
 
-              _ ->
-                name = Map.get(map, "name", current_name)
-                image = Map.get(map, "image", current_image)
+            extra =
+              Map.drop(map, ["name", "image"])
+              |> Map.merge(current_extra)
 
-                extra =
-                  Map.drop(map, ["name", "image"])
-                  |> Map.merge(current_extra)
-
-                PayService.update(db_ref, %{
-                  "name" => name,
-                  "image" => image,
-                  "extra" => CBOR.encode(extra),
-                  "updated_at" => round_id}, id)
-            end
+            PayService.update(
+              db_ref,
+              %{
+                "name" => name,
+                "image" => image,
+                "extra" => CBOR.encode(extra),
+                "updated_at" => round_id
+              },
+              id
+            )
         end
+    end
   end
 
   def delete(_source, id) do

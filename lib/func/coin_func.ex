@@ -253,7 +253,7 @@ defmodule Ippan.Func.Coin do
       do: raise(IppanError, "It's already recharged. Wait for #{req_time}")
 
     if Map.get(env, "auth", false) != Map.get(map, "auth", false),
-      do: raise IppanError, "Unauthorized account"
+      do: raise(IppanError, "Unauthorized account")
 
     price = Map.get(env, "reload.price", 0)
 

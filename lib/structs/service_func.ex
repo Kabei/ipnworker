@@ -52,7 +52,8 @@ defmodule Ippan.Func.Service do
     end
   end
 
-  def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map) when is_map(map) do
+  def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map)
+      when is_map(map) do
     map
     |> MapUtil.validate_length("name", @name_max_length)
     |> MapUtil.validate_url("image")
@@ -93,7 +94,8 @@ defmodule Ippan.Func.Service do
       account_id != id and account_id != EnvStore.owner() ->
         raise IppanError, "Unauthorized"
 
-      true -> :ok
+      true ->
+        :ok
     end
   end
 
@@ -102,7 +104,8 @@ defmodule Ippan.Func.Service do
         service_id,
         token_id,
         extra
-      ) when is_map(extra) do
+      )
+      when is_map(extra) do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
@@ -123,22 +126,22 @@ defmodule Ippan.Func.Service do
               SubPay.has?(db_ref, service_id, account_id, token_id) ->
                 raise IppanError, "Already subscribed"
 
-                true ->
-                  only_auth = Map.get(service_extra, "only_auth", false)
-                  min_amount = Map.get(service_extra, "min_amount", 0)
+              true ->
+                only_auth = Map.get(service_extra, "only_auth", false)
+                min_amount = Map.get(service_extra, "min_amount", 0)
 
-                  extra
-                  |> MapUtil.validate_integer("exp")
-                  |> MapUtil.validate_integer("max_amount")
-                  |> MapUtil.validate_value("exp", :gt, 0)
-                  |> MapUtil.validate_value("max_amount", :gte, min_amount)
+                extra
+                |> MapUtil.validate_integer("exp")
+                |> MapUtil.validate_integer("max_amount")
+                |> MapUtil.validate_value("exp", :gt, 0)
+                |> MapUtil.validate_value("max_amount", :gte, min_amount)
 
-                  fees = Utils.calc_fees(fa, fb, size)
+                fees = Utils.calc_fees(fa, fb, size)
 
-                  BalanceTrace.new(account_id)
-                  |> BalanceTrace.auth!(token_id, only_auth)
-                  |> BalanceTrace.requires!(@token, fees)
-                  |> BalanceTrace.output()
+                BalanceTrace.new(account_id)
+                |> BalanceTrace.auth!(token_id, only_auth)
+                |> BalanceTrace.requires!(@token, fees)
+                |> BalanceTrace.output()
             end
         end
     end
@@ -148,15 +151,15 @@ defmodule Ippan.Func.Service do
     db_ref = :persistent_term.get(:main_conn)
 
     unless SubPay.has?(db_ref, service_id, account_id) or
-    SubPay.has?(db_ref, account_id, service_id),
-      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+             SubPay.has?(db_ref, account_id, service_id),
+           do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
   end
 
   def unsubscribe(%{id: account_id}, service_id, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
     unless SubPay.has?(db_ref, service_id, account_id, token_id) or
-    SubPay.has?(db_ref, account_id, service_id, token_id),
-      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+             SubPay.has?(db_ref, account_id, service_id, token_id),
+           do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
   end
 end

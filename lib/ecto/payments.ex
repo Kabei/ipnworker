@@ -179,6 +179,6 @@ defmodule Ippan.Ecto.Payments do
   # Util functions
   defp get_array_of_types(types) do
     String.split(types, ",", trim: true)
-    |> Enum.map(& String.to_integer(&1))
+    |> Enum.map(&String.to_integer(&1))
   end
 end

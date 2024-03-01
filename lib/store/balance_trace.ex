@@ -20,7 +20,7 @@ defmodule BalanceTrace do
     {_, map} = DetsPlux.get_cache(db, tx, key, {0, %{}})
 
     if Map.get(map, "auth", false) == false,
-      do: raise IppanError, "Account balance unauthorized"
+      do: raise(IppanError, "Account balance unauthorized")
 
     bt
   end
