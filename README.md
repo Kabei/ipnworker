@@ -66,9 +66,8 @@ config :ipnworker, :history, true
 ## Run
 
 ```bash
-cp scripts/run.sh ./run.sh
-chmod +x run.sh
-./run.sh
+chmod +x scripts/run.sh
+./scripts/run.sh
 ```
 ## Docker
 See docker/README.md
