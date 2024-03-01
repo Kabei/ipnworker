@@ -8,7 +8,7 @@ defmodule Ippan.Func.Account do
   @token Application.compile_env(@app, :token)
 
   def new(
-        %{id: account_id, validator: %{id: vid, fa: vfa, fb: vfb}},
+        %{id: account_id, map: account_map, validator: %{id: vid, fa: vfa, fb: vfb}},
         pubkey,
         sig_type,
         validator_id,
@@ -17,10 +17,11 @@ defmodule Ippan.Func.Account do
       ) do
     pubkey = Fast64.decode64(pubkey)
     address = Address.hash(sig_type, pubkey)
-    dets = DetsPlux.get(:wallet)
-    tx = DetsPlux.tx(dets, :cache_wallet)
 
     cond do
+      account_map != nil ->
+        raise IppanError, "Account #{account_id} already exists"
+
       not Match.account?(account_id) ->
         raise IppanError, "Invalid account ID format"
 
@@ -40,13 +41,10 @@ defmodule Ippan.Func.Account do
         raise IppanError, "Invalid pubkey size"
 
       not is_integer(fa) or fa < EnvStore.min_fa() ->
-        raise IppanError, "Invalid FA"
+        raise IppanError, "Invalid FA value"
 
       not is_integer(fb) or fb < EnvStore.min_fb() ->
-        raise IppanError, "Invalid FB"
-
-      DetsPlux.member_tx?(dets, tx, account_id) ->
-        raise IppanError, "Account #{account_id} already exists"
+        raise IppanError, "Invalid FB value"
 
       true ->
         :ok
