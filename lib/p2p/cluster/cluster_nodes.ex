@@ -80,11 +80,12 @@ defmodule Ippan.ClusterNodes do
     end
   end
 
-  @impl Network
-  def handle_request("check_block", data, _state) do
-    BlockHandler.check(data)
-  end
+  # @impl Network
+  # def handle_request("check_block", data, _state) do
+  #   BlockHandler.check(data)
+  # end
 
+  @impl Network
   def handle_request("verify_block", data, _state) do
     case BlockHandler.verify_block(data) do
       :ok ->
