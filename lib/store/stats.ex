@@ -1,10 +1,18 @@
 defmodule Stats do
   @db :stats
   @tx :stats
+  @cache :cache_stats
 
   def new do
     db = DetsPlux.get(@db)
     tx = DetsPlux.tx(db, @tx)
+
+    %{db: db, tx: tx}
+  end
+
+  def cache do
+    db = DetsPlux.get(@db)
+    tx = DetsPlux.tx(db, @cache)
 
     %{db: db, tx: tx}
   end

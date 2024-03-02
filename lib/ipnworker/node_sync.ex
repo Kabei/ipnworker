@@ -37,7 +37,7 @@ defmodule Ipnworker.NodeSync do
     db_ref = :persistent_term.get(:local_conn)
     node = Node.get(miner)
     builder_pid = Process.whereis(RoundBuilder)
-    stats = Stats.new()
+    stats = Stats.cache()
     local_round_id = Stats.rounds(stats, -1)
 
     if is_nil(node) do
