@@ -101,7 +101,7 @@ defmodule Ippan.BlockHandler do
     stats = Stats.new()
     last_round = Stats.rounds(stats)
 
-    if :persistent_term.get(:status) == :synced and block_round_id != last_round + 1 do
+    if :persistent_term.get(:status) == :synced and block_round_id == last_round + 1 do
       output_path = Block.block_path(creator_id, height)
       miner = :persistent_term.get(:miner)
       node = ClusterNodes.info(miner)
