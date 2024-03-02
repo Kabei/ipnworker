@@ -136,8 +136,12 @@ defmodule RoundBuilder do
 
       case status do
         1 ->
-          Validator.put_active(round_creator_id, false, round_id)
-          Sqlite.sync(db_ref)
+          n = Sqlite.one("total_players", [], 0)
+
+          if n > 2 do
+            Validator.put_active(round_creator_id, false, round_id)
+            Sqlite.sync(db_ref)
+          end
 
         2 ->
           Validator.delete(round_creator_id)
