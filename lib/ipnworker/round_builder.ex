@@ -93,7 +93,7 @@ defmodule RoundBuilder do
     unless Round.exists?(round_id) do
       vid = :persistent_term.get(:vid)
       balance_pid = DetsPlux.get(:balance)
-      balance_tx = DetsPlux.tx(:balance)
+      balance_tx = DetsPlux.tx(balance_pid, :balance)
       # :persistent_term.put(:round, round_id)
 
       IO.puts("##{round.id}")

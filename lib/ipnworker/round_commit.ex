@@ -9,7 +9,7 @@ defmodule RoundCommit do
         end),
         Task.async(fn ->
           wallet_dets = DetsPlux.get(:wallet)
-          wallet_tx = DetsPlux.tx(:wallet)
+          wallet_tx = DetsPlux.tx(wallet_dets, :wallet)
           nonce_dets = DetsPlux.get(:nonce)
           nonce_tx = DetsPlux.tx(nonce_dets, :nonce)
           DetsPlux.sync(wallet_dets, wallet_tx)

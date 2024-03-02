@@ -113,7 +113,7 @@ defmodule Ippan.BlockHandler do
           dets = DetsSup.begin()
           db_ref = :persistent_term.get(:main_conn)
           wallet_dets = DetsPlux.get(:wallet)
-          wallet_tx = DetsPlux.tx(dets.wallet)
+          wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)
           nonce_dets = DetsPlux.get(:nonce)
           nonce_tx = DetsPlux.tx(nonce_dets, dets.nonce)
           validator = Validator.get(creator_id)
