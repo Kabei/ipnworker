@@ -134,9 +134,17 @@ defmodule RoundBuilder do
       run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
       run_jackpot(round, balance_pid, balance_tx, db_ref, pg_conn)
 
-      if status > 0 do
-        Validator.delete(round_creator_id)
-        Sqlite.sync(db_ref)
+      case status do
+        1 ->
+          Validator.put_active(round_creator_id, false, round_id)
+          Sqlite.sync(db_ref)
+
+        2 ->
+          Validator.delete(round_creator_id)
+          Sqlite.sync(db_ref)
+
+        _ ->
+          nil
       end
 
       # IO.inspect("step 3")

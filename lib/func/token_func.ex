@@ -54,22 +54,7 @@ defmodule Ippan.Func.Token do
 
         if is_map(env) do
           for {name, value} <- env do
-            case name do
-              "reload.times" ->
-                if not is_integer(value) and value < 12, do: raise(IppanError, "Invalid value")
-
-              "reload.amount" ->
-                if not is_integer(value) and value < 60, do: raise(IppanError, "Invalid value")
-
-              "reload.expiry" ->
-                if not is_integer(value) and value < 120, do: raise(IppanError, "Invalid value")
-
-              "stream.times" ->
-                if not is_integer(value) and value < 12, do: raise(IppanError, "Invalid value")
-
-              _ ->
-                :ok
-            end
+            check_env!(name, value)
           end
         end
 
@@ -230,22 +215,7 @@ defmodule Ippan.Func.Token do
         raise IppanError, "Invalid owner"
 
       true ->
-        case name do
-          "reload.times" ->
-            if not is_integer(value) and value <= 0, do: raise(IppanError, "Invalid value")
-
-          "reload.amount" ->
-            if not is_integer(value) and value < 60, do: raise(IppanError, "Invalid value")
-
-          "reload.expiry" ->
-            if not is_integer(value) and value < 120, do: raise(IppanError, "Invalid value")
-
-          "auth" ->
-            if not is_boolean(value), do: raise(IppanError, "Invalid value")
-
-          _ ->
-            :ok
-        end
+        check_env!(name, value)
 
         fees = Utils.calc_fees(fa, fb, size)
 
@@ -283,4 +253,22 @@ defmodule Ippan.Func.Token do
         |> BalanceTrace.output()
     end
   end
+
+  defp check_env!("reload.times", value) when not is_integer(value) and value < 12,
+    do: raise(IppanError, "Invalid reload.times only integer and equal or greater than 12")
+
+  defp check_env!("reload.amount", value) when not is_integer(value) and value < 1,
+    do: raise(IppanError, "Invalid reload.amount only integer value and greater than zero")
+
+  defp check_env!("reload.expiry", value) when not is_integer(value) and value < 120,
+    do:
+      raise(IppanError, "Invalid reload.expiry only integer value and equal or greater than 120")
+
+  defp check_env!("reload.auth", value) when not is_integer(value) and value != true,
+    do: raise(IppanError, "Invalid reload.auth only boolean")
+
+  defp check_env!("stream.times", value) when not is_integer(value) and value != true,
+    do: raise(IppanError, "Invalid stream.times only integer and equal or greater than 12")
+
+  defp check_env!(_, _), do: :ok
 end
