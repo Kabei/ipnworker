@@ -106,6 +106,7 @@ defmodule Ippan.BlockHandler do
       miner = :persistent_term.get(:miner)
       node = ClusterNodes.info(miner)
       url = Block.cluster_block_url(node.hostname, creator_id, height)
+      IO.inspect(url)
 
       case DownloadTask.start(url, output_path) do
         :ok ->
