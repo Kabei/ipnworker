@@ -11,6 +11,7 @@ defmodule Ippan.Func.Domain do
   def new(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -45,7 +46,7 @@ defmodule Ippan.Func.Domain do
         amount = Domain.price(name, days)
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, amount + fees)
         |> BalanceTrace.output()
     end
@@ -54,6 +55,7 @@ defmodule Ippan.Func.Domain do
   def update(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -81,7 +83,7 @@ defmodule Ippan.Func.Domain do
 
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -95,7 +97,7 @@ defmodule Ippan.Func.Domain do
     end
   end
 
-  def renew(%{id: account_id}, name, days)
+  def renew(%{id: account_id, dets: dets}, name, days)
       when is_integer(days) and days > 0 do
     db_ref = :persistent_term.get(:main_conn)
 
@@ -106,7 +108,7 @@ defmodule Ippan.Func.Domain do
       true ->
         amount = Domain.price(name, days)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, amount)
         |> BalanceTrace.output()
     end

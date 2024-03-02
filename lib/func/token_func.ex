@@ -10,7 +10,7 @@ defmodule Ippan.Func.Token do
   @max_tokens Application.compile_env(@app, :max_tokens, 0)
 
   def new(
-        %{id: account_id},
+        %{id: account_id, dets: dets},
         id,
         owner_id,
         name,
@@ -58,7 +58,7 @@ defmodule Ippan.Func.Token do
           end
         end
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, price)
         |> BalanceTrace.output()
     end
@@ -67,6 +67,7 @@ defmodule Ippan.Func.Token do
   def update(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -88,7 +89,7 @@ defmodule Ippan.Func.Token do
         fees = Utils.calc_fees(fa, fb, size)
 
         bt =
-          BalanceTrace.new(account_id)
+          BalanceTrace.new(account_id, dets.balance)
           |> BalanceTrace.requires!(@token, fees)
 
         MapUtil.to_atoms(map_filter)
@@ -119,6 +120,7 @@ defmodule Ippan.Func.Token do
   def prop_add(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -149,7 +151,7 @@ defmodule Ippan.Func.Token do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -158,6 +160,7 @@ defmodule Ippan.Func.Token do
   def prop_drop(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -181,7 +184,7 @@ defmodule Ippan.Func.Token do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -190,6 +193,7 @@ defmodule Ippan.Func.Token do
   def env_put(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -219,7 +223,7 @@ defmodule Ippan.Func.Token do
 
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -228,6 +232,7 @@ defmodule Ippan.Func.Token do
   def env_delete(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -248,7 +253,7 @@ defmodule Ippan.Func.Token do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end

@@ -36,7 +36,7 @@ defmodule BalanceStore do
   defmacro load(account_id, token_id) do
     quote bind_quoted: [account: account_id, token: token_id] do
       balance = DetsPlux.tuple(account, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), balance, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), balance, {0, %{}})
       balance
     end
   end
@@ -110,7 +110,7 @@ defmodule BalanceStore do
   defmacro send(to, token, amount) do
     quote bind_quoted: [to: to, token: token, amount: amount], location: :keep do
       balance = DetsPlux.tuple(to, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), balance, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), balance, {0, %{}})
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
       RegPay.payment(var!(source), var!(from), to, token, amount)
     end
@@ -120,11 +120,11 @@ defmodule BalanceStore do
     quote bind_quoted: [from: from, to: old_sender, token: token, amount: amount],
           location: :keep do
       balance_key = DetsPlux.tuple(from, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), balance_key, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), balance_key, {0, %{}})
 
       if DetsPlux.update_counter(var!(tx), balance_key, {2, -amount}) >= 0 do
         to_balance_key = DetsPlux.tuple(to, token)
-        DetsPlux.get_cache(var!(dets), var!(tx), to_balance_key, {0, %{}})
+        DetsPlux.get_cache(var!(dets).balance, var!(tx), to_balance_key, {0, %{}})
         DetsPlux.update_counter(var!(tx), to_balance_key, {2, amount})
         RegPay.refund(var!(source), from, to, token, amount)
       else
@@ -172,7 +172,7 @@ defmodule BalanceStore do
   defmacro coinbase(account, token, value) do
     quote bind_quoted: [account: account, token: token, value: value], location: :keep do
       key = DetsPlux.tuple(account, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
       DetsPlux.update_counter(var!(tx), key, {2, value})
 
       RegPay.coinbase(var!(source), account, token, value)
@@ -203,7 +203,7 @@ defmodule BalanceStore do
   defmacro lock(to, token, value) do
     quote bind_quoted: [to: to, token: token, value: value], location: :keep do
       key = DetsPlux.tuple(to, token)
-      {balance, map} = DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      {balance, map} = DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
 
       if balance >= value do
         lock = Map.get(map, "lock", 0)
@@ -221,7 +221,7 @@ defmodule BalanceStore do
   defmacro unlock(to, token, value) do
     quote bind_quoted: [to: to, token: token, value: value], location: :keep do
       key = DetsPlux.tuple(to, token)
-      {balance, map} = DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      {balance, map} = DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
       lock = Map.get(map, "lock", 0)
 
       if lock >= value do
@@ -245,13 +245,13 @@ defmodule BalanceStore do
           location: :keep do
       if to != from do
         key = DetsPlux.tuple(from, token)
-        {balance, _map} = DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+        {balance, _map} = DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
 
         result = balance - total_fees
 
         if result >= 0 do
           to_key = DetsPlux.tuple(to, token)
-          DetsPlux.get_cache(var!(dets), var!(tx), to_key, {0, %{}})
+          DetsPlux.get_cache(var!(dets).balance, var!(tx), to_key, {0, %{}})
 
           reserve = Ippan.Utils.calc_reserve(total_fees)
           fees = total_fees - reserve
@@ -274,7 +274,7 @@ defmodule BalanceStore do
     quote bind_quoted: [from: from, token: @token, value: value],
           location: :keep do
       key = DetsPlux.tuple(from, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
 
       if DetsPlux.update_counter(var!(tx), key, {2, -value}) >= 0 do
         supply = TokenSupply.new(token)
@@ -292,7 +292,7 @@ defmodule BalanceStore do
     quote bind_quoted: [from: from, token: token, value: value],
           location: :keep do
       key = DetsPlux.tuple(from, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
 
       if DetsPlux.update_counter(var!(tx), key, {2, -value}) >= 0 do
         supply = TokenSupply.new(token)
@@ -310,7 +310,7 @@ defmodule BalanceStore do
     quote bind_quoted: [from: from, token: token, value: value],
           location: :keep do
       key = DetsPlux.tuple(from, token)
-      DetsPlux.get_cache(var!(dets), var!(tx), key, {0, %{}})
+      DetsPlux.get_cache(var!(dets).balance, var!(tx), key, {0, %{}})
 
       if DetsPlux.update_counter(var!(tx), key, {2, -value}) >= 0 do
         supply = TokenSupply.new(token)

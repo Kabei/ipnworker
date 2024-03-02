@@ -11,7 +11,7 @@ defmodule Ippan.Func.Validator do
   @max_fees 1_000_000_000_000_000
 
   def join(
-        %{id: account_id},
+        %{id: account_id, dets: dets},
         hostname,
         port,
         owner_id,
@@ -65,7 +65,7 @@ defmodule Ippan.Func.Validator do
 
         price = Validator.calc_price(next_id)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, price)
         |> BalanceTrace.output()
     end
@@ -74,6 +74,7 @@ defmodule Ippan.Func.Validator do
   def update(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -94,7 +95,7 @@ defmodule Ippan.Func.Validator do
         fees = Utils.calc_fees(fa, fb, size)
 
         bt =
-          BalanceTrace.new(account_id)
+          BalanceTrace.new(account_id, dets.balance)
           |> BalanceTrace.requires!(@token, fees)
 
         MapUtil.to_atoms(map_filter)
@@ -129,7 +130,7 @@ defmodule Ippan.Func.Validator do
     end
   end
 
-  def active(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, active)
+  def active(%{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}}, id, active)
       when is_boolean(active) do
     db_ref = :persistent_term.get(:main_conn)
     v = Validator.get(id)
@@ -147,7 +148,7 @@ defmodule Ippan.Func.Validator do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -164,6 +165,7 @@ defmodule Ippan.Func.Validator do
   def env_put(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -191,7 +193,7 @@ defmodule Ippan.Func.Validator do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -200,6 +202,7 @@ defmodule Ippan.Func.Validator do
   def env_delete(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -220,7 +223,7 @@ defmodule Ippan.Func.Validator do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end

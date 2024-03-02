@@ -12,7 +12,13 @@ defmodule Ippan.Func.Dns do
   @data_range 1..255
   @ttl_range 0..2_147_483_648
 
-  def new(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, fullname, type, data, ttl)
+  def new(
+        %{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}},
+        fullname,
+        type,
+        data,
+        ttl
+      )
       when byte_size(fullname) <= @fullname_max_size and
              type in @type_range and
              byte_size(data) in @data_range and
@@ -37,14 +43,14 @@ defmodule Ippan.Func.Dns do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
   end
 
   def update(
-        %{id: account_id, size: size, validator: %{fa: fa, fb: fb}},
+        %{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}},
         fullname,
         dns_hash16,
         params
@@ -79,7 +85,7 @@ defmodule Ippan.Func.Dns do
         fees = Utils.calc_fees(fa, fb, size)
 
         bt =
-          BalanceTrace.new(account_id)
+          BalanceTrace.new(account_id, dets.balance)
           |> BalanceTrace.requires!(@token, fees)
 
         MapUtil.to_atoms(opts)

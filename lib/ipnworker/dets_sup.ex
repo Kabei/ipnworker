@@ -22,4 +22,46 @@ defmodule Ippan.DetsSup do
 
     Supervisor.init(children, strategy: :one_for_one)
   end
+
+  def begin do
+    %{
+      wallet: make_ref(),
+      balance: make_ref(),
+      nonce: make_ref(),
+      stats: make_ref(),
+      supply: make_ref()
+    }
+  end
+
+  def cache do
+    %{
+      wallet: :cache_wallet,
+      balance: :cache_balance,
+      nonce: :cache_nonce,
+      stats: :cahce_stats,
+      supply: :cache_supply
+    }
+  end
+
+  def real do
+    %{
+      wallet: :wallet,
+      balance: :balance,
+      nonce: :nonce,
+      stats: :stats,
+      supply: :supply
+    }
+  end
+
+  def close(txs) do
+    for {_name, ref} <- txs do
+      case :persistent_term.get({:txs, ref}) do
+        nil ->
+          false
+
+        table ->
+          :ets.delete(table)
+      end
+    end
+  end
 end

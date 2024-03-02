@@ -9,10 +9,10 @@ defmodule Ippan.Func.Service do
   @name_max_length 50
   @max_services Application.compile_env(@app, :max_services, 0)
 
-  def new(%{id: account_id}, id, name, image, extra) do
+  def new(%{id: account_id, dets: dets}, id, name, image, extra) do
     db_ref = :persistent_term.get(:main_conn)
-    dets = DetsPlux.get(:wallet)
-    tx = DetsPlux.tx(dets, :cache_wallet)
+    wallet = DetsPlux.get(:wallet)
+    tx = DetsPlux.tx(wallet, :cache_wallet)
     stats = Stats.new()
 
     cond do
@@ -46,13 +46,13 @@ defmodule Ippan.Func.Service do
 
         price = EnvStore.service_price()
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, price)
         |> BalanceTrace.output()
     end
   end
 
-  def update(%{id: account_id, size: size, validator: %{fa: fa, fb: fb}}, id, map)
+  def update(%{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}}, id, map)
       when is_map(map) do
     map
     |> MapUtil.validate_length("name", @name_max_length)
@@ -78,7 +78,7 @@ defmodule Ippan.Func.Service do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -100,7 +100,7 @@ defmodule Ippan.Func.Service do
   end
 
   def subscribe(
-        %{id: account_id, size: size, validator: %{fa: fa, fb: fb}},
+        %{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}},
         service_id,
         token_id,
         extra
@@ -138,7 +138,7 @@ defmodule Ippan.Func.Service do
 
                 fees = Utils.calc_fees(fa, fb, size)
 
-                BalanceTrace.new(account_id)
+                BalanceTrace.new(account_id, dets.balance)
                 |> BalanceTrace.auth!(token_id, only_auth)
                 |> BalanceTrace.requires!(@token, fees)
                 |> BalanceTrace.output()

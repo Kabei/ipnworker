@@ -52,13 +52,13 @@ defmodule Ippan.Func.Account do
   end
 
   def subscribe(
-        %{id: account_id, validator: %{fa: vfa, fb: vfb}, size: size},
+        %{id: account_id, dets: dets, validator: %{fa: vfa, fb: vfb}, size: size},
         validator_id,
         fa,
         fb
       ) do
     wallet_dets = DetsPlux.get(:wallet)
-    wallet_cache = DetsPlux.tx(wallet_dets, :cache_wallet)
+    wallet_cache = DetsPlux.tx(wallet_dets, dets.wallet)
 
     {_pk, _sig_type, %{"vid" => vid}} =
       DetsPlux.get_cache(wallet_dets, wallet_cache, account_id)
@@ -73,13 +73,17 @@ defmodule Ippan.Func.Account do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
   end
 
-  def edit_key(%{id: account_id, validator: %{fa: fa, fb: fb}, size: size}, pubkey, sig_type) do
+  def edit_key(
+        %{id: account_id, dets: dets, validator: %{fa: fa, fb: fb}, size: size},
+        pubkey,
+        sig_type
+      ) do
     pubkey = Fast64.decode64(pubkey)
 
     cond do
@@ -95,7 +99,7 @@ defmodule Ippan.Func.Account do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end
@@ -103,7 +107,7 @@ defmodule Ippan.Func.Account do
 
   defp invalid_pubkey_size?(pubkey, sig_type) do
     (sig_type == 0 and byte_size(pubkey) != 32) or
-        (sig_type == 1 and byte_size(pubkey) == 65) or
-          (sig_type == 2 and byte_size(pubkey) != 897)
+      (sig_type == 1 and byte_size(pubkey) == 65) or
+      (sig_type == 2 and byte_size(pubkey) != 897)
   end
 end

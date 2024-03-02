@@ -13,6 +13,7 @@ defmodule Ippan.Func.Coin do
   def send(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -22,7 +23,7 @@ defmodule Ippan.Func.Coin do
       )
       when is_integer(amount) and amount <= @max_tx_amount and
              account_id != to do
-    bt = BalanceTrace.new(account_id)
+    bt = BalanceTrace.new(account_id, dets.balance)
     fees = Utils.calc_fees(fa, fb, size)
 
     case token_id == @token do
@@ -46,6 +47,7 @@ defmodule Ippan.Func.Coin do
   def coinbase(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -89,7 +91,7 @@ defmodule Ippan.Func.Coin do
 
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
         |> Map.put(:supply, TokenSupply.output(supply))
@@ -97,7 +99,7 @@ defmodule Ippan.Func.Coin do
   end
 
   def multisend(
-        %{id: from, validator: %{fa: fa, fb: fb}, size: size},
+        %{id: from, dets: dets, validator: %{fa: fa, fb: fb}, size: size},
         token_id,
         outputs,
         note \\ ""
@@ -122,7 +124,7 @@ defmodule Ippan.Func.Coin do
 
     fees = Utils.calc_fees(fa, fb, size)
 
-    BalanceTrace.new(from)
+    BalanceTrace.new(from, dets.balance)
     |> BalanceTrace.multi_requires!([{token_id, total}, {@token, fees}])
     |> BalanceTrace.output()
   end
@@ -141,7 +143,7 @@ defmodule Ippan.Func.Coin do
     end
   end
 
-  def lock(%{id: account_id}, to, token_id, amount)
+  def lock(%{id: account_id, dets: dets}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
@@ -157,13 +159,13 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "lock property is missing"
 
       true ->
-        BalanceTrace.new(to)
+        BalanceTrace.new(to, dets.balance)
         |> BalanceTrace.requires!(@token, amount)
         |> BalanceTrace.output()
     end
   end
 
-  def unlock(%{id: account_id}, to, token_id, amount)
+  def unlock(%{id: account_id, dets: dets}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
@@ -179,14 +181,15 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "lock property missing"
 
       true ->
-        BalanceTrace.new(to)
+        BalanceTrace.new(to, dets.balance)
         |> BalanceTrace.can_unlock!(token_id, amount)
 
         :ok
     end
   end
 
-  def burn(%{id: account_id}, token_id, amount) when is_integer(amount) and amount > 0 do
+  def burn(%{id: account_id, dets: dets}, token_id, amount)
+      when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
@@ -195,13 +198,14 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "Burn property missing"
 
       true ->
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(token_id, amount)
         |> BalanceTrace.output()
     end
   end
 
-  def burn(%{id: account_id}, to, token_id, amount) when is_integer(amount) and amount > 0 do
+  def burn(%{id: account_id, dets: dets}, to, token_id, amount)
+      when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
 
@@ -213,13 +217,13 @@ defmodule Ippan.Func.Coin do
         raise IppanError, "Unauthorised"
 
       true ->
-        BalanceTrace.new(to)
+        BalanceTrace.new(to, dets.balance)
         |> BalanceTrace.requires!(token_id, amount)
         |> BalanceTrace.output()
     end
   end
 
-  def reload(%{id: account_id}, token_id) do
+  def reload(%{id: account_id, dets: dets}, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
     %{env: env, props: props} = Token.get(token_id)
@@ -240,8 +244,8 @@ defmodule Ippan.Func.Coin do
 
     stats = Stats.new()
     round_id = Stats.rounds(stats)
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :cache_balance)
+    balance = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(balance, dets.balance)
     %{"reload.times" => times} = env
 
     key = DetsPlux.tuple(account_id, token_id)
@@ -259,7 +263,7 @@ defmodule Ippan.Func.Coin do
 
     ret =
       if price != 0 do
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, price)
         |> BalanceTrace.output()
       end
@@ -269,7 +273,7 @@ defmodule Ippan.Func.Coin do
     ret
   end
 
-  def stream(%{id: account_id}, payer, token_id, amount) when amount > 0 do
+  def stream(%{id: account_id, dets: dets}, payer, token_id, amount) when amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
 
     case SubPay.get(db_ref, account_id, payer, token_id) do
@@ -294,7 +298,7 @@ defmodule Ippan.Func.Coin do
             raise IppanError, "Paystream already used"
 
           true ->
-            BalanceTrace.new(payer)
+            BalanceTrace.new(payer, dets.balance)
             |> BalanceTrace.requires!(token_id, amount)
             |> BalanceTrace.output()
         end
@@ -304,6 +308,7 @@ defmodule Ippan.Func.Coin do
   def auth(
         %{
           id: account_id,
+          dets: dets,
           size: size,
           validator: %{fa: fa, fb: fb}
         },
@@ -313,8 +318,8 @@ defmodule Ippan.Func.Coin do
       )
       when is_boolean(auth) do
     db_ref = :persistent_term.get(:main_conn)
-    dets = DetsPlux.get(:wallet)
-    tx = DetsPlux.tx(dets, :cache_wallet)
+    wallet = DetsPlux.get(:wallet)
+    tx = DetsPlux.tx(wallet, dets.wallet)
     token = Token.get(token_id)
 
     cond do
@@ -330,7 +335,7 @@ defmodule Ippan.Func.Coin do
       true ->
         fees = Utils.calc_fees(fa, fb, size)
 
-        BalanceTrace.new(account_id)
+        BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, fees)
         |> BalanceTrace.output()
     end

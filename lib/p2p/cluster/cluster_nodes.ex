@@ -89,10 +89,13 @@ defmodule Ippan.ClusterNodes do
   def handle_request("verify_block", data, _state) do
     case BlockHandler.verify_block(data) do
       :ok ->
-        true
+        1
 
-      {:error, _} ->
-        false
+      :standby ->
+        2
+
+      :error ->
+        0
     end
   end
 
