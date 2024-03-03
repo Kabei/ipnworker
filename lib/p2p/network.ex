@@ -65,6 +65,7 @@ defmodule Ippan.Network do
       @name opts[:name]
       @table opts[:table]
       @bag opts[:bag]
+      @via opts[:via]
       @server opts[:server] || opts[:name]
       @pubsub opts[:pubsub]
       @topic opts[:topic]
@@ -188,7 +189,7 @@ defmodule Ippan.Network do
           ) do
         Logger.debug("On connect #{node_id} via: #{via}")
 
-        if via == :client do
+        if via == @via do
           :ets.insert(@table, {node_id, map})
         end
 
@@ -197,28 +198,16 @@ defmodule Ippan.Network do
 
       @impl Network
       def on_disconnect(%{id: node_id, socket: socket} = node, action, via) do
-        case via do
-          :client ->
-            case alive?(node_id) do
-              false ->
-                Logger.debug("On disconnect #{node_id} #{via}")
-                false
+        Logger.debug("On disconnect #{node_id} #{via}")
+        disconnect(node)
 
-              true ->
-                # unexpected disconnection
-                Logger.debug("On disconnect #{node_id} unexpected disconnection #{via}")
+        if via == @via do
+          opts = Map.get(node, :opts, [])
 
-                :ets.delete(@table, node_id)
-                opts = Map.get(node, :opts, [])
-
-                if (action == 1 or Keyword.get(opts, :reconnect, false)) and
-                     exists?(node_id) do
-                  spawn(fn -> connect(node, opts) end)
-                end
-            end
-
-          _server ->
-            Logger.debug("On disconnect #{node_id}")
+          if (action == 1 or Keyword.get(opts, :reconnect, false)) and
+               exists?(node_id) do
+            spawn(fn -> connect(node, opts) end)
+          end
         end
       end
 
@@ -282,18 +271,32 @@ defmodule Ippan.Network do
       # :ets.fun2ms(fn {id, socket} when id == 1 and socket == 2 -> true end)
       @impl Network
       def disconnect(%{id: node_id, socket: socket}) do
-        match = [{{:"$1", :"$2", :"$3"}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}], [true]}]
+        match = [
+          {{:"$1", :"$2", :"$3"}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
+           [true]}
+        ]
 
-        :ets.delete(@table, node_id)
+        match2 = [
+          {{:"$1", %{socket: :"$2"}}, [{:andalso, {:==, :"$1", 1}, {:==, :"$2", 2}}], [true]}
+        ]
+
+        :ets.select_delete(@table, match2)
         :ets.select_delete(@bag, match)
         @adapter.close(socket)
       end
 
       @impl Network
       def disconnect(node_id, socket) do
-        match = [{{:"$1", :"$2", :"$3"}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}], [true]}]
+        match = [
+          {{:"$1", :"$2", :"$3"}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
+           [true]}
+        ]
 
-        :ets.delete(@table, node_id)
+        match2 = [
+          {{:"$1", %{socket: :"$2"}}, [{:andalso, {:==, :"$1", 1}, {:==, :"$2", 2}}], [true]}
+        ]
+
+        :ets.select_delete(@table, match2)
         :ets.select_delete(@bag, match)
         @adapter.close(socket)
       end
@@ -427,10 +430,13 @@ defmodule Ippan.Network do
 
       @impl Network
       def broadcast(message) do
+        IO.puts("broadcast")
+
         all()
         |> Enum.uniq_by(fn {node_id, _, _} -> node_id end)
         # |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
-        |> Enum.each(fn {_, socket, sharedkey} ->
+        |> Enum.each(fn {node_id, socket, sharedkey} ->
+          IO.puts(node_id)
           @adapter.send(socket, encode(message, sharedkey))
         end)
       end

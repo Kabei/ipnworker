@@ -13,6 +13,7 @@ defmodule Ippan.ClusterNodes do
     name: :cluster,
     table: :cnw,
     bag: :cnb,
+    via: :client,
     server: Ippan.ClusterNodes.Server,
     pubsub: @pubsub,
     topic: "cluster",
