@@ -22,8 +22,8 @@ defmodule Ippan.Funx.Account do
         fa,
         fb
       ) do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, :balance)
     fees = Utils.calc_fees(fa, fb, size)
 
     case BalanceStore.pay_fee(from, vOwner, fees) do
@@ -47,8 +47,8 @@ defmodule Ippan.Funx.Account do
         pubkey,
         sig_type
       ) do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, :balance)
     fees = Utils.calc_fees(fa, fb, size)
     pubkey = Fast64.decode64(pubkey)
 

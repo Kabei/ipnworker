@@ -7,8 +7,8 @@ defmodule Ippan.Funx.Service do
   @max_services Application.compile_env(@app, :max_services, 0)
 
   def new(source = %{id: account_id, round: round_id}, id, name, image, extra) do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(:balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, :balance)
     price = EnvStore.service_price()
     stats = Stats.new()
 
@@ -36,8 +36,8 @@ defmodule Ippan.Funx.Service do
         id,
         map
       ) do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(:balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, :balance)
     fees = Utils.calc_fees(fa, fb, size)
     db_ref = :persistent_term.get(:main_conn)
 
@@ -97,8 +97,8 @@ defmodule Ippan.Funx.Service do
         token_id,
         extra
       ) do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(:balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, :balance)
     fees = Utils.calc_fees(fa, fb, size)
 
     case BalanceStore.pay_fee(account_id, vOwner, fees) do

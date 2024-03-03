@@ -40,10 +40,10 @@ defmodule Ipnworker.AccountRoutes do
   end
 
   get "/:id/balance/:token" do
-    dets = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(dets, :cache_balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, :cache_balance)
     key = DetsPlux.tuple(id, token)
-    {balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    {balance, map} = DetsPlux.get_cache(db, tx, key, {0, %{}})
 
     %{"balance" => balance, "map" => map} |> json()
   end
