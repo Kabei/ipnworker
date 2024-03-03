@@ -24,7 +24,7 @@ defmodule Ippan.DetsSup do
   end
 
   def refs(number) do
-    x = rem(number, 7)
+    x = rem(number, 10)
 
     %{
       wallet: String.to_atom("wallet#{x}"),
@@ -44,16 +44,6 @@ defmodule Ippan.DetsSup do
       supply: :cache_supply
     }
   end
-
-  # def real do
-  #   %{
-  #     wallet: :wallet,
-  #     balance: :balance,
-  #     nonce: :nonce,
-  #     stats: :stats,
-  #     supply: :supply
-  #   }
-  # end
 
   # a = Ippan.DetsSup.refs(0)
   # :persistent_term.put({:txs, :balance0}, :ets.new(:asd, [:set]))

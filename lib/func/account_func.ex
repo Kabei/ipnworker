@@ -52,19 +52,21 @@ defmodule Ippan.Func.Account do
   end
 
   def subscribe(
-        %{id: account_id, dets: dets, validator: %{fa: vfa, fb: vfb}, size: size},
+        %{
+          id: account_id,
+          dets: dets,
+          map: account_map,
+          validator: %{fa: vfa, fb: vfb},
+          size: size
+        },
         validator_id,
         fa,
         fb
       ) do
-    wallet_dets = DetsPlux.get(:wallet)
-    wallet_cache = DetsPlux.tx(wallet_dets, dets.wallet)
-
-    {_pk, _sig_type, %{"vid" => vid}} =
-      DetsPlux.get_cache(wallet_dets, wallet_cache, account_id)
+    %{"vid" => vid, "fa" => ofa, "fb" => ofb} = account_map
 
     cond do
-      validator_id == vid ->
+      validator_id == vid and ofa == fa and ofb == fb ->
         raise IppanError, "Already subscribed"
 
       vfa != fa or vfb != fb ->
