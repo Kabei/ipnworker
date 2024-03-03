@@ -54,9 +54,10 @@ defmodule Ippan.DetsSup do
   #     supply: :supply
   #   }
   # end
-  a = Ippan.DetsSup.refs(1)
-  Ippan.DetsSup.close(a)
 
+  # a = Ippan.DetsSup.refs(0)
+  # :persistent_term.put({:txs, :balance0}, :ets.new(:asd, [:set]))
+  # Ippan.DetsSup.close(a)
   def close(txs) do
     for {_name, ref} <- txs do
       case :persistent_term.get({:txs, ref}, nil) do
@@ -68,8 +69,8 @@ defmodule Ippan.DetsSup do
             :undefined ->
               :ok
 
-            tid ->
-              :ets.delete(tid)
+            _tid ->
+              :ets.delete(table)
           end
       end
     end
