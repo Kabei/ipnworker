@@ -50,7 +50,7 @@ defmodule Ipnworker.NetworkRoutes do
     txs = Stats.txs(stats)
     validators = Validator.total()
     tokens = Token.total()
-    accounts = DetsPlux.info(wallet, nil, :size)
+    accounts = DetsPlux.info(wallet, :size)
     jackpot = TokenSupply.cache("jackpot")
 
     %{
