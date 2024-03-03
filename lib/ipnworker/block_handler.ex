@@ -92,6 +92,7 @@ defmodule Ippan.BlockHandler do
 
   @spec verify_block(map) :: :ok | :error | :standby
   def verify_block(%{
+        "id" => block_id,
         "round" => block_round_id,
         "count" => count,
         "creator" => creator_id,
@@ -110,7 +111,7 @@ defmodule Ippan.BlockHandler do
 
       case DownloadTask.start(url, output_path) do
         :ok ->
-          dets = DetsSup.cache()
+          dets = DetsSup.refs(block_id)
           db_ref = :persistent_term.get(:main_conn)
           wallet_dets = DetsPlux.get(:wallet)
           wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)

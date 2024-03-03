@@ -650,7 +650,7 @@ defmodule DetsPlux do
       case :persistent_term.get({@txs_suffix, name}, nil) do
         nil ->
           tid =
-            :ets.new(:table, [
+            :ets.new(name, [
               @ets_type,
               :public,
               read_concurrency: true,

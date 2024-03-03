@@ -23,13 +23,15 @@ defmodule Ippan.DetsSup do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def begin do
+  def refs(number) do
+    x = rem(number, 7)
+
     %{
-      wallet: make_ref(),
-      balance: make_ref(),
-      nonce: make_ref(),
-      stats: make_ref(),
-      supply: make_ref()
+      wallet: String.to_atom("wallet#{x}"),
+      balance: String.to_atom("balance#{x}"),
+      nonce: String.to_atom("nonce#{x}"),
+      stats: String.to_atom("stats#{x}"),
+      supply: String.to_atom("supply#{x}")
     }
   end
 
