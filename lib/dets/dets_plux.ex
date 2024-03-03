@@ -465,11 +465,9 @@ defmodule DetsPlux do
   def tx(dets, name) do
     case :persistent_term.get({@txs_suffix, name}, nil) do
       nil ->
-        IO.puts("new tx #{inspect(name)}")
         call(dets, {:tx, name})
 
       tid ->
-        IO.puts("Reuse tx #{inspect(name)}")
         tid
     end
   end
