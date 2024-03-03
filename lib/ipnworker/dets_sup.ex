@@ -45,15 +45,17 @@ defmodule Ippan.DetsSup do
     }
   end
 
-  def real do
-    %{
-      wallet: :wallet,
-      balance: :balance,
-      nonce: :nonce,
-      stats: :stats,
-      supply: :supply
-    }
-  end
+  # def real do
+  #   %{
+  #     wallet: :wallet,
+  #     balance: :balance,
+  #     nonce: :nonce,
+  #     stats: :stats,
+  #     supply: :supply
+  #   }
+  # end
+  a = Ippan.DetsSup.refs(1)
+  Ippan.DetsSup.close(a)
 
   def close(txs) do
     for {_name, ref} <- txs do
@@ -62,7 +64,7 @@ defmodule Ippan.DetsSup do
           false
 
         table ->
-          case :ets.whereis(table) do
+          case :ets.info(table) do
             :undefined ->
               :ok
 
