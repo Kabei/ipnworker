@@ -110,7 +110,7 @@ defmodule Ippan.BlockHandler do
 
       case DownloadTask.start(url, output_path) do
         :ok ->
-          dets = DetsSup.begin()
+          dets = DetsSup.cache()
           db_ref = :persistent_term.get(:main_conn)
           wallet_dets = DetsPlux.get(:wallet)
           wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)
