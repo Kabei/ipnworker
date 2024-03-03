@@ -62,6 +62,8 @@ defmodule Ippan.DetsSup do
             _tid ->
               :ets.delete(table)
           end
+
+          :persistent_term.erase({:txs, ref})
       end
     end
   end

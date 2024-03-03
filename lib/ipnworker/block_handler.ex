@@ -146,7 +146,6 @@ defmodule Ippan.BlockHandler do
                         [result | acc]
 
                       false ->
-                        :ets.delete(ets)
                         raise IppanHighError, "Invalid block transaction duplicated"
                     end
                   rescue
