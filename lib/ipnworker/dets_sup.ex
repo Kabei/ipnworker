@@ -62,7 +62,13 @@ defmodule Ippan.DetsSup do
           false
 
         table ->
-          :ets.delete(table)
+          case :ets.whereis(table) do
+            :undefined ->
+              :ok
+
+            tid ->
+              :ets.delete(tid)
+          end
       end
     end
   end
