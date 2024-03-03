@@ -143,7 +143,6 @@ defmodule Ipnworker.NodeSync do
   def terminate(_reason, _state) do
     :persistent_term.put(:status, :synced)
     :persistent_term.erase(:node_sync)
-    :ets.delete(ets_queue)
   end
 
   def add_queue(round) do
