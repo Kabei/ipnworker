@@ -230,26 +230,14 @@ defmodule Ippan.Func.Coin do
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
-    acc_type = Map.get(env, "reload.accType")
-
-    if acc_type do
-      cond do
-        acc_type == "anon" and not Match.wallet_address?(account_id) ->
-          raise IppanError, "Your account type is not allowed"
-
-        acc_type == "public" and not Match.username?(account_id) ->
-          raise IppanError, "Your account type is not allowed"
-      end
-    end
-
     stats = Stats.new()
     round_id = Stats.rounds(stats)
-    balance = DetsPlux.get(:balance)
-    tx = DetsPlux.tx(balance, dets.balance)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, dets.balance)
     %{"reload.times" => times} = env
 
     key = DetsPlux.tuple(account_id, token_id)
-    {_balance, map} = DetsPlux.get_cache(dets, tx, key, {0, %{}})
+    {_balance, map} = DetsPlux.get_cache(db, tx, key, {0, %{}})
     last_reload = Map.get(map, "lastReload", 0)
     req_time = last_reload + times
 
@@ -329,7 +317,7 @@ defmodule Ippan.Func.Coin do
       token.owner != account_id ->
         raise IppanError, "Unauthorized"
 
-      DetsPlux.member_tx?(dets, tx, to) == false ->
+      DetsPlux.member_tx?(wallet, tx, to) == false ->
         raise IppanError, "Account #{to} not exists"
 
       true ->

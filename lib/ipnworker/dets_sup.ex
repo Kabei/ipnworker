@@ -40,7 +40,7 @@ defmodule Ippan.DetsSup do
       wallet: :cache_wallet,
       balance: :cache_balance,
       nonce: :cache_nonce,
-      stats: :cahce_stats,
+      stats: :cache_stats,
       supply: :cache_supply
     }
   end

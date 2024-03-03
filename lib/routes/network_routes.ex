@@ -40,7 +40,7 @@ defmodule Ipnworker.NetworkRoutes do
 
   get "/status" do
     db_ref = :persistent_term.get(:main_conn)
-    dets = DetsPlux.get(:wallet)
+    wallet = DetsPlux.get(:wallet)
     stats = Stats.new()
     supply = TokenSupply.cache(@token)
 
@@ -50,7 +50,7 @@ defmodule Ipnworker.NetworkRoutes do
     txs = Stats.txs(stats)
     validators = Validator.total()
     tokens = Token.total()
-    accounts = DetsPlux.info(dets, nil, :size)
+    accounts = DetsPlux.info(wallet, nil, :size)
     jackpot = TokenSupply.cache("jackpot")
 
     %{

@@ -12,14 +12,14 @@ defmodule Ipnworker.AccountRoutes do
   plug(:dispatch)
 
   get "/:id" do
-    dets = DetsPlux.get(:wallet)
-    tx = DetsPlux.tx(dets, :cache_wallet)
+    wallet = DetsPlux.get(:wallet)
+    tx = DetsPlux.tx(wallet, :cache_wallet)
 
-    case DetsPlux.get_cache(dets, tx, id) do
+    case DetsPlux.get_cache(wallet, tx, id) do
       {pk, sig_type, map} ->
-        dets = DetsPlux.get(:nonce)
-        tx = DetsPlux.tx(dets, :cache_nonce)
-        nonce = DetsPlux.get_cache(dets, tx, id, 0)
+        nonce_db = DetsPlux.get(:nonce)
+        tx = DetsPlux.tx(nonce_db, :cache_nonce)
+        nonce = DetsPlux.get_cache(nonce_db, tx, id, 0)
 
         map
         |> Map.merge(%{
@@ -49,16 +49,16 @@ defmodule Ipnworker.AccountRoutes do
   end
 
   get "/:id/nonce" do
-    dets = DetsPlux.get(:nonce)
-    tx = DetsPlux.tx(dets, :cache_nonce)
-    nonce = DetsPlux.get_cache(dets, tx, id, 0)
+    db = DetsPlux.get(:nonce)
+    tx = DetsPlux.tx(db, :cache_nonce)
+    nonce = DetsPlux.get_cache(db, tx, id, 0)
     send_resp(conn, 200, Integer.to_string(nonce))
   end
 
   head "/:id" do
-    dets = DetsPlux.get(:wallet)
+    db = DetsPlux.get(:wallet)
 
-    case DetsPlux.member?(dets, id) do
+    case DetsPlux.member?(db, id) do
       true -> send_resp(conn, 200, "")
       false -> send_resp(conn, 204, "")
     end
