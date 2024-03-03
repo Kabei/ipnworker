@@ -57,7 +57,7 @@ defmodule Ippan.DetsSup do
 
   def close(txs) do
     for {_name, ref} <- txs do
-      case :persistent_term.get({:txs, ref}) do
+      case :persistent_term.get({:txs, ref}, nil) do
         nil ->
           false
 
