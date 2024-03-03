@@ -88,7 +88,7 @@ defmodule Ipnworker.NodeSync do
           queue: ets_queue
         }
       ) do
-    if round_id <= target_id do
+    if round_id < target_id do
       {:ok, new_rounds} =
         ClusterNodes.call(node_id, "get_rounds", %{
           "limit" => @offset,
