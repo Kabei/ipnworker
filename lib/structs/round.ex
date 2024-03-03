@@ -172,7 +172,7 @@ defmodule Ippan.Round do
 
     msg_round
     # |> MapUtil.to_atoms(~w(id creator hash prev signature timestamp))
-    |> MapUtil.to_atoms(~w(id creator hash prev signature size timestamp tx_count))
+    |> MapUtil.to_atoms(~w(id creator hash prev signature size status timestamp tx_count))
     |> Map.put(:blocks, blocks)
   end
 
@@ -202,30 +202,29 @@ defmodule Ippan.Round do
   def null?(_), do: false
 
   # status: 1 = timeout
-  # status: 2 = Error round data
+  # status: 2 = Error all block with error
   @spec cancel(
           non_neg_integer(),
           binary() | nil,
-          binary() | nil,
-          binary() | nil,
-          non_neg_integer(),
           non_neg_integer(),
           non_neg_integer()
         ) :: map
-  def cancel(id, hash, prev, signature, creator_id, status, timestamp) do
+  def cancel(id, prev, creator_id, status) when status > 0 do
+    hash = compute_hash(id, prev, creator_id, [], 0)
+
     %{
       id: id,
-      hash: hash || prev,
+      hash: hash,
       prev: prev,
       creator: creator_id,
-      signature: signature,
+      signature: nil,
       coinbase: 0,
       reward: 0,
       count: 0,
       tx_count: 0,
       size: 0,
       status: status,
-      timestamp: timestamp,
+      timestamp: 0,
       blocks: [],
       extra: nil
     }
@@ -256,12 +255,22 @@ defmodule Ippan.Round do
     end
   end
 
-  defmacro last(default \\ {0, nil}) do
+  defmacro last do
     quote location: :keep do
       Sqlite.fetch("last_round", [])
       |> case do
-        nil -> unquote(default)
-        x -> :erlang.list_to_tuple(x)
+        nil -> %{hash: nil, id: -1}
+        x -> Ippan.Round.list_to_map(x)
+      end
+    end
+  end
+
+  defmacro last_created(creator_id, default \\ nil) do
+    quote bind_quoted: [id: creator_id, default: default], location: :keep do
+      Sqlite.fetch("last_round_by_creator", [id])
+      |> case do
+        nil -> default
+        x -> Ippan.Round.list_to_map(x)
       end
     end
   end
