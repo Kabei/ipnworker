@@ -117,7 +117,6 @@ defmodule Ippan.ClusterNodes do
   Create a new round. Received from a IPNCORE
   """
   def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
-    IO.inspect("round.new")
     round = MapUtil.to_atoms(msg_round)
     GenServer.cast(RoundBuilder, {:build, round, hostname, true})
   end

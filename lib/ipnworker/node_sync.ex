@@ -112,8 +112,6 @@ defmodule Ipnworker.NodeSync do
       if :ets.info(ets_queue, :size) > 0 do
         {:noreply, state, {:continue, {:next, :ets.first(ets_queue)}}}
       else
-        IO.inspect("node sync stop normal")
-        IO.inspect(state)
         {:stop, :normal, state}
       end
     end
