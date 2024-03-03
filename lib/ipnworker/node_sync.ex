@@ -44,7 +44,7 @@ defmodule Ipnworker.NodeSync do
       IO.puts("NodeSync no init")
       {:stop, :normal, state}
     else
-      {:ok, %{id: remote_round_id}} =
+      {:ok, %{"id" => remote_round_id}} =
         ClusterNodes.call(node.id, "last_round", nil, @opts)
 
       diff = remote_round_id - local_round_id
