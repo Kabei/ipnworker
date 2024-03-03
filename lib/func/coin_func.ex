@@ -244,7 +244,7 @@ defmodule Ippan.Func.Coin do
     if last_reload > 0 and round_id < req_time,
       do: raise(IppanError, "It's already recharged. Wait for #{req_time}")
 
-    if Map.get(env, "reload.auth", false) != Map.get(map, "auth", false),
+    if Map.get(env, "reload.auth") == true and Map.get(map, "auth") == false,
       do: raise(IppanError, "Unauthorized account")
 
     price = Map.get(env, "reload.price", 0)

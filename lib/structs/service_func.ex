@@ -19,7 +19,7 @@ defmodule Ippan.Func.Service do
       not Match.account?(id) ->
         raise IppanError, "Invalid ID"
 
-      not DetsPlux.member_tx?(dets, tx, id) ->
+      not DetsPlux.member_tx?(wallet, tx, id) ->
         raise IppanError, "Account \"#{id}\" not exists"
 
       byte_size(name) > @name_max_length ->
