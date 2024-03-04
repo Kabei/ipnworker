@@ -4,7 +4,7 @@ defmodule RegPay do
   0. Coinbase
   1. Round Reward
   2. Jackpot
-  3. Reload
+  3. PayConnect
   100. Pay
   101. Refund
   200. Fees
@@ -106,7 +106,6 @@ defmodule RegPay do
     def jackpot(_, _, _), do: true
     def stream(_, _, _), do: true
   end
-
 
   def commit(nil, _), do: nil
 
