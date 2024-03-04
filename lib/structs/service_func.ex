@@ -9,7 +9,7 @@ defmodule Ippan.Func.Service do
   @name_max_length 50
   @max_services Application.compile_env(@app, :max_services, 0)
 
-  def new(%{id: account_id, dets: dets}, id, owner_id, name, image, extra) do
+  def new(%{id: account_id, dets: dets}, id, name, owner, image, extra) do
     db_ref = :persistent_term.get(:main_conn)
     stats = Stats.new()
 
@@ -17,7 +17,7 @@ defmodule Ippan.Func.Service do
       not Match.service?(id) ->
         raise IppanError, "Invalid ID"
 
-      not Match.account?(owner_id) ->
+      not Match.account?(owner) ->
         raise IppanError, "Invalid Owner"
 
       byte_size(name) > @name_max_length ->
