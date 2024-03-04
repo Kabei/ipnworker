@@ -38,7 +38,7 @@ defmodule Ipnworker.NodeSync do
     node = Node.get(miner)
     builder_pid = Process.whereis(RoundBuilder)
     stats = Stats.cache()
-    local_round_id = Stats.rounds(stats, -1)
+    local_round_id = Stats.get(stats, "last_round", -1)
 
     if is_nil(node) do
       IO.puts("NodeSync no init")

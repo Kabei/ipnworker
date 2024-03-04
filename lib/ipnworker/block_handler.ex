@@ -99,105 +99,107 @@ defmodule Ippan.BlockHandler do
         "height" => height,
         "vsn" => version
       }) do
-    stats = Stats.new()
-    last_round = Stats.rounds(stats)
+    dets = DetsSup.refs(block_id)
+    stats = Stats.new(dets.stats)
+    last_round = Stats.get(stats, "last_round", -1)
 
-    if :persistent_term.get(:status) == :synced and block_round_id == last_round + 1 do
-      output_path = Block.block_path(creator_id, height)
-      miner = :persistent_term.get(:miner)
-      node = ClusterNodes.info(miner)
-      url = Block.cluster_block_url(node.hostname, creator_id, height)
-      IO.inspect(url)
+    return =
+      if :persistent_term.get(:status) == :synced and block_round_id == last_round + 1 do
+        output_path = Block.block_path(creator_id, height)
+        miner = :persistent_term.get(:miner)
+        node = ClusterNodes.info(miner)
+        url = Block.cluster_block_url(node.hostname, creator_id, height)
+        IO.inspect(url)
 
-      case DownloadTask.start(url, output_path) do
-        :ok ->
-          dets = DetsSup.refs(block_id)
-          db_ref = :persistent_term.get(:main_conn)
-          wallet_dets = DetsPlux.get(:wallet)
-          wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)
-          nonce_dets = DetsPlux.get(:nonce)
-          nonce_tx = DetsPlux.tx(nonce_dets, dets.nonce)
-          validator = Validator.get(creator_id)
+        case DownloadTask.start(url, output_path) do
+          :ok ->
+            db_ref = :persistent_term.get(:main_conn)
+            wallet_dets = DetsPlux.get(:wallet)
+            wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)
+            nonce_dets = DetsPlux.get(:nonce)
+            nonce_tx = DetsPlux.tx(nonce_dets, dets.nonce)
+            validator = Validator.get(creator_id)
 
-          IO.inspect(output_path)
-          IO.inspect("File.read")
-          {:ok, content} = File.read(output_path)
-          %{"vsn" => vsn, "data" => messages} = decode_file!(content)
+            IO.inspect(output_path)
+            IO.inspect("File.read")
+            {:ok, content} = File.read(output_path)
+            %{"vsn" => vsn, "data" => messages} = decode_file!(content)
 
-          IO.inspect("Version")
+            IO.inspect("Version")
 
-          if vsn == version do
-            ets = :ets.new(:temp, [:set])
+            if vsn == version do
+              ets = :ets.new(:temp, [:set])
 
-            IO.inspect("before check hash duplic")
+              IO.inspect("before check hash duplic")
 
-            try do
-              values =
-                Enum.reduce(messages, [], fn [body, signature], acc ->
-                  hash = Blake3.hash(body)
-                  size = byte_size(body) + byte_size(signature)
-                  [type, nonce, from | args] = @json.decode!(body)
+              try do
+                values =
+                  Enum.reduce(messages, [], fn [body, signature], acc ->
+                    hash = Blake3.hash(body)
+                    size = byte_size(body) + byte_size(signature)
+                    [type, nonce, from | args] = @json.decode!(body)
 
-                  try do
-                    result = TxHandler.decode_from_file!()
+                    try do
+                      result = TxHandler.decode_from_file!()
 
-                    case :ets.insert_new(ets, {{from, nonce}, nil}) do
-                      true ->
-                        [result | acc]
+                      case :ets.insert_new(ets, {{from, nonce}, nil}) do
+                        true ->
+                          [result | acc]
 
-                      false ->
-                        raise IppanHighError, "Invalid block transaction duplicated"
+                        false ->
+                          raise IppanHighError, "Invalid block transaction duplicated"
+                      end
+                    rescue
+                      IppanHighError ->
+                        reraise IppanHighError, __STACKTRACE__
+
+                      [IppanError, IppanRedirectError] ->
+                        [["err", hash, type, from, nonce, args, signature, size] | acc]
+
+                      err ->
+                        Logger.error(Exception.format(:error, err, __STACKTRACE__))
                     end
-                  rescue
-                    IppanHighError ->
-                      reraise IppanHighError, __STACKTRACE__
+                  end)
+                  |> Enum.reverse()
 
-                    [IppanError, IppanRedirectError] ->
-                      [["err", hash, type, from, nonce, args, signature, size] | acc]
+                :ets.delete(ets)
 
-                    err ->
-                      Logger.error(Exception.format(:error, err, __STACKTRACE__))
-                  end
-                end)
-                |> Enum.reverse()
+                IO.inspect("after check hash duplic")
 
-              :ets.delete(ets)
+                if count != Enum.count(values) do
+                  raise IppanError, "Invalid block messages count"
+                end
 
-              IO.inspect("after check hash duplic")
+                IO.puts("before export")
 
-              if count != Enum.count(values) do
-                raise IppanError, "Invalid block messages count"
+                export_path = Block.decode_path(creator_id, height)
+
+                IO.inspect(export_path)
+
+                File.write(
+                  export_path,
+                  encode_file!(%{"data" => values, "vsn" => version})
+                )
+              rescue
+                _ ->
+                  :error
               end
-
-              IO.puts("before export")
-
-              export_path = Block.decode_path(creator_id, height)
-
-              IO.inspect(export_path)
-
-              DetsSup.close(dets)
-
-              File.write(
-                export_path,
-                encode_file!(%{"data" => values, "vsn" => version})
-              )
-            rescue
-              _ ->
-                DetsSup.close(dets)
-                :error
+            else
+              # Bad version
+              :error
             end
-          else
-            # Bad version
-            :error
-          end
 
-        _error ->
-          IO.puts("error download file")
-          :error
+          _error ->
+            IO.puts("error download file")
+            :error
+        end
+      else
+        :standby
       end
-    else
-      :standby
-    end
+
+    DetsSup.close(dets)
+
+    return
   end
 
   def verify_block(_), do: :error

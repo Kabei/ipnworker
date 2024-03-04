@@ -230,8 +230,8 @@ defmodule Ippan.Func.Coin do
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
-    stats = Stats.new()
-    round_id = Stats.rounds(stats)
+    stats = Stats.new(dets.stats)
+    round_id = Stats.get(stats, "last_round")
     db = DetsPlux.get(:balance)
     tx = DetsPlux.tx(db, dets.balance)
     %{"reload.times" => times} = env
@@ -271,8 +271,8 @@ defmodule Ippan.Func.Coin do
       %{extra: extra, last_round: last_round} ->
         max_amount = Map.get(extra, "max_amount", 0)
         expiry = Map.get(extra, "exp", 0)
-        stats = Stats.new()
-        round_id = Stats.rounds(stats)
+        stats = Stats.new(dets.stats)
+        round_id = Stats.get(stats, "last_round")
         %{env: %{"stream.times" => interval}} = Token.get(token_id)
 
         cond do

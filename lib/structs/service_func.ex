@@ -8,11 +8,12 @@ defmodule Ippan.Func.Service do
   @token Application.compile_env(@app, :token)
   @name_max_length 50
   @max_services Application.compile_env(@app, :max_services, 0)
+  @skey "services"
 
   def new(%{id: account_id, dets: dets}, id, name, owner, image, extra \\ %{})
       when is_map(extra) do
     db_ref = :persistent_term.get(:main_conn)
-    stats = Stats.new()
+    stats = Stats.new(dets.stats)
 
     cond do
       not Match.service?(id) ->
@@ -30,7 +31,7 @@ defmodule Ippan.Func.Service do
       map_size(extra) > 5 ->
         raise IppanError, "Invalid extra key size"
 
-      @max_services != 0 and @max_services <= Stats.services(stats) ->
+      @max_services != 0 and @max_services <= Stats.get(stats, @skey) ->
         raise IppanError, "Total services register exceeded"
 
       PayService.exists?(db_ref, id) ->

@@ -66,9 +66,11 @@ defmodule RoundCommit do
     cache_balance_tx = DetsPlux.tx(:balance, :cache_balance)
     cache_nonce_tx = DetsPlux.tx(:nonce, :cache_nonce)
     cache_supply = DetsPlux.tx(:stats, :cache_supply)
+    cache_stats = DetsPlux.tx(:stats, :cache_stats)
     DetsPlux.clear_tx(cache_wallet_tx)
     DetsPlux.clear_tx(cache_balance_tx)
     DetsPlux.clear_tx(cache_nonce_tx)
     DetsPlux.clear_tx(cache_supply)
+    DetsPlux.clear_tx(cache_stats)
   end
 end

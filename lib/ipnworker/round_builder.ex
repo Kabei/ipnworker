@@ -81,6 +81,7 @@ defmodule RoundBuilder do
            hash: hash,
            blocks: blocks,
            creator: round_creator_id,
+           count: block_count,
            status: status,
            tx_count: tx_count
          },
@@ -159,11 +160,11 @@ defmodule RoundBuilder do
       run_save_balances(balance_tx, pg_conn)
 
       # update stats
-      stats_tx = Stats.new()
-      Stats.count_blocks(stats_tx, length(blocks))
-      Stats.count_txs(stats_tx, tx_count)
-      Stats.put_round(stats_tx, round_id)
-      Stats.put_last_hash(stats_tx, hash)
+      stats = Stats.new()
+      Stats.incr(stats, "blocks", block_count)
+      Stats.incr(stats, "txs", tx_count)
+      Stats.put(stats, "last_round", round_id)
+      Stats.put(stats, "last_hash", hash)
 
       RegPay.commit(pg_conn, round_id)
 
