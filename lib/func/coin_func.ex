@@ -261,34 +261,41 @@ defmodule Ippan.Func.Coin do
     ret
   end
 
-  def stream(%{id: account_id, dets: dets}, payer, token_id, amount) when amount > 0 do
+  def stream(%{id: account_id, dets: dets}, service_id, payer, token_id, amount)
+      when amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
 
-    case SubPay.get(db_ref, account_id, payer, token_id) do
-      nil ->
-        raise IppanError, "Payment not authorized"
+    case PayService.owner?(db_ref, service_id, account_id) do
+      false ->
+        raise IppanError, "Account not authorized"
 
-      %{extra: extra, last_round: last_round} ->
-        max_amount = Map.get(extra, "max_amount", 0)
-        expiry = Map.get(extra, "exp", 0)
-        stats = Stats.new(dets.stats)
-        round_id = Stats.get(stats, "last_round")
-        %{env: %{"stream.times" => interval}} = Token.get(token_id)
+      true ->
+        case SubPay.get(db_ref, service_id, payer, token_id) do
+          nil ->
+            raise IppanError, "Payment not authorized"
 
-        cond do
-          max_amount != 0 and max_amount < amount ->
-            raise IppanError, "Exceeded max amount"
+          %{extra: extra, last_round: last_round} ->
+            max_amount = Map.get(extra, "max_amount", 0)
+            expiry = Map.get(extra, "exp", 0)
+            stats = Stats.new(dets.stats)
+            round_id = Stats.get(stats, "last_round")
+            %{env: %{"stream.times" => interval}} = Token.get(token_id)
 
-          expiry != 0 and expiry < round_id ->
-            raise IppanError, "Subscription has expired"
+            cond do
+              max_amount != 0 and max_amount < amount ->
+                raise IppanError, "Exceeded max amount"
 
-          last_round + interval > round_id ->
-            raise IppanError, "Paystream already used"
+              expiry != 0 and expiry < round_id ->
+                raise IppanError, "Subscription has expired"
 
-          true ->
-            BalanceTrace.new(payer, dets.balance)
-            |> BalanceTrace.requires!(token_id, amount)
-            |> BalanceTrace.output()
+              last_round + interval > round_id ->
+                raise IppanError, "Paystream already used"
+
+              true ->
+                BalanceTrace.new(payer, dets.balance)
+                |> BalanceTrace.requires!(token_id, amount)
+                |> BalanceTrace.output()
+            end
         end
     end
   end
