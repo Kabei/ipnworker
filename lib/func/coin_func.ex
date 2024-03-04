@@ -21,7 +21,7 @@ defmodule Ippan.Func.Coin do
         token_id,
         amount
       )
-      when is_integer(amount) and amount <= @max_tx_amount and
+      when is_integer(amount) and amount > 0 and amount <= @max_tx_amount and
              account_id != to do
     bt = BalanceTrace.new(account_id, dets.balance)
     fees = Utils.calc_fees(fa, fb, size)

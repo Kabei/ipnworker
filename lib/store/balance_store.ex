@@ -157,12 +157,12 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro burn(balance, account, token, amount) do
-    quote bind_quoted: [account: account, balance: balance, token: token, amount: amount],
+  defmacro burn(account, token, amount) do
+    quote bind_quoted: [account: account, token: token, amount: amount],
           location: :keep do
       if amount > 0 do
         supply = TokenSupply.new(token)
-        TokenSupply.subtract(var!(supply), amount)
+        TokenSupply.subtract(supply, amount)
 
         RegPay.burn(var!(source), account, token, amount)
       end

@@ -22,6 +22,15 @@ defmodule Ipnworker.ServiceRoutes do
     |> send_json()
   end
 
+  head "/:id" do
+    db_ref = :persistent_term.get(:main_ro)
+
+    case PayService.exists?(db_ref, id) do
+      true -> send_resp(conn, 200, "")
+      false -> send_resp(conn, 204, "")
+    end
+  end
+
   match _ do
     send_resp(conn, 404, "Not found")
   end

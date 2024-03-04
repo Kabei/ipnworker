@@ -9,18 +9,16 @@ defmodule Ippan.Func.Service do
   @name_max_length 50
   @max_services Application.compile_env(@app, :max_services, 0)
 
-  def new(%{id: account_id, dets: dets}, id, name, image, extra) do
+  def new(%{id: account_id, dets: dets}, id, owner_id, name, image, extra) do
     db_ref = :persistent_term.get(:main_conn)
-    wallet = DetsPlux.get(:wallet)
-    tx = DetsPlux.tx(wallet, :cache_wallet)
     stats = Stats.new()
 
     cond do
-      not Match.account?(id) ->
+      not Match.service?(id) ->
         raise IppanError, "Invalid ID"
 
-      not DetsPlux.member_tx?(wallet, tx, id) ->
-        raise IppanError, "Account \"#{id}\" not exists"
+      not Match.account?(owner_id) ->
+        raise IppanError, "Invalid Owner"
 
       byte_size(name) > @name_max_length ->
         raise IppanError, "Invalid name length"
@@ -56,14 +54,15 @@ defmodule Ippan.Func.Service do
       when is_map(map) do
     map
     |> MapUtil.validate_length("name", @name_max_length)
+    |> MapUtil.validate_account("owner")
     |> MapUtil.validate_url("image")
 
-    extra = Map.drop(map, ["name", "image"])
+    extra = Map.drop(map, ["name", "image", "owner"])
 
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
-      id != account_id ->
+      not PayService.owner?(db_ref, id, account_id) ->
         raise IppanError, "Unauthorized"
 
       not PayService.exists?(db_ref, id) ->
@@ -97,6 +96,31 @@ defmodule Ippan.Func.Service do
       true ->
         :ok
     end
+  end
+
+  def withdraw(
+        %{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}},
+        service_id,
+        token_id,
+        amount
+      )
+      when is_integer(amount) and amount > 0 do
+    db_ref = :persistent_term.get(:main_conn)
+    bt = BalanceTrace.new(service_id, dets.balance)
+    fees = Utils.calc_fees(fa, fb, size)
+    %{"service.tax" => tax} = Token.get(token_id)
+
+    if not PayService.owner?(db_ref, service_id, account_id),
+      do: raise(IppanError, "Unauthorized")
+
+    case token_id == @token do
+      true ->
+        BalanceTrace.requires!(bt, token_id, amount + fees + tax)
+
+      false ->
+        BalanceTrace.multi_requires!(bt, [{token_id, amount + tax}, {@token, fees}])
+    end
+    |> BalanceTrace.output()
   end
 
   def subscribe(
@@ -150,16 +174,34 @@ defmodule Ippan.Func.Service do
   def unsubscribe(%{id: account_id}, service_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless SubPay.has?(db_ref, service_id, account_id) or
-             SubPay.has?(db_ref, account_id, service_id),
-           do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+    if not SubPay.has?(db_ref, service_id, account_id),
+      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
   end
 
   def unsubscribe(%{id: account_id}, service_id, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless SubPay.has?(db_ref, service_id, account_id, token_id) or
-             SubPay.has?(db_ref, account_id, service_id, token_id),
-           do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+    if not SubPay.has?(db_ref, service_id, account_id, token_id),
+      do: raise(IppanError, "#{account_id} has not subscription with #{service_id}")
+  end
+
+  def kick(%{id: account_id}, service_id, payer) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    if not PayService.owner?(db_ref, service_id, account_id),
+      do: raise(IppanError, "Unauthorized")
+
+    if not SubPay.has?(db_ref, service_id, payer),
+      do: raise(IppanError, "#{payer} has not subscription with #{service_id}")
+  end
+
+  def kick(%{id: account_id}, service_id, payer, token_id) do
+    db_ref = :persistent_term.get(:main_conn)
+
+    if not PayService.owner?(db_ref, service_id, account_id),
+      do: raise(IppanError, "Unauthorized")
+
+    if not SubPay.has?(db_ref, service_id, payer, token_id),
+      do: raise(IppanError, "#{payer} has not subscription with #{service_id}")
   end
 end

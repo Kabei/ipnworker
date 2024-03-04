@@ -260,20 +260,23 @@ defmodule Ippan.Func.Token do
   end
 
   defp check_env!("reload.times", value) when not is_integer(value) and value < 12,
-    do: raise(IppanError, "Invalid reload.times only integer and equal or greater than 12")
+    do: raise(IppanError, "Invalid reload.times, only integer and equal or greater than 12")
 
   defp check_env!("reload.amount", value) when not is_integer(value) and value < 1,
-    do: raise(IppanError, "Invalid reload.amount only integer value and greater than zero")
+    do: raise(IppanError, "Invalid reload.amount, only integer value and greater than zero")
 
   defp check_env!("reload.expiry", value) when not is_integer(value) and value < 120,
     do:
-      raise(IppanError, "Invalid reload.expiry only integer value and equal or greater than 120")
+      raise(IppanError, "Invalid reload.expiry, only integer value and equal or greater than 120")
 
   defp check_env!("reload.auth", value) when not is_integer(value) and value != true,
-    do: raise(IppanError, "Invalid reload.auth only boolean")
+    do: raise(IppanError, "Invalid reload.auth, only boolean")
 
   defp check_env!("stream.times", value) when not is_integer(value) and value != true,
-    do: raise(IppanError, "Invalid stream.times only integer and equal or greater than 12")
+    do: raise(IppanError, "Invalid stream.times, only integer and equal or greater than 12")
+
+  defp check_env!("service.tax", value) when not is_float(value) and value != true,
+    do: raise(IppanError, "Invalid service.tax, only positive decimal number")
 
   defp check_env!(_, _), do: :ok
 end

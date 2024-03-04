@@ -15,6 +15,7 @@ defmodule Match do
   @base62 ~r/^[0-9A-Za-z]+$/
   @domain_link ~r/^@([a-z0-9]{0,1}[a-z0-9-]{0,61}[a-z0-9]{1,1})/
   @username ~r/^@[a-z0-9]{1}([a-z0-9_]{3,20})$/
+  @service ~r/^s-[a-z0-9]{1}([a-z0-9_]{3,20})$/
   @token ~r/^[A-Z0-9]{1,10}$/
   @text ~r/^[\x20-\x26|\x28-\x7E]+$/
 
@@ -32,6 +33,7 @@ defmodule Match do
   def phone?(x), do: Regex.match?(@phone, x)
   def wallet_address?(x), do: Regex.match?(@wallet_address, x)
   def username?(x), do: Regex.match?(@username, x)
+  def service?(x), do: Regex.match?(@service, x)
   def token?(x), do: Regex.match?(@token, x)
   def text?(x), do: Regex.match?(@text, x)
   def ipv4?(x), do: Regex.match?(@ipv4, x)

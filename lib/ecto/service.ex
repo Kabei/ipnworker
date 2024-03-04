@@ -5,7 +5,7 @@ defmodule Ippan.Ecto.Service do
   require Sqlite
 
   @table "serv"
-  @select ~w(id name image extra created_at updated_at)a
+  @select ~w(id name owner image extra created_at updated_at)a
 
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
@@ -19,6 +19,7 @@ defmodule Ippan.Ecto.Service do
       |> filter_offset(params)
       |> filter_limit(params)
       |> filter_search(params)
+      |> filter_owner(params)
       |> filter_while(params)
       |> filter_select()
       |> sort(params)
@@ -38,7 +39,7 @@ defmodule Ippan.Ecto.Service do
   end
 
   defp filter_select(query) do
-    select(query, [t], map(t, @select))
+    select(query, [s], map(s, @select))
   end
 
   defp filter_search(query, %{"q" => q}) do
@@ -46,19 +47,25 @@ defmodule Ippan.Ecto.Service do
 
     where(
       query,
-      [t],
-      like(fragment("UPPER(?)", t.id), ^q) or like(fragment("UPPER(?)", t.name), ^q)
+      [s],
+      like(fragment("UPPER(?)", s.id), ^q) or like(fragment("UPPER(?)", s.name), ^q)
     )
   end
 
   defp filter_search(query, _), do: query
 
+  defp filter_owner(query, %{"owner" => owner}) do
+    where(query, [s], s.owner == ^owner)
+  end
+
+  defp filter_owner(query, _), do: query
+
   defp filter_while(query, %{"last_updated" => time}) do
-    where(query, [t], t.updated_at > ^time)
+    where(query, [s], s.updated_at > ^time)
   end
 
   defp filter_while(query, _), do: query
 
-  defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
-  defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
+  defp sort(query, %{"sort" => "newest"}), do: order_by(query, [s], desc: s.created_at)
+  defp sort(query, _), do: order_by(query, [s], asc: s.created_at)
 end
