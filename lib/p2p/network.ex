@@ -13,6 +13,7 @@ defmodule Ippan.Network do
   @callback all() :: [term()]
   @callback alive?(node :: term()) :: boolean()
   @callback count() :: non_neg_integer()
+  @callback total() :: non_neg_integer()
   @callback cast(node_or_id :: binary | term(), message :: term) :: :ok | :disconnect
   @callback cast(node_or_id :: term(), event :: binary, data :: term) :: :ok | :disconnect
   @callback call(node_or_id :: binary | map, method :: binary) :: {:ok, term()} | {:error, term()}
@@ -345,6 +346,11 @@ defmodule Ippan.Network do
       end
 
       @impl Network
+      def total do
+        :ets.info(@bag, :size)
+      end
+
+      @impl Network
       def cast(%{sharedkey: sharedkey, socket: socket}, message) do
         @adapter.send(socket, encode(message, sharedkey))
       end
@@ -430,13 +436,9 @@ defmodule Ippan.Network do
 
       @impl Network
       def broadcast(message) do
-        IO.puts("broadcast")
-
         all()
         |> Enum.uniq_by(fn {node_id, _, _} -> node_id end)
-        # |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
         |> Enum.each(fn {node_id, socket, sharedkey} ->
-          IO.puts(node_id)
           @adapter.send(socket, encode(message, sharedkey))
         end)
       end
@@ -446,9 +448,8 @@ defmodule Ippan.Network do
         data = :ets.select(@table, [{{:_, %{role: :"$1"}}, [{:==, :"$1", role}], [:"$_"]}])
 
         data
-        # |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
         |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
-          # |> Enum.each(fn {_, socket, sharedkey} ->
           @adapter.send(socket, encode(message, sharedkey))
         end)
       end
