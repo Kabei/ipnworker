@@ -9,7 +9,8 @@ defmodule Ippan.Func.Service do
   @name_max_length 50
   @max_services Application.compile_env(@app, :max_services, 0)
 
-  def new(%{id: account_id, dets: dets}, id, name, owner, image, extra) do
+  def new(%{id: account_id, dets: dets}, id, name, owner, image, extra \\ %{})
+      when is_map(extra) do
     db_ref = :persistent_term.get(:main_conn)
     stats = Stats.new()
 
