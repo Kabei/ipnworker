@@ -108,7 +108,8 @@ defmodule Ippan.Func.Service do
     db_ref = :persistent_term.get(:main_conn)
     bt = BalanceTrace.new(service_id, dets.balance)
     fees = Utils.calc_fees(fa, fb, size)
-    %{"service.tax" => tax} = Token.get(token_id)
+    %{env: env} = Token.get(token_id)
+    tax = round(amount * Map.get(env, "service.tax", 0.01))
 
     if not PayService.owner?(db_ref, service_id, account_id),
       do: raise(IppanError, "Unauthorized")

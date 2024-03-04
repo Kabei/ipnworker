@@ -101,7 +101,8 @@ defmodule Ippan.Funx.Service do
     tx = DetsPlux.tx(db, :balance)
     tfees = Utils.calc_fees(fa, fb, size)
     is_validator = vOwner == to
-    %{"service.tax" => tax} = Token.get(token_id)
+    %{env: env} = Token.get(token_id)
+    tax = round(amount * Map.get(env, "service.tax", 0.01))
 
     BalanceStore.pay from, token_id, amount + tax, tfees do
       BalanceStore.send(to, token_id, amount)
