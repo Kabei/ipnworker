@@ -102,10 +102,14 @@ defmodule Ippan.Funx.Service do
     tfees = Utils.calc_fees(fa, fb, size)
     is_validator = vOwner == to
     %{env: env} = Token.get(token_id)
-    tax = round(amount * Map.get(env, "service.tax", 0.01))
+    tax = round(amount * Map.get(env, "service.tax", 0))
 
-    BalanceStore.pay from, token_id, amount + tax, tfees do
-      BalanceStore.send(to, token_id, amount)
+    BalanceStore.pay from, token_id, amount, tfees do
+      total = amount - tax
+
+      if total > 0 do
+        BalanceStore.send(to, token_id, total)
+      end
 
       reserve = Utils.calc_reserve(tfees)
       fees = tfees - reserve

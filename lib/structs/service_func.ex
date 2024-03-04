@@ -114,15 +114,13 @@ defmodule Ippan.Func.Service do
 
     bt = BalanceTrace.new(service_id, dets.balance)
     fees = Utils.calc_fees(fa, fb, size)
-    %{env: env} = Token.get(token_id)
-    tax = round(amount * Map.get(env, "service.tax", 0.01))
 
     case token_id == @token do
       true ->
-        BalanceTrace.requires!(bt, token_id, amount + fees + tax)
+        BalanceTrace.requires!(bt, token_id, amount + fees)
 
       false ->
-        BalanceTrace.multi_requires!(bt, [{token_id, amount + tax}, {@token, fees}])
+        BalanceTrace.multi_requires!(bt, [{token_id, amount}, {@token, fees}])
     end
     |> BalanceTrace.output()
   end
