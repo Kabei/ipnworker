@@ -16,7 +16,6 @@ defmodule Ippan.Func.Account do
         fb
       ) do
     pubkey = Fast64.decode64(pubkey)
-    address = Address.hash(sig_type, pubkey)
 
     cond do
       account_map != nil ->
@@ -25,7 +24,7 @@ defmodule Ippan.Func.Account do
       not Match.account?(account_id) ->
         raise IppanError, "Invalid account ID format"
 
-      Match.wallet_address?(account_id) and address != account_id ->
+      Match.wallet_address?(account_id) and Address.hash(sig_type, pubkey) != account_id ->
         raise IppanError, "Invalid account ID"
 
       validator_id != vid ->
