@@ -25,19 +25,18 @@ defmodule Ippan.Funx.Coin do
     tfees = Utils.calc_fees(fa, fb, size)
 
     BalanceStore.pay from, token_id, amount, tfees do
-      balance_to = BalanceStore.load(to, token_id)
-      BalanceStore.send(balance_to, amount)
+      BalanceStore.send(from, to, token_id, amount)
 
       reserve = Utils.calc_reserve(tfees)
       fees = tfees - reserve
 
       if is_validator do
         BalanceStore.burn(from, @token, fees)
-        BalanceStore.reserve(reserve)
+        BalanceStore.reserve(from, reserve)
       else
         validator_balance = BalanceStore.load(vOwner, @token)
-        BalanceStore.fees(validator_balance, fees)
-        BalanceStore.reserve(reserve)
+        BalanceStore.fees(from, validator_balance, fees)
+        BalanceStore.reserve(from, reserve)
       end
     end
   end
@@ -115,7 +114,7 @@ defmodule Ippan.Funx.Coin do
 
     BalanceStore.pay from, token_id, total, tfees do
       Enum.each(outputs, fn [to, amount] ->
-        BalanceStore.send(to, token_id, amount)
+        BalanceStore.send(from, to, token_id, amount)
       end)
 
       reserve = Utils.calc_reserve(tfees)
@@ -123,11 +122,11 @@ defmodule Ippan.Funx.Coin do
 
       if is_validator do
         BalanceStore.burn(from, @token, fees)
-        BalanceStore.reserve(reserve)
+        BalanceStore.reserve(from, reserve)
       else
         validator_balance = BalanceStore.load(vOwner, @token)
-        BalanceStore.fees(validator_balance, fees)
-        BalanceStore.reserve(reserve)
+        BalanceStore.fees(from, validator_balance, fees)
+        BalanceStore.reserve(from, reserve)
       end
     end
   end

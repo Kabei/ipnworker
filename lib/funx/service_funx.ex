@@ -91,8 +91,8 @@ defmodule Ippan.Funx.Service do
   end
 
   def withdraw(
-        source = %{id: to, size: size, validator: %{fa: fa, fb: fb, owner: vOwner}},
-        from,
+        source = %{id: account_id, size: size, validator: %{fa: fa, fb: fb, owner: vOwner}},
+        service_id,
         token_id,
         amount
       ) do
@@ -100,30 +100,22 @@ defmodule Ippan.Funx.Service do
     db = DetsPlux.get(:balance)
     tx = DetsPlux.tx(db, :balance)
     tfees = Utils.calc_fees(fa, fb, size)
-    is_validator = vOwner == to
     %{env: env} = Token.get(token_id)
     tax = round(amount * Map.get(env, "service.tax", 0))
 
-    BalanceStore.pay from, token_id, amount, tfees do
+    BalanceStore.pay service_id, token_id, amount, tfees do
       total = amount - tax
 
       if total > 0 do
-        BalanceStore.send(to, token_id, total)
+        BalanceStore.send(service_id, account_id, token_id, total)
       end
 
       reserve = Utils.calc_reserve(tfees)
       fees = tfees - reserve
 
-      if is_validator do
-        BalanceStore.burn(from, @token, fees)
-        BalanceStore.reserve(reserve)
-      else
-        validator_balance = BalanceStore.load(vOwner, @token)
-        BalanceStore.fees(validator_balance, fees)
-        BalanceStore.reserve(reserve)
-      end
-
-      BalanceStore.burn(from, token_id, tax)
+      validator_balance = BalanceStore.load(vOwner, @token)
+      BalanceStore.fees(service_id, validator_balance, fees)
+      BalanceStore.reserve(service_id, reserve)
     end
   end
 

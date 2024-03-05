@@ -100,19 +100,12 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro send(balance, amount) do
-    quote bind_quoted: [amount: amount, balance: balance], location: :keep do
-      DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.payment(var!(source), var!(from), var!(to), var!(token_id), amount)
-    end
-  end
-
-  defmacro send(to, token, amount) do
-    quote bind_quoted: [to: to, token: token, amount: amount], location: :keep do
+  defmacro send(from, to, token, amount) do
+    quote bind_quoted: [from: from, to: to, token: token, amount: amount], location: :keep do
       balance = DetsPlux.tuple(to, token)
       DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.payment(var!(source), var!(from), to, token, amount)
+      RegPay.payment(var!(source), from, to, token, amount)
     end
   end
 
@@ -134,25 +127,26 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro fees(validator_balance_id, fees) do
+  defmacro fees(from, validator_balance_id, fees) do
     quote bind_quoted: [
+            from: from,
             balance: validator_balance_id,
             fees: fees,
             token: @token
           ],
           location: :keep do
       DetsPlux.update_counter(var!(tx), balance, {2, fees})
-      RegPay.fees(var!(source), var!(from), var!(vOwner), token, fees)
+      RegPay.fees(var!(source), from, var!(vOwner), token, fees)
     end
   end
 
-  defmacro reserve(amount) do
-    quote bind_quoted: [token: @token, amount: amount], location: :keep do
+  defmacro reserve(from, amount) do
+    quote bind_quoted: [from: from, token: @token, amount: amount], location: :keep do
       if amount > 0 do
         supply = TokenSupply.jackpot()
         TokenSupply.add(supply, amount)
 
-        RegPay.reserve(var!(source), token, amount)
+        RegPay.reserve(var!(source), from, token, amount)
       end
     end
   end
@@ -260,7 +254,7 @@ defmodule BalanceStore do
           DetsPlux.update_counter(var!(tx), to_key, {2, fees})
 
           RegPay.fees(var!(source), from, to, token, fees)
-          BalanceStore.reserve(reserve)
+          BalanceStore.reserve(from, reserve)
         else
           :error
         end

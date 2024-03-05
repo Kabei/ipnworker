@@ -50,11 +50,11 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
     end
 
-    def fees(%{id: from, nonce: nonce}, _from, to, token, amount) do
+    def fees(%{nonce: nonce}, from, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
     end
 
-    def reserve(%{id: from, nonce: nonce}, token, amount) do
+    def reserve(%{nonce: nonce}, from, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 201, token, -amount})
     end
 
