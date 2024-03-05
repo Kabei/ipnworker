@@ -228,12 +228,12 @@ defmodule Ippan.Funx.Coin do
     div(round_id - init_round, times) - div(last_round - init_round, times)
   end
 
-  def stream(source = %{round: round_id}, service_id, payer, token_id, amount) do
+  def stream(source = %{id: account_id, round: round_id}, service_id, payer, token_id, amount) do
     db = DetsPlux.get(:balance)
     tx = DetsPlux.tx(db, :balance)
 
     BalanceStore.pay payer, token_id, amount do
-      BalanceStore.stream(payer, service_id, token_id, amount)
+      BalanceStore.stream(account_id, payer, service_id, token_id, amount)
 
       db_ref = :persistent_term.get(:main_conn)
       SubPay.update(db_ref, service_id, payer, token_id, round_id)

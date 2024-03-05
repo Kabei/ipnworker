@@ -318,12 +318,18 @@ defmodule BalanceStore do
     end
   end
 
-  defmacro stream(payer, service, token, amount) do
-    quote bind_quoted: [payer: payer, amount: amount, service: service, token: token],
+  defmacro stream(account, payer, service, token, amount) do
+    quote bind_quoted: [
+            account: account,
+            payer: payer,
+            amount: amount,
+            service: service,
+            token: token
+          ],
           location: :keep do
       balance = BalanceStore.load(service, token)
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.stream(var!(source), payer, service, token, amount)
+      RegPay.stream(var!(source), account, payer, token, -amount)
     end
   end
 
