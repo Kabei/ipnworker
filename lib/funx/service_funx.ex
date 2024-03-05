@@ -107,7 +107,7 @@ defmodule Ippan.Funx.Service do
       total = amount - tax
 
       if total > 0 do
-        BalanceStore.send(service_id, account_id, token_id, total)
+        BalanceStore.send(account_id, account_id, token_id, total)
       end
 
       reserve = Utils.calc_reserve(tfees)
