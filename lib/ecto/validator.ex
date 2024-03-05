@@ -18,7 +18,13 @@ defmodule Ippan.Ecto.Validator do
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
 
-    Validator.get(id)
+    case Match.hostname?(id) do
+      false ->
+        Validator.get(id)
+
+      _ ->
+        Validator.get_host(id)
+    end
     |> fun()
   end
 
