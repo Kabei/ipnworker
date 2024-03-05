@@ -329,7 +329,7 @@ defmodule BalanceStore do
           location: :keep do
       balance = BalanceStore.load(service, token)
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.stream(var!(source), account, payer, token, -amount)
+      RegPay.stream(var!(source), account, payer, token, amount)
     end
   end
 
