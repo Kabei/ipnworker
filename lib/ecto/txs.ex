@@ -16,7 +16,7 @@ defmodule Ippan.Ecto.Tx do
   @primary_key false
   @schema_prefix "history"
   schema "txs" do
-    field(:from, :binary)
+    field(:from, :string)
     field(:nonce, :decimal)
     field(:ix, :integer)
     field(:block, :integer)

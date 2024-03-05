@@ -66,7 +66,7 @@ defmodule Ippan.BlockHandler do
   #       hash != Block.compute_hash(creator_id, height, prev, filehash, timestamp) ->
   #         raise(IppanError, "Invalid block hash")
 
-  #       filehash != hash_file(output_path) ->
+  #       filehash != Block.compute_filehash(output_path) ->
   #         raise(IppanError, "Hash block file is invalid")
 
   #       Cafezinho.Impl.verify(signature, hash, pubkey) != :ok ->

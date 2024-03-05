@@ -10,12 +10,12 @@ defmodule Ippan.Ecto.Payments do
   @primary_key false
   @schema_prefix "history"
   schema "payments" do
-    field(:from, :binary)
+    field(:from, :string)
     field(:nonce, :decimal)
-    field(:to, :binary)
+    field(:to, :string)
     field(:round, :integer)
     field(:type, :integer)
-    field(:token, :binary)
+    field(:token, :string)
     field(:amount, :decimal)
   end
 

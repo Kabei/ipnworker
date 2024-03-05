@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "prev" BYTEA,
   "creator" BIGINT,
   "signature" BYTEA,
-  "coinbase" NUMERIC,
   "reward" NUMERIC,
   "count" BIGINT,
   "tx_count" BIGINT,
@@ -18,14 +17,14 @@ CREATE TABLE IF NOT EXISTS history.rounds(
 );
 
 CREATE TABLE IF NOT EXISTS history.jackpot(
-  "round_id" BIGINT NOT NULL,
+  "round_id" NUMERIC NOT NULL,
   "winner" BYTEA NOT NULL,
-  "amount" BIGINT,
+  "amount" NUMERIC,
   PRIMARY KEY("round_id", "winner")
 );
 
 CREATE TABLE IF NOT EXISTS history.snapshot(
-  "round_id" BIGINT PRIMARY KEY NOT NULL,
+  "round_id" NUMERIC PRIMARY KEY NOT NULL,
   "hash" BYTEA NOT NULL,
   "size" BIGINT NOT NULL
 );
@@ -48,7 +47,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
 );
 
 CREATE TABLE IF NOT EXISTS history.txs(
-  "from" BYTEA,
+  "from" TEXT,
   "nonce" NUMERIC,
   "ix" integer,
   "block" BIGINT,
@@ -63,20 +62,20 @@ CREATE TABLE IF NOT EXISTS history.txs(
 );
 
 CREATE TABLE IF NOT EXISTS history.balance(
-  "id" BYTEA,
-  "token" BYTEA,
+  "id" TEXT,
+  "token" TEXT,
   "balance" NUMERIC,
   "map" JSONB,
   PRIMARY KEY("id", "token")
 );
 
 CREATE TABLE IF NOT EXISTS history.payments(
-  "from" BYTEA,
+  "from" TEXT,
   "nonce" NUMERIC,
-  "to" BYTEA,
+  "to" TEXT,
   "round" BIGINT,
   "type" INTEGER,
-  "token" BYTEA,
+  "token" TEXT,
   "amount" NUMERIC
 );
 
