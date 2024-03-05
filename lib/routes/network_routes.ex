@@ -45,7 +45,7 @@ defmodule Ipnworker.NetworkRoutes do
     supply = TokenSupply.cache(@token)
 
     id = Stats.get(stats, "last_round", 0)
-    hash = Stats.get(stats, "last_hash")
+    hash = Stats.get(stats, "last_hash", nil)
     blocks = Stats.get(stats, "blocks")
     txs = Stats.get(stats, "txs")
     validators = Validator.total()
