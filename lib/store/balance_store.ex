@@ -333,6 +333,15 @@ defmodule BalanceStore do
     end
   end
 
+  defmacro withdraw(account, token, amount) do
+    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
+      balance = DetsPlux.tuple(account, token)
+      DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
+      DetsPlux.update_counter(var!(tx), balance, {2, amount})
+      RegPay.withdraw(var!(source), account, token, amount)
+    end
+  end
+
   defmacro income(db, tx, account, token, value) do
     quote bind_quoted: [db: db, tx: tx, account: account, token: token, value: value],
           location: :keep do

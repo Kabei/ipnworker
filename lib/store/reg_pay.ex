@@ -15,6 +15,7 @@ defmodule RegPay do
   302. unlock
   303. drop coins
   400. PayStream
+  401. Withdraw
   """
 
   @app Mix.Project.config()[:app]
@@ -89,6 +90,10 @@ defmodule RegPay do
     def stream(%{nonce: nonce}, from, to, token, amount) do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 400, token, -amount})
     end
+
+    def withdraw(%{nonce: nonce}, from, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 401, token, amount})
+    end
   else
     def init, do: :ok
     def coinbase(_, _, _, _), do: true
@@ -104,7 +109,8 @@ defmodule RegPay do
     def unlock(_, _, _, _), do: true
     def reward(_, _, _), do: true
     def jackpot(_, _, _), do: true
-    def stream(_, _, _), do: true
+    def stream(_, _, _, _, _), do: true
+    def withdraw(_, _, _, _), do: true
   end
 
   def commit(nil, _), do: nil
