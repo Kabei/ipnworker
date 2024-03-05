@@ -140,7 +140,9 @@ defmodule RoundBuilder do
           n = Sqlite.one("total_players", [], 0)
 
           if n > 2 do
-            if rem(Validator.incr_failure(round_creator, 1, round_id), 6) == 0 do
+            max = EnvStore.max_failures()
+
+            if max != 0 and rem(Validator.incr_failure(round_creator, 1, round_id), max) == 0 do
               Validator.disable(round_creator, round_id)
             end
 
