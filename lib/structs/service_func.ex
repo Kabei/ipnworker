@@ -112,17 +112,17 @@ defmodule Ippan.Func.Service do
     if not PayService.owner?(db_ref, service_id, account_id),
       do: raise(IppanError, "Unauthorized")
 
-    bt = BalanceTrace.new(service_id, dets.balance)
     fees = Utils.calc_fees(fa, fb, size)
+    db = DetsPlux.get(:balance)
+    tx = DetsPlux.tx(db, dets.balance)
 
-    case token_id == @token do
-      true ->
-        BalanceTrace.requires!(bt, token_id, amount + fees)
-
-      false ->
-        BalanceTrace.multi_requires!(bt, [{token_id, amount}, {@token, fees}])
-    end
-    |> BalanceTrace.output()
+    %{
+      output:
+        BalanceStore.multi_requires!(db, tx, [
+          {BalanceStore.make(account_id, @token), fees},
+          {BalanceStore.make(service_id, token_id), amount}
+        ])
+    }
   end
 
   def subscribe(
