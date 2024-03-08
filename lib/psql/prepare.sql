@@ -1,8 +1,9 @@
 PREPARE insert_pay(text, numeric, text, bigint, integer, text, numeric)
-AS INSERT INTO history.payments("from", "nonce", "to", "round", "type", "token", "amount") VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ("from", "nonce") DO NOTHING;
+AS INSERT INTO history.payments VALUES($1,$2,$3,$4,$5,$6,$7)
+-- ("from", "nonce", "to", "round", "type", "token", "amount") VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ("from", "nonce") DO NOTHING;
 
-PREPARE insert_multi_pay(text, numeric, text, bigint, integer, text, numeric, text, numeric)
-AS INSERT INTO history.payments("from", "nonce", "to", "round", "type", "token", "amount") VALUES ($1,$2,$3,$4,$5,$6,$7), ($1,$2,$8,$4,$5,$6,$9) ON CONFLICT ("from", "nonce") DO NOTHING;
+-- PREPARE insert_multi_pay(text, numeric, text, bigint, integer, text, numeric, text, numeric)
+-- AS INSERT INTO history.payments("from", "nonce", "to", "round", "type", "token", "amount") VALUES ($1,$2,$3,$4,$5,$6,$7), ($1,$2,$8,$4,$5,$6,$9) ON CONFLICT ("from", "nonce") DO NOTHING;
 
 PREPARE insert_tx(text, numeric, integer, bigint, bytea, integer, integer, integer, integer, bytea, bytea)
 AS INSERT INTO history.txs VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11);
