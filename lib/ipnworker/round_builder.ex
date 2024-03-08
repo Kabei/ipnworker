@@ -92,7 +92,7 @@ defmodule RoundBuilder do
     db_ref = :persistent_term.get(:main_conn)
 
     if :synced == :persistent_term.get(:status, :startup) do
-      rid = :persistent_term.put(:round, -1)
+      rid = :persistent_term.get(:round, -1)
       next_id = rid + 1
 
       cond do
