@@ -29,7 +29,7 @@ defmodule PgStore do
       pid,
       fn conn ->
         for sql <- @prepares do
-          {:ok, _} = Postgrex.query(conn, sql, [])
+          Postgrex.query(conn, sql, [])
         end
       end,
       timeout: :infinity

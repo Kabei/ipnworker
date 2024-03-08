@@ -1,5 +1,5 @@
 PREPARE insert_pay(text, numeric, text, bigint, integer, text, numeric)
-AS INSERT INTO history.payments VALUES($1,$2,$3,$4,$5,$6,$7)
+AS INSERT INTO history.payments VALUES($1,$2,$3,$4,$5,$6,$7);
 -- ("from", "nonce", "to", "round", "type", "token", "amount") VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ("from", "nonce") DO NOTHING;
 
 -- PREPARE insert_multi_pay(text, numeric, text, bigint, integer, text, numeric, text, numeric)
