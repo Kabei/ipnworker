@@ -15,22 +15,22 @@ defmodule Ipnworker.ClusterRoutes do
   plug(:dispatch)
 
   # post "/call" do
-    # auth = get_req_header(conn, "auth")
-    # {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
+  # auth = get_req_header(conn, "auth")
+  # {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
-    # case check_mac(auth, body) do
-    #   true ->
-    #     with %{"method" => method, "data" => data} <- @json.decode!(body),
-    #          :ok <- NodeApi.trigger(method, data) do
-    #       send_resp(conn, 200, "")
-    #     else
-    #       _ ->
-    #         send_resp(conn, 400, "Bad arguments")
-    #     end
+  # case check_mac(auth, body) do
+  #   true ->
+  #     with %{"method" => method, "data" => data} <- @json.decode!(body),
+  #          :ok <- NodeApi.trigger(method, data) do
+  #       send_resp(conn, 200, "")
+  #     else
+  #       _ ->
+  #         send_resp(conn, 400, "Bad arguments")
+  #     end
 
-    #   false ->
-    #     send_resp(conn, 401, "")
-    # end
+  #   false ->
+  #     send_resp(conn, 401, "")
+  # end
   # end
 
   get "/node/all" do

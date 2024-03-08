@@ -25,7 +25,7 @@ defmodule Ipnworker.AccountRoutes do
         |> Map.merge(%{
           "nonce" => nonce,
           "pubkey" => Utils.encode64(pk),
-          "sig_type" => sig_type,
+          "sig_type" => sig_type
         })
         |> json()
 

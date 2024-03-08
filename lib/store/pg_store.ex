@@ -29,7 +29,7 @@ defmodule PgStore do
       pid,
       fn conn ->
         for sql <- @prepares do
-          Postgrex.query(conn, sql, [])
+          {:ok, _} = Postgrex.query(conn, sql, [])
         end
       end,
       timeout: :infinity
@@ -92,6 +92,14 @@ defmodule PgStore do
     Postgrex.query(
       conn,
       query_parse("EXECUTE insert_pay($1,$2,$3,$4,$5,$6,$7)", params),
+      []
+    )
+  end
+
+  def insert_multi_pay(conn, params) do
+    Postgrex.query(
+      conn,
+      query_parse("EXECUTE insert_multi_pay($1,$2,$3,$4,$5,$6,$7,$8,$9)", params),
       []
     )
   end

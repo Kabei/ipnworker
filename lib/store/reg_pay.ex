@@ -123,25 +123,58 @@ defmodule RegPay do
       data = :ets.tab2list(tid)
       synced = :persistent_term.get(:status) == :synced
 
-      Enum.each(data, fn {from, nonce, to, type, token, amount} ->
-        PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
+      Enum.each(
+        data,
+        fn {from, nonce, to, type, token, amount} ->
+          PgStore.insert_pay(pg_conn, [from, nonce, to, round_id, type, token, amount])
 
-        if synced and to do
-          payload =
-            %{
-              "amount" => amount,
-              "from" => from,
-              "nonce" => nonce,
-              "round" => round_id,
-              "to" => to,
-              "token" => token,
-              "type" => type
-            }
-            |> MapUtil.drop_nils()
+          if synced and to do
+            payload =
+              %{
+                "amount" => amount,
+                "from" => from,
+                "nonce" => nonce,
+                "round" => round_id,
+                "to" => to,
+                "token" => token,
+                "type" => type
+              }
+              |> MapUtil.drop_nils()
 
-          Phoenix.PubSub.broadcast(@pubsub, "payments:#{to}", payload)
+            Phoenix.PubSub.broadcast(@pubsub, "payments:#{to}", payload)
+          end
+
+          fn {from, nonce, type, token, to, amount, to2, amount2} ->
+            PgStore.insert_multi_pay(pg_conn, [
+              from,
+              nonce,
+              to,
+              round_id,
+              type,
+              token,
+              amount,
+              to2,
+              amount2
+            ])
+
+            if synced and to do
+              payload =
+                %{
+                  "amount" => amount,
+                  "from" => from,
+                  "nonce" => nonce,
+                  "round" => round_id,
+                  "to" => to,
+                  "token" => token,
+                  "type" => type
+                }
+                |> MapUtil.drop_nils()
+
+              Phoenix.PubSub.broadcast(@pubsub, "payments:#{to}", payload)
+            end
+          end
         end
-      end)
+      )
 
       :ets.delete_all_objects(tid)
     end

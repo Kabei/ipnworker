@@ -91,115 +91,126 @@ defmodule RoundBuilder do
     # IO.inspect("step 0")
     db_ref = :persistent_term.get(:main_conn)
 
-    unless Round.exists?(round_id) do
-      vid = :persistent_term.get(:vid)
-      balance_pid = DetsPlux.get(:balance)
-      balance_tx = DetsPlux.tx(balance_pid, :balance)
-      # :persistent_term.put(:round, round_id)
+    if :synced == :persistent_term.get(:status, :startup) do
+      rid = :persistent_term.put(:round, -1)
+      next_id = rid + 1
 
-      IO.puts("##{round.id}")
+      cond do
+        round_id > next_id ->
+          NodeSync.start_link()
 
-      pool_pid = Process.whereis(:minerpool)
-      # IO.inspect("step 1")
-      is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
+        round_id == next_id ->
+          vid = :persistent_term.get(:vid)
+          balance_pid = DetsPlux.get(:balance)
+          balance_tx = DetsPlux.tx(balance_pid, :balance)
+          :persistent_term.put(:round, round_id)
 
-      for block = %{"creator" => block_creator_id} <- blocks do
-        Task.async(fn ->
-          creator = Validator.get(block_creator_id)
+          IO.puts("##{round.id}")
 
-          :poolboy.transaction(
-            pool_pid,
-            fn pid ->
-              MinerWorker.mine(
-                pid,
-                round_id,
-                MapUtil.to_atoms(block),
-                hostname,
-                creator,
-                pg_conn
+          pool_pid = Process.whereis(:minerpool)
+          # IO.inspect("step 1")
+          is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
+
+          for block = %{"creator" => block_creator_id} <- blocks do
+            Task.async(fn ->
+              creator = Validator.get(block_creator_id)
+
+              :poolboy.transaction(
+                pool_pid,
+                fn pid ->
+                  MinerWorker.mine(
+                    pid,
+                    round_id,
+                    MapUtil.to_atoms(block),
+                    hostname,
+                    creator,
+                    pg_conn
+                  )
+                end,
+                :infinity
               )
-            end,
-            :infinity
-          )
-        end)
-      end
-      |> Task.await_many(:infinity)
+            end)
+          end
+          |> Task.await_many(:infinity)
 
-      # IO.inspect("step 2")
+          # IO.inspect("step 2")
 
-      TxHandler.run_deferred_txs()
+          TxHandler.run_deferred_txs()
 
-      round_creator =
-        Validator.get(round_creator_id)
+          round_creator =
+            Validator.get(round_creator_id)
 
-      run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
-      run_jackpot(round, balance_pid, balance_tx, db_ref, pg_conn)
+          run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
+          run_jackpot(round, balance_pid, balance_tx, db_ref, pg_conn)
 
-      case status do
-        1 ->
-          max = EnvStore.max_failures()
+          case status do
+            1 ->
+              max = EnvStore.max_failures()
 
-          if max != 0 do
-            number = Validator.incr_failure(round_creator, 1, round_id)
-            if number != nil and rem(number, max) == 0 do
-              Validator.disable(round_creator, round_id)
-            end
+              if max != 0 do
+                number = Validator.incr_failure(round_creator, 1, round_id)
 
-            Sqlite.sync(db_ref)
+                if number != nil and rem(number, max) == 0 do
+                  Validator.disable(round_creator, round_id)
+                end
+
+                Sqlite.sync(db_ref)
+              end
+
+            2 ->
+              Validator.delete(round_creator_id)
+              Sqlite.sync(db_ref)
+
+            _ ->
+              nil
           end
 
-        2 ->
-          Validator.delete(round_creator_id)
-          Sqlite.sync(db_ref)
+          # IO.inspect("step 3")
+          round_encode = Round.to_list(round)
+          Round.insert(round_encode)
 
-        _ ->
-          nil
-      end
+          # Save balances
+          run_save_balances(balance_tx, pg_conn)
 
-      # IO.inspect("step 3")
-      round_encode = Round.to_list(round)
-      Round.insert(round_encode)
+          # update stats
+          stats = Stats.new()
+          Stats.incr(stats, "blocks", block_count)
+          Stats.incr(stats, "txs", tx_count)
+          Stats.put(stats, "last_round", round_id)
+          Stats.put(stats, "last_hash", hash)
 
-      # Save balances
-      run_save_balances(balance_tx, pg_conn)
+          RegPay.commit(pg_conn, round_id)
 
-      # update stats
-      stats = Stats.new()
-      Stats.incr(stats, "blocks", block_count)
-      Stats.incr(stats, "txs", tx_count)
-      Stats.put(stats, "last_round", round_id)
-      Stats.put(stats, "last_hash", hash)
+          RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
+          # IO.inspect("step 4")
 
-      RegPay.commit(pg_conn, round_id)
+          if @history do
+            PgStore.insert_round(pg_conn, round_encode)
+            |> then(fn
+              {:ok, _} ->
+                :ok
 
-      RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
-      # IO.inspect("step 4")
+              err ->
+                IO.inspect(err)
+            end)
+          end
 
-      if @history do
-        PgStore.insert_round(pg_conn, round_encode)
-        |> then(fn
-          {:ok, _} ->
-            :ok
+          # Push event
+          msg = Round.to_text(round)
+          PubSub.broadcast(@pubsub, "round.new", msg)
+          PubSub.broadcast(@pubsub, "round:#{round_id}", msg)
 
-          err ->
-            IO.inspect(err)
-        end)
-      end
+          run_maintenance(round_id, db_ref)
 
-      # Push event
-      msg = Round.to_text(round)
-      PubSub.broadcast(@pubsub, "round.new", msg)
-      PubSub.broadcast(@pubsub, "round:#{round_id}", msg)
+          fun = :persistent_term.get(:last_fun, nil)
 
-      run_maintenance(round_id, db_ref)
+          if fun do
+            :persistent_term.erase(:last_fun)
+            fun.()
+          end
 
-      # :persistent_term.put(:round, round_id)
-
-      fun = :persistent_term.get(:last_fun, nil)
-
-      if fun do
-        :persistent_term.erase(:last_fun)
-        fun.()
+        true ->
+          :ok
       end
     end
   end

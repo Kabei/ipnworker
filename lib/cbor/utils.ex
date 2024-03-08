@@ -24,6 +24,6 @@ defmodule CBOR.Utils do
   end
 
   def encode_string(_mt, s, acc) do
-    <<acc::binary, 0x7f, s::binary, 0xff>>
+    <<acc::binary, 0x7F, s::binary, 0xFF>>
   end
 end

@@ -1,13 +1,13 @@
 defmodule Ippan.Account do
   @behaviour Ippan.Struct
   @type t :: %__MODULE__{
-    id: String.t(),
-    pubkey: binary,
-    vid: non_neg_integer(),
-    fa: non_neg_integer(),
-    fb: non_neg_integer(),
-    sig_type: non_neg_integer()
-  }
+          id: String.t(),
+          pubkey: binary,
+          vid: non_neg_integer(),
+          fa: non_neg_integer(),
+          fb: non_neg_integer(),
+          sig_type: non_neg_integer()
+        }
 
   defstruct [:id, :fa, :fb, :pubkey, :vid, :sig_type]
 

@@ -18,6 +18,7 @@ defmodule Ipnworker.SubPayRoutes do
 
   get "/:payer/total" do
     db_ref = :persistent_term.get(:main_ro)
+
     SubPay.total(db_ref, payer)
     |> send_json()
   end
