@@ -20,6 +20,10 @@ defmodule RoundBuilder do
 
   @impl true
   def init(_init_arg) do
+    db_ref = :persistent_term.get(:main_conn)
+    %{id: id} = Round.last()
+    :persistent_term.put(:round, id)
+
     {:ok, nil}
   end
 
