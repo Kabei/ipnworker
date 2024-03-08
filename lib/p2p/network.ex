@@ -152,6 +152,21 @@ defmodule Ippan.Network do
       def on_init(_), do: :ok
       def on_continue(_), do: :ok
 
+      # @impl true
+      # def handle_info({node_id, msg}, state) do
+      #   %{sharedkey: sharedkey, socket: socket} = info(node_id)
+      #   @adapter.send(socket, encode(msg, sharedkey))
+      #   {:noreply, state}
+      # end
+
+      # def handle_info(msg, state) do
+      #   for %{sharedkey: sharedkey, socket: socket} <- list() do
+      #     @adapter.send(socket, encode(msg, sharedkey))
+      #   end
+
+      #   {:noreply, state}
+      # end
+
       @impl true
       def terminate(_reason, %{bag: bag_ets, ets: ets, server: server, sup: sup}) do
         ThousandIsland.stop(server, :infinity)
@@ -179,7 +194,7 @@ defmodule Ippan.Network do
           :ets.insert(@table, {node_id, map})
         end
 
-        :ets.insert(@bag, {node_id, socket, sharedkey})
+        :ets.insert(@bag, {node_id, map})
       end
 
       @impl Network
@@ -261,13 +276,20 @@ defmodule Ippan.Network do
       @impl Network
       def disconnect(node_id, socket) do
         match = [
-          {{:"$1", :"$2", :"$3"}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
+          {{:"$1", %{socket: :"$2"}}, [{:andalso, {:==, :"$1", node_id}, {:==, :"$2", socket}}],
            [true]}
         ]
 
         :ets.select_delete(@bag, match)
-        :ets.delete(@table, node_id)
-        @adapter.close(socket)
+
+        case :ets.lookup(@bag, node_id) do
+          [] ->
+            :ets.delete(@table, node_id)
+            @adapter.close(socket)
+
+          _ ->
+            @adapter.close(socket)
+        end
       end
 
       @impl Network
@@ -287,7 +309,7 @@ defmodule Ippan.Network do
 
       @impl Network
       def info(node_id) do
-        case :ets.lookup(@table, node_id) do
+        case :ets.lookup(@bag, node_id) do
           [{_, data} | _] -> data
           _ -> nil
         end
@@ -305,7 +327,7 @@ defmodule Ippan.Network do
 
       @impl Network
       def alive?(node_id) do
-        :ets.member(@table, node_id)
+        :ets.member(@bag, node_id)
       end
 
       @impl Network
@@ -405,18 +427,18 @@ defmodule Ippan.Network do
       @impl Network
       def broadcast(message) do
         all()
-        # |> Enum.uniq_by(fn {node_id, _, _} -> node_id end)
-        |> Enum.each(fn {node_id, socket, sharedkey} ->
+        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
           @adapter.send(socket, encode(message, sharedkey))
         end)
       end
 
       @impl Network
       def broadcast(message, role) do
-        data = :ets.select(@table, [{{:_, %{role: :"$1"}}, [{:==, :"$1", role}], [:"$_"]}])
+        data = :ets.select(@bag, [{{:_, %{role: :"$1"}}, [{:==, :"$1", role}], [:"$_"]}])
 
         data
-        # |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
         |> Enum.each(fn {_, %{sharedkey: sharedkey, socket: socket}} ->
           @adapter.send(socket, encode(message, sharedkey))
         end)
@@ -424,10 +446,12 @@ defmodule Ippan.Network do
 
       @impl Network
       def broadcast_except(message, ids) do
+        # match = [{{:"$1", :_, :_}, [not: {:"=:=", :"$1", ids}], [:"$_"]}]
+        # :ets.select(@bag, match)
+
         all()
-        # |> Enum.uniq_by(fn {node_id, _, _} -> node_id end)
-        # |> Enum.each(fn {id, %{sharedkey: sharedkey, socket: socket}} ->
-        |> Enum.each(fn {id, socket, sharedkey} ->
+        |> Enum.uniq_by(fn {node_id, _} -> node_id end)
+        |> Enum.each(fn {id, %{sharedkey: sharedkey, socket: socket}} ->
           if id not in ids do
             @adapter.send(socket, encode(message, sharedkey))
           end
@@ -437,8 +461,11 @@ defmodule Ippan.Network do
       @impl Network
       def get_random_node do
         case :ets.tab2list(@table) do
-          [] -> nil
-          objects -> Enum.random(objects)
+          [] ->
+            nil
+
+          objects ->
+            Enum.random(objects)
         end
       end
 
