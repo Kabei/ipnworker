@@ -59,8 +59,8 @@ defmodule Ippan.ClusterNodes do
   def on_connect(
         node_id,
         %{
-          socket: socket,
-          sharedkey: sharedkey,
+          socket: _socket,
+          sharedkey: _sharedkey,
           hostname: _hostname,
           net_pubkey: _net_pubkey
         } =
@@ -74,7 +74,7 @@ defmodule Ippan.ClusterNodes do
       :ets.insert(@table, {node_id, map})
     end
 
-    :ets.insert(@bag, {node_id, socket, sharedkey})
+    :ets.insert(@bag, {node_id, map})
 
     if node_id == :persistent_term.get(:miner) do
       NodeSync.start_link()
