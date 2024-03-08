@@ -95,128 +95,128 @@ defmodule RoundBuilder do
     # IO.inspect("step 0")
     db_ref = :persistent_term.get(:main_conn)
 
-    if :synced == :persistent_term.get(:status, :startup) do
-      rid = :persistent_term.get(:round, -1)
-      next_id = rid + 1
+    # if :synced == :persistent_term.get(:status, :startup) do
+    #   rid = :persistent_term.get(:round, -1)
+    #   next_id = rid + 1
 
-      cond do
-        round_id > next_id ->
-          NodeSync.start_link()
+    #   cond do
+    #     round_id > next_id ->
+    #       NodeSync.start_link()
 
-        round_id == next_id ->
-          vid = :persistent_term.get(:vid)
-          balance_pid = DetsPlux.get(:balance)
-          balance_tx = DetsPlux.tx(balance_pid, :balance)
-          :persistent_term.put(:round, round_id)
+    #     round_id == next_id ->
+    vid = :persistent_term.get(:vid)
+    balance_pid = DetsPlux.get(:balance)
+    balance_tx = DetsPlux.tx(balance_pid, :balance)
+    :persistent_term.put(:round, round_id)
 
-          IO.puts("##{round.id}")
+    IO.puts("##{round.id}")
 
-          pool_pid = Process.whereis(:minerpool)
-          # IO.inspect("step 1")
-          is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
+    pool_pid = Process.whereis(:minerpool)
+    # IO.inspect("step 1")
+    is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
-          for block = %{"creator" => block_creator_id} <- blocks do
-            Task.async(fn ->
-              creator = Validator.get(block_creator_id)
+    for block = %{"creator" => block_creator_id} <- blocks do
+      Task.async(fn ->
+        creator = Validator.get(block_creator_id)
 
-              :poolboy.transaction(
-                pool_pid,
-                fn pid ->
-                  MinerWorker.mine(
-                    pid,
-                    round_id,
-                    MapUtil.to_atoms(block),
-                    hostname,
-                    creator,
-                    pg_conn
-                  )
-                end,
-                :infinity
-              )
-            end)
-          end
-          |> Task.await_many(:infinity)
-
-          # IO.inspect("step 2")
-
-          TxHandler.run_deferred_txs()
-
-          round_creator =
-            Validator.get(round_creator_id)
-
-          run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
-          run_jackpot(round, balance_pid, balance_tx, db_ref, pg_conn)
-
-          case status do
-            1 ->
-              max = EnvStore.max_failures()
-
-              if max != 0 do
-                number = Validator.incr_failure(round_creator, 1, round_id)
-
-                if number != nil and rem(number, max) == 0 do
-                  Validator.disable(round_creator, round_id)
-                end
-
-                Sqlite.sync(db_ref)
-              end
-
-            2 ->
-              Validator.delete(round_creator_id)
-              Sqlite.sync(db_ref)
-
-            _ ->
-              nil
-          end
-
-          # IO.inspect("step 3")
-          round_encode = Round.to_list(round)
-          Round.insert(round_encode)
-
-          # Save balances
-          run_save_balances(balance_tx, pg_conn)
-
-          # update stats
-          stats = Stats.new()
-          Stats.incr(stats, "blocks", block_count)
-          Stats.incr(stats, "txs", tx_count)
-          Stats.put(stats, "last_round", round_id)
-          Stats.put(stats, "last_hash", hash)
-
-          RegPay.commit(pg_conn, round_id)
-
-          RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
-          # IO.inspect("step 4")
-
-          if @history do
-            PgStore.insert_round(pg_conn, round_encode)
-            |> then(fn
-              {:ok, _} ->
-                :ok
-
-              err ->
-                IO.inspect(err)
-            end)
-          end
-
-          # Push event
-          msg = Round.to_text(round)
-          PubSub.broadcast(@pubsub, "round.new", msg)
-          PubSub.broadcast(@pubsub, "round:#{round_id}", msg)
-
-          run_maintenance(round_id, db_ref)
-
-          fun = :persistent_term.get(:last_fun, nil)
-
-          if fun do
-            :persistent_term.erase(:last_fun)
-            fun.()
-          end
-
-        true ->
-          :ok
-      end
+        :poolboy.transaction(
+          pool_pid,
+          fn pid ->
+            MinerWorker.mine(
+              pid,
+              round_id,
+              MapUtil.to_atoms(block),
+              hostname,
+              creator,
+              pg_conn
+            )
+          end,
+          :infinity
+        )
+      end)
     end
+    |> Task.await_many(:infinity)
+
+    # IO.inspect("step 2")
+
+    TxHandler.run_deferred_txs()
+
+    round_creator =
+      Validator.get(round_creator_id)
+
+    run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
+    run_jackpot(round, balance_pid, balance_tx, db_ref, pg_conn)
+
+    case status do
+      1 ->
+        max = EnvStore.max_failures()
+
+        if max != 0 do
+          number = Validator.incr_failure(round_creator, 1, round_id)
+
+          if number != nil and rem(number, max) == 0 do
+            Validator.disable(round_creator, round_id)
+          end
+
+          Sqlite.sync(db_ref)
+        end
+
+      2 ->
+        Validator.delete(round_creator_id)
+        Sqlite.sync(db_ref)
+
+      _ ->
+        nil
+    end
+
+    # IO.inspect("step 3")
+    round_encode = Round.to_list(round)
+    Round.insert(round_encode)
+
+    # Save balances
+    run_save_balances(balance_tx, pg_conn)
+
+    # update stats
+    stats = Stats.new()
+    Stats.incr(stats, "blocks", block_count)
+    Stats.incr(stats, "txs", tx_count)
+    Stats.put(stats, "last_round", round_id)
+    Stats.put(stats, "last_hash", hash)
+
+    RegPay.commit(pg_conn, round_id)
+
+    RoundCommit.sync(db_ref, tx_count, is_some_block_mine)
+    # IO.inspect("step 4")
+
+    if @history do
+      PgStore.insert_round(pg_conn, round_encode)
+      |> then(fn
+        {:ok, _} ->
+          :ok
+
+        err ->
+          IO.inspect(err)
+      end)
+    end
+
+    # Push event
+    msg = Round.to_text(round)
+    PubSub.broadcast(@pubsub, "round.new", msg)
+    PubSub.broadcast(@pubsub, "round:#{round_id}", msg)
+
+    run_maintenance(round_id, db_ref)
+
+    fun = :persistent_term.get(:last_fun, nil)
+
+    if fun do
+      :persistent_term.erase(:last_fun)
+      fun.()
+    end
+
+    #   true ->
+    #     :ok
+    # end
+    # end
   end
 
   defp run_reward(%{reward: amount}, %{owner: winner}, dets, tx, pg_conn) when amount > 0 do
