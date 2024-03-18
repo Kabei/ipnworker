@@ -1,12 +1,16 @@
 defmodule Ippan.Ecto.Snapshot do
   use Ecto.Schema
   import Ecto.Query, only: [from: 1, from: 2, order_by: 3, select: 3, where: 3]
+  require Sqlite
+  alias Ippan.DetsSup
   alias Ippan.Utils
   alias Ipnworker.Repo
   alias __MODULE__
 
   @primary_key false
   @schema_prefix "history"
+  @app Mix.Project.config()[:app]
+  @extension Application.compile_env(@app, :snap_extension, "snap")
 
   schema "snapshot" do
     field(:round_id, :integer)
@@ -37,6 +41,48 @@ defmodule Ippan.Ecto.Snapshot do
     |> sort(params)
     |> Repo.all()
     |> Enum.map(&fun(&1))
+  end
+
+  def create(round_id) do
+    filename = String.to_charlist("#{round_id}.#{@extension}")
+
+    files =
+      :persistent_term.get(:store_dir)
+      |> File.ls!()
+      |> Enum.map(fn x -> String.to_charlist(x) end)
+
+    to = :persistent_term.get(:save_dir)
+
+    :zip.create(filename, files, cwd: to)
+
+    stats = Stats.new()
+    Stats.put(stats, "last_snap", round_id)
+  end
+
+  def restore(round_id) do
+    cwd = :persistent_term.get(:store_dir)
+
+    file =
+      Path.join(:persistent_term.get(:save_dir), "#{round_id}.#{@extension}")
+      |> String.to_charlist()
+
+    :zip.extract(file, cwd: cwd)
+  end
+
+  def before_restore(db_ref) do
+    :persistent_term.put(:status, :sync)
+    Sqlite.step("delete_old_blocks")
+    Sqlite.step("delete_old_rounds")
+    MainStore.terminate()
+    Supervisor.stop(DetsSup)
+  end
+
+  def after_restore(round_id) do
+    MainStore.init(nil)
+    DetsSup.init(nil)
+    stats = Stats.new()
+    Stats.put(stats, "last_snap", round_id)
+    :persistent_term.put(:status, :synced)
   end
 
   defp filter_select(query) do

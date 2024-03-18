@@ -63,6 +63,7 @@ config :ipnworker, :max_tokens, 1_000
 config :ipnworker, :maintenance, 25_000
 config :ipnworker, :reserve, 0.3
 config :ipnworker, :max_services, 5_000
+config :ipnworker, :snap_extension, "snap"
 
 # P2P client
 config :ipnworker, :p2p_client, [
