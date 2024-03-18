@@ -234,7 +234,7 @@ defmodule Ippan.Func.Coin do
     round_id = Stats.get(stats, "last_round")
     db = DetsPlux.get(:balance)
     tx = DetsPlux.tx(db, dets.balance)
-    %{"reload.times" => times} = env
+    %{"reload.every" => times} = env
 
     key = DetsPlux.tuple(account_id, token_id)
     {_balance, map} = DetsPlux.get_cache(db, tx, key, {0, %{}})
@@ -279,7 +279,7 @@ defmodule Ippan.Func.Coin do
             expiry = Map.get(extra, "exp", 0)
             stats = Stats.new(dets.stats)
             round_id = Stats.get(stats, "last_round")
-            %{env: %{"stream.times" => interval}} = Token.get(token_id)
+            %{env: %{"stream.every" => interval}} = Token.get(token_id)
 
             cond do
               max_amount != 0 and max_amount < amount ->
