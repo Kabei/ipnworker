@@ -43,16 +43,25 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 3, token, amount})
     end
 
-    def payment(%{nonce: nonce}, from, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 100, token, amount})
+    def payment(%{id: account, nonce: nonce}, from, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), [
+        {account, nonce, to, 100, token, amount},
+        {account, nonce, from, 100, token, -amount}
+      ])
     end
 
-    def refund(%{nonce: nonce}, from, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 101, token, amount})
+    def refund(%{id: account, nonce: nonce}, from, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), [
+        {account, nonce, to, 101, token, amount},
+        {account, nonce, from, 101, token, -amount}
+      ])
     end
 
-    def fees(%{nonce: nonce}, from, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 200, token, amount})
+    def fees(%{id: account, nonce: nonce}, from, validator, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), [
+        {account, nonce, validator, 200, token, amount},
+        {account, nonce, from, 100, token, -amount}
+      ])
     end
 
     def reserve(%{nonce: nonce}, from, token, amount) do
@@ -60,23 +69,23 @@ defmodule RegPay do
     end
 
     def expired(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 202, token, -amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 202, token, -amount})
     end
 
     def drop(%{id: from, nonce: nonce}, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, nil, 303, token, -amount})
+      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 303, token, -amount})
     end
 
-    def burn(%{id: from, nonce: nonce}, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 300, token, -amount})
+    def burn(%{id: account, nonce: nonce}, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {account, nonce, to, 300, token, -amount})
     end
 
-    def lock(%{id: from, nonce: nonce}, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 301, token, -amount})
+    def lock(%{id: account, nonce: nonce}, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {account, nonce, to, 301, token, -amount})
     end
 
-    def unlock(%{id: from, nonce: nonce}, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 302, token, amount})
+    def unlock(%{id: account, nonce: nonce}, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), {account, nonce, to, 302, token, amount})
     end
 
     def reward(to, token, amount) do
@@ -87,12 +96,18 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(:payment), {nil, nil, to, 2, token, amount})
     end
 
-    def stream(%{nonce: nonce}, from, to, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, to, 400, token, -amount})
+    def stream(%{id: account, nonce: nonce}, from, to, token, amount) do
+      :ets.insert(:persistent_term.get(:payment), [
+        {account, nonce, to, 400, token, amount},
+        {account, nonce, from, 400, token, -amount}
+      ])
     end
 
-    def withdraw(%{nonce: nonce}, from, token, amount) do
-      :ets.insert(:persistent_term.get(:payment), {from, nonce, from, 401, token, amount})
+    def withdraw(%{id: account, nonce: nonce}, to, token, total_spent, received) do
+      :ets.insert(:persistent_term.get(:payment), [
+        {account, nonce, to, 401, token, received},
+        {account, nonce, account, 401, token, -total_spent}
+      ])
     end
   else
     def init, do: :ok
@@ -110,7 +125,7 @@ defmodule RegPay do
     def reward(_, _, _), do: true
     def jackpot(_, _, _), do: true
     def stream(_, _, _, _, _), do: true
-    def withdraw(_, _, _, _), do: true
+    def withdraw(_, _, _, _, _), do: true
   end
 
   def commit(nil, _), do: nil
@@ -135,43 +150,12 @@ defmodule RegPay do
                 "from" => from,
                 "nonce" => nonce,
                 "round" => round_id,
-                "to" => to,
                 "token" => token,
                 "type" => type
               }
               |> MapUtil.drop_nils()
 
-            Phoenix.PubSub.broadcast(@pubsub, "payments:#{to}", payload)
-          end
-
-          fn {from, nonce, type, token, to, amount, to2, amount2} ->
-            PgStore.insert_multi_pay(pg_conn, [
-              from,
-              nonce,
-              to,
-              round_id,
-              type,
-              token,
-              amount,
-              to2,
-              amount2
-            ])
-
-            if synced and to do
-              payload =
-                %{
-                  "amount" => amount,
-                  "from" => from,
-                  "nonce" => nonce,
-                  "round" => round_id,
-                  "to" => to,
-                  "token" => token,
-                  "type" => type
-                }
-                |> MapUtil.drop_nils()
-
-              Phoenix.PubSub.broadcast(@pubsub, "payments:#{to}", payload)
-            end
+            Phoenix.PubSub.local_broadcast(@pubsub, "payments:#{to}", payload)
           end
         end
       )

@@ -8,6 +8,7 @@ defmodule Ipnworker.Application do
 
   @impl true
   def start(_type, _args) do
+    load_env_file()
     check_branch()
     start_node()
     make_folders()
@@ -98,6 +99,27 @@ defmodule Ipnworker.Application do
 
       _ ->
         []
+    end
+  end
+
+  defp load_env_file do
+    path = System.get_env("ENV_FILE", "env_file")
+
+    if File.exists?(path) do
+      File.stream!(path, [], :line)
+      |> Enum.each(fn text ->
+        text
+        |> String.trim()
+        |> String.replace(~r/\n|\r|#.+/, "")
+        |> String.split("=", parts: 2)
+        |> case do
+          [key, value] ->
+            System.put_env(key, value)
+
+          _ ->
+            :ignored
+        end
+      end)
     end
   end
 

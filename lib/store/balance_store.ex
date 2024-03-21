@@ -348,18 +348,27 @@ defmodule BalanceStore do
             token: token
           ],
           location: :keep do
-      balance = BalanceStore.load(service, token)
+      balance = DetsPlux.tuple(account, token)
+      DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
+
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
       RegPay.stream(var!(source), account, payer, token, amount)
     end
   end
 
-  defmacro withdraw(account, token, amount) do
-    quote bind_quoted: [account: account, token: token, amount: amount], location: :keep do
+  defmacro withdraw(service_id, account, token, total_spent, received) do
+    quote bind_quoted: [
+            account: account,
+            service: service_id,
+            token: token,
+            spent: total_spent,
+            received: received
+          ],
+          location: :keep do
       balance = DetsPlux.tuple(account, token)
       DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
-      DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.withdraw(var!(source), account, token, amount)
+      DetsPlux.update_counter(var!(tx), balance, {2, received})
+      RegPay.withdraw(var!(source), service, token, spent, received)
     end
   end
 

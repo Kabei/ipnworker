@@ -93,7 +93,7 @@ defmodule MinerWorker do
         if status > 0 do
           # delete validator
           Validator.delete(creator_id)
-          PubSub.broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
+          PubSub.local_broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
           b = Block.cancel(block, round_id, count, 1)
           :done = Block.insert(Block.to_list(b))
         end
@@ -119,8 +119,8 @@ defmodule MinerWorker do
 
       # Push event
       msg = Block.to_text(block)
-      PubSub.broadcast(@pubsub, "block.new", msg)
-      PubSub.broadcast(@pubsub, "block:#{block_id}", msg)
+      PubSub.local_broadcast(@pubsub, "block.new", msg)
+      PubSub.local_broadcast(@pubsub, "block:#{block_id}", msg)
     end
   end
 
@@ -153,7 +153,7 @@ defmodule MinerWorker do
         end
 
         if @notify and synced and type != 307 do
-          PubSub.broadcast(@pubsub, "payments:#{from}", %{
+          PubSub.local_broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
             "from" => from,
@@ -176,7 +176,7 @@ defmodule MinerWorker do
         status = tx_status(result)
 
         if @notify and synced and type != 307 do
-          PubSub.broadcast(@pubsub, "payments:#{from}", %{
+          PubSub.local_broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
             "from" => from,
@@ -223,7 +223,7 @@ defmodule MinerWorker do
         status = tx_status(result)
 
         if @notify and synced and type != 307 do
-          PubSub.broadcast(@pubsub, "payments:#{from}", %{
+          PubSub.local_broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
             "from" => from,

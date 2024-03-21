@@ -49,16 +49,24 @@ defmodule Ippan.Ecto.SubPay do
       id: sp.id,
       payer: sp.payer,
       token: sp.token,
+      every: sp.every,
       extra: sp.extra,
+      spent: sp.spent,
+      maxAmount: sp.maxAmount,
+      status: sp.status,
       created_at: sp.created_at,
-      last_round: sp.last_round,
+      last_round: sp.lastPay,
       name: s.name,
       image: s.image
     })
   end
 
   defp filter_select(query, _) do
-    select(query, [sp], map(sp, ~w(id payer token extra created_at last_round)a))
+    select(
+      query,
+      [sp],
+      map(sp, ~w(id payer token lastPay every spent maxAmount extra created_at)a)
+    )
   end
 
   defp filter_search(query, %{"q" => q}) do

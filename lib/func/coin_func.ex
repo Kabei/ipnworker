@@ -129,14 +129,13 @@ defmodule Ippan.Func.Coin do
     |> BalanceTrace.output()
   end
 
-  def refund(%{id: account_id}, hash16)
-      when byte_size(hash16) == 64 do
+  def refund(%{id: account_id}, sender, nonce)
+      when is_integer(nonce) and nonce >= 0 do
     db_ref = :persistent_term.get(:main_conn)
-    hash = Base.decode16!(hash16, case: :mixed)
 
-    case Sqlite.exists?("exists_refund", [hash, account_id]) do
+    case Sqlite.exists?("exists_refund", [sender, nonce, account_id]) do
       false ->
-        raise IppanError, "Hash refund not exists"
+        raise IppanError, "Transaction does not exists"
 
       true ->
         :ok
@@ -242,7 +241,7 @@ defmodule Ippan.Func.Coin do
     req_time = last_reload + times
 
     if last_reload > 0 and round_id < req_time,
-      do: raise(IppanError, "It's already recharged. Wait for #{req_time}")
+      do: raise(IppanError, "It's already recharged. Wait for Round ##{req_time}")
 
     if Map.get(env, "reload.auth") == true and Map.get(map, "auth") == false,
       do: raise(IppanError, "Unauthorized account")
@@ -259,45 +258,6 @@ defmodule Ippan.Func.Coin do
     DetsPlux.update_element(tx, key, 3, Map.put(map, "lastReload", round_id))
 
     ret
-  end
-
-  def stream(%{id: account_id, dets: dets}, service_id, payer, token_id, amount)
-      when amount > 0 do
-    db_ref = :persistent_term.get(:main_conn)
-
-    case PayService.owner?(db_ref, service_id, account_id) do
-      false ->
-        raise IppanError, "Account not authorized"
-
-      true ->
-        case SubPay.get(db_ref, service_id, payer, token_id) do
-          nil ->
-            raise IppanError, "Payment not authorized"
-
-          %{extra: extra, last_round: last_round} ->
-            max_amount = Map.get(extra, "max_amount", 0)
-            expiry = Map.get(extra, "exp", 0)
-            stats = Stats.new(dets.stats)
-            round_id = Stats.get(stats, "last_round")
-            %{env: %{"stream.every" => interval}} = Token.get(token_id)
-
-            cond do
-              max_amount != 0 and max_amount < amount ->
-                raise IppanError, "Exceeded max amount"
-
-              expiry != 0 and expiry < round_id ->
-                raise IppanError, "Subscription has expired"
-
-              last_round + interval > round_id ->
-                raise IppanError, "Paystream already used"
-
-              true ->
-                BalanceTrace.new(payer, dets.balance)
-                |> BalanceTrace.requires!(token_id, amount)
-                |> BalanceTrace.output()
-            end
-        end
-    end
   end
 
   def auth(

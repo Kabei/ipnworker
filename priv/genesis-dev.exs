@@ -100,8 +100,7 @@ owner = "@ippan"
         "reload.amount" => 3125,
         "reload.every" => 720,
         "reload.expiry" => 103680,
-        "service.tax" => 0.01,
-        "stream.every" => 12
+        "service.tax" => 0.01
       }
     }
   ],

@@ -23,8 +23,6 @@ defmodule Ipnworker.MixProject do
     if System.otp_release() |> String.to_integer() < @min_otp,
       do: raise(RuntimeError, "OTP invalid version. Required minimum v#{@min_otp}")
 
-    load_env_file()
-
     [
       extra_applications: [:crypto, :syntax_tools, :logger],
       mod: {Ipnworker.Application, []}
@@ -61,26 +59,5 @@ defmodule Ipnworker.MixProject do
       {:ntrukem, git: "https://kabei@github.com/kabei/ntrukem.git", branch: "master"},
       {:fast64, git: "https://kabei@github.com/kabei/fast64_elixir.git", branch: "master"}
     ]
-  end
-
-  defp load_env_file do
-    path = System.get_env("ENV_FILE", "env_file")
-
-    if File.exists?(path) do
-      File.stream!(path, [], :line)
-      |> Enum.each(fn text ->
-        text
-        |> String.trim()
-        |> String.replace(~r/\n|\r|#.+/, "")
-        |> String.split("=", parts: 2)
-        |> case do
-          [key, value] ->
-            System.put_env(key, value)
-
-          _ ->
-            :ignored
-        end
-      end)
-    end
   end
 end

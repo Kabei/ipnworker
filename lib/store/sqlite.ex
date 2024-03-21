@@ -260,7 +260,16 @@ defmodule Sqlite do
 
   def prepare_statements(db_ref, statements, prefix) do
     Enum.each(statements, fn {name, sql} ->
-      {:ok, statement} = Sqlite3NIF.prepare(db_ref, sql)
+      {:ok, statement} =
+        case Sqlite3NIF.prepare(db_ref, sql) do
+          {:error, msg} ->
+            IO.puts(sql)
+            raise MatchError, msg
+
+          result ->
+            result
+        end
+
       :persistent_term.put({prefix, name}, statement)
     end)
   end
@@ -291,6 +300,7 @@ defmodule Sqlite do
     Sqlite3NIF.execute(db_ref, ~c"PRAGMA temp_store = memory")
     Sqlite3NIF.execute(db_ref, ~c"PRAGMA mmap_size = 30000000000")
     Sqlite3NIF.execute(db_ref, ~c"PRAGMA case_sensitive_like = ON")
+    # Sqlite3NIF.execute(db_ref, ~c"PRAGMA journal_size_limit = 6144000")
   end
 
   defp setup_ro(db_ref) do
