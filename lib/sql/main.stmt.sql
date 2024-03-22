@@ -195,11 +195,11 @@ DELETE FROM assets.refund WHERE sender = ?1 AND nonce = ?2;
 DELETE FROM assets.refund WHERE expiry_in < ?1;
 
 
---name: insert_jackpot
-INSERT INTO blockchain.jackpot VALUES(?1,?2,?3);
+-- --name: insert_jackpot
+-- INSERT INTO blockchain.jackpot VALUES(?1,?2,?3);
 
---name: get_jackpot
-SELECT winner, amount FROM blockchain.jackpot WHERE round_id=? LIMIT 1;
+-- --name: get_jackpot
+-- SELECT winner, amount FROM blockchain.jackpot WHERE round_id=? LIMIT 1;
 
 
 --name: insert_paysrv
