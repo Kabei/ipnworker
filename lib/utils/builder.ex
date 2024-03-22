@@ -813,15 +813,16 @@ defmodule Builder do
     {Client.cont(client), body, sig}
   end
 
-  # service_subscribe(client, "s-ippan", "XPN", %{"maxAmount" => 1500, "exp" => 1500000})
+  # service_subscribe(client, "s-ippan", "XPN", 18000, %{"maxAmount" => 1500, "exp" => 1500000})
   def service_subscribe(
         client = %Client{id: account_id, nonce: nonce},
         service_id,
         token_id,
+        every,
         extra
       ) do
     body =
-      [610, nonce, account_id, service_id, token_id, extra]
+      [610, nonce, account_id, service_id, token_id, every, extra]
       |> encode_fun!()
 
     hash = hash_fun(body)
