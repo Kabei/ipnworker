@@ -187,7 +187,7 @@ defmodule Ippan.Func.Coin do
     end
   end
 
-  def burn(%{id: account_id, dets: dets}, token_id, amount)
+  def drop(%{id: account_id, dets: dets}, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
     token = Token.get(token_id)
