@@ -65,6 +65,9 @@ defmodule Ippan.Func.Account do
     %{"vid" => vid, "fa" => ofa, "fb" => ofb} = account_map
 
     cond do
+      not Match.validator?(validator_id) ->
+        raise IppanError, "Invalid validator ID"
+
       validator_id == vid and ofa == fa and ofb == fb ->
         raise IppanError, "Already subscribed"
 

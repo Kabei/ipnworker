@@ -76,6 +76,7 @@ defmodule PgStore do
         restart(pid)
 
       error ->
+        IO.inspect(error)
         error
     end
   end
@@ -115,10 +116,14 @@ defmodule PgStore do
     )
   end
 
-  def insert_round(conn, params) do
+  def insert_round(conn, round_encode) do
+    # Remove Blocks attribute from round_encode
     Postgrex.query(
       conn,
-      query_parse("EXECUTE insert_round($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)", params),
+      query_parse(
+        "EXECUTE insert_round($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
+        List.delete_at(round_encode, -2)
+      ),
       []
     )
   end

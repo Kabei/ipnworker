@@ -49,7 +49,7 @@ defmodule Ipnworker.Application do
     name = System.get_env("NAME") || raise IppanStartUpError, "variable NAME is missing"
     miner = System.get_env("MINER") || raise IppanStartUpError, "variable MINER is missing"
 
-    :persistent_term.put(:vid, :erlang.binary_to_integer(vid))
+    :persistent_term.put(:vid, vid)
     :persistent_term.put(:name, name)
     :persistent_term.put(:miner, miner)
     :persistent_term.put(:status, :startup)

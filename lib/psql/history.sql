@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "id" NUMERIC PRIMARY KEY NOT NULL,
   "hash" BYTEA,
   "prev" BYTEA,
-  "creator" BIGINT,
+  "creator" TEXT,
   "signature" BYTEA,
   "reward" NUMERIC,
   "count" BIGINT,
@@ -12,13 +12,12 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "size" BIGINT,
   "status" INTEGER,
   "timestamp" BIGINT,
-  "blocks" BYTEA,
   "extras" BYTEA
 );
 
 CREATE TABLE IF NOT EXISTS history.jackpot(
   "round_id" NUMERIC NOT NULL,
-  "winner" BYTEA NOT NULL,
+  "winner" TEXT NOT NULL,
   "amount" NUMERIC,
   PRIMARY KEY("round_id", "winner")
 );
@@ -31,7 +30,7 @@ CREATE TABLE IF NOT EXISTS history.snapshot(
 
 CREATE TABLE IF NOT EXISTS history.blocks(
   "id" NUMERIC PRIMARY KEY,
-  "creator" BIGINT NOT NULL,
+  "creator" TEXT NOT NULL,
   "height" BIGINT NOT NULL,
   "hash" BYTEA NOT NULL,
   "prev" BYTEA,
@@ -49,7 +48,7 @@ CREATE TABLE IF NOT EXISTS history.blocks(
 CREATE TABLE IF NOT EXISTS history.txs(
   "from" TEXT,
   "nonce" NUMERIC,
-  "ix" integer,
+  "ix" INTEGER,
   "block" BIGINT,
   "hash" BYTEA NOT NULL,
   "type" INTEGER,
