@@ -39,38 +39,53 @@ defmodule Ipnworker.NodeSync do
     builder_pid = Process.whereis(RoundBuilder)
     stats = Stats.cache()
     local_round_id = Stats.get(stats, "last_round", -1)
+    my_last_snap = Snapshot.last()
 
     if is_nil(node) do
       IO.puts("NodeSync no init")
       {:stop, :normal, state}
     else
-      {:ok, %{"id" => remote_round_id}} =
+      {:ok, %{"id" => remote_round_id, "snap" => last_snap}} =
         ClusterNodes.call(node.id, "last_round", nil, @opts)
 
-      diff = remote_round_id - local_round_id
+      cond do
+        last_snap.id > my_last_snap.id ->
+          case Snapshot.local_download(node.hostname, last_snap) do
+            :ok ->
+              Snapshot.restore(last_snap)
 
-      if diff > 0 do
-        init_round = max(local_round_id, 0)
-        IO.puts("NodeSync starts from ##{init_round} to #{remote_round_id}")
-        :persistent_term.put(:status, :sync)
-        :persistent_term.put(:node_sync, self())
-        :ets.new(:sync, @ets_opts)
+            :error ->
+              Logger.warning("Error snapshot downloading or verification hash")
+          end
 
-        {:noreply,
-         %{
-           builder: builder_pid,
-           db_ref: db_ref,
-           node: node.id,
-           hostname: node.hostname,
-           offset: 0,
-           queue: :ets.whereis(:sync),
-           round: init_round,
-           starts: local_round_id + 1,
-           target: remote_round_id
-         }, {:continue, :fetch}}
-      else
-        IO.inspect("No Sync")
-        {:stop, :normal, state}
+          {:stop, :normal, state}
+
+        true ->
+          diff = remote_round_id - local_round_id
+
+          if diff > 0 do
+            init_round = max(local_round_id, 0)
+            IO.puts("NodeSync starts from ##{init_round} to #{remote_round_id}")
+            :persistent_term.put(:status, :sync)
+            :persistent_term.put(:node_sync, self())
+            :ets.new(:sync, @ets_opts)
+
+            {:noreply,
+             %{
+               builder: builder_pid,
+               db_ref: db_ref,
+               node: node.id,
+               hostname: node.hostname,
+               offset: 0,
+               queue: :ets.whereis(:sync),
+               round: init_round,
+               starts: local_round_id + 1,
+               target: remote_round_id
+             }, {:continue, :fetch}}
+          else
+            IO.inspect("No Sync")
+            {:stop, :normal, state}
+          end
       end
     end
   end

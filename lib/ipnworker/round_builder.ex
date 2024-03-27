@@ -13,6 +13,7 @@ defmodule RoundBuilder do
   @pubsub :pubsub
   @history Application.compile_env(@app, :history, false)
   @maintenance Application.compile_env(@app, :maintenance)
+  @snap_round Application.compile_env(@app, :snap_round, 350_000)
 
   def start_link do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
@@ -271,12 +272,21 @@ defmodule RoundBuilder do
 
   defp run_maintenance(0, _), do: nil
 
-  defp run_maintenance(round_id, db_ref) do
-    if rem(round_id, @maintenance) == 0 do
-      Sqlite.step("expiry_refund", [round_id])
-      Sqlite.step("expiry_domain", [round_id])
-    end
+  defp run_maintenance(round_id, db_ref) when rem(round_id, @maintenance) == 0 do
+    Sqlite.step("expiry_refund", [round_id])
+    Sqlite.step("expiry_domain", [round_id])
   end
+
+  defp run_maintenance(round_id, _db_ref) when rem(round_id, @snap_round) == 0 do
+    fun = fn ->
+      Snapshot.create(round_id)
+      Snapshot.restore(round_id)
+    end
+
+    :persistent_term.put(:last_fun, fun)
+  end
+
+  defp run_maintenance(_, _), do: nil
 
   defp node_syncing?(round) do
     case :persistent_term.get(:node_sync, nil) do
