@@ -8,7 +8,7 @@ defmodule Ippan.Ecto.Node do
   require Logger
 
   @table "node"
-  @select ~w(id hostname port class pubkey net_pubkey avatar created_at)a
+  @select ~w(id hostname port class pubkey net_pubkey image created_at)a
 
   def one(id) do
     db_ref = :persistent_term.get(:local_conn)
@@ -25,7 +25,7 @@ defmodule Ippan.Ecto.Node do
       |> MapUtil.validate_hostname("hostname")
       |> MapUtil.validate_range("port", 1000..65535)
       |> MapUtil.validate_bytes_range("id", 0..255)
-      |> MapUtil.validate_bytes_range("avatar", 0..255)
+      |> MapUtil.validate_bytes_range("image", 0..255)
       |> MapUtil.validate_text("class")
       |> Map.put(:created_at, timestamp)
       |> Map.put(:updated_at, timestamp)

@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Domain do
   require Domain
 
   @table "domain"
-  @select ~w(name owner email avatar records created_at renewed_at updated_at)a
+  @select ~w(name owner email image records created_at renewed_at updated_at)a
 
   def one(name) do
     db_ref = :persistent_term.get(:main_ro)

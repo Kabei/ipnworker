@@ -47,7 +47,7 @@ defmodule Ippan.Func.Token do
         price = EnvStore.token_price()
 
         MapUtil.to_atoms(map_filter)
-        |> MapUtil.validate_url(:avatar)
+        |> MapUtil.validate_url(:image)
         |> MapUtil.validate_any(:opts, Token.props())
 
         env = Map.get(map_filter, :env)
@@ -94,7 +94,7 @@ defmodule Ippan.Func.Token do
 
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_length_range(:name, 1..100)
-        |> MapUtil.validate_url(:avatar)
+        |> MapUtil.validate_url(:image)
         |> MapUtil.validate_account(:owner)
 
         BalanceTrace.output(bt)

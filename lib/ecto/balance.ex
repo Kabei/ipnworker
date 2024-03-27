@@ -18,7 +18,7 @@ defmodule Ippan.Ecto.Balance do
   end
 
   @select ~w(token balance map)a
-  @token_fields ~w(avatar env decimal props symbol)a
+  @token_fields ~w(image env decimal props symbol)a
 
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
 

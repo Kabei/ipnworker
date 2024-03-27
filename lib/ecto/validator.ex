@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Validator do
   require Validator
 
   @table "validator"
-  @select ~w(id hostname port name owner class pubkey net_pubkey avatar fa fb active failures env created_at updated_at)a
+  @select ~w(id hostname port name owner class pubkey net_pubkey image fa fb active failures env created_at updated_at)a
 
   def me do
     db_ref = :persistent_term.get(:main_ro)

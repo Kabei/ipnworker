@@ -40,7 +40,7 @@ defmodule Ippan.Func.Domain do
 
       true ->
         MapUtil.to_atoms(map_filter)
-        |> MapUtil.validate_url(:avatar)
+        |> MapUtil.validate_url(:image)
         |> MapUtil.validate_email(:email)
 
         amount = Domain.price(name, days)
@@ -78,7 +78,7 @@ defmodule Ippan.Func.Domain do
       true ->
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_account(:owner)
-        |> MapUtil.validate_url(:avatar)
+        |> MapUtil.validate_url(:image)
         |> MapUtil.validate_email(:email)
 
         fees = Utils.calc_fees(fa, fb, size)

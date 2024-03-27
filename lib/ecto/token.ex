@@ -7,7 +7,7 @@ defmodule Ippan.Ecto.Token do
   require Token
 
   @table "token"
-  @select ~w(id owner name avatar decimal symbol max_supply props env created_at updated_at)a
+  @select ~w(id owner name image decimal symbol max_supply props env created_at updated_at)a
 
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
