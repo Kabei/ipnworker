@@ -46,7 +46,7 @@ defmodule Ipnworker.NodeSync do
       {:stop, :normal, state}
     else
       {:ok, %{"id" => remote_round_id, "snap" => last_snap}} =
-        ClusterNodes.call(node.id, "last_round", nil, @opts)
+        ClusterNodes.call(node.id, "height", nil, @opts)
 
       cond do
         last_snap.id > my_last_snap.id ->
