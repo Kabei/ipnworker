@@ -233,7 +233,7 @@ defmodule RoundBuilder do
   defp run_reward(_, _creator, _, _, _), do: :ok
 
   defp run_jackpot(
-         %{id: round_id, extra: %{jackpot: {winner, amount}}},
+         %{id: round_id, extra: %{"jackpot" => {winner, amount}}},
          dets,
          tx,
          pg_conn
