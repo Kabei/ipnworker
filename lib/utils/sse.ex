@@ -19,7 +19,6 @@ defmodule SSE do
     Process.flag(:trap_exit, true)
 
     {_, adapter} = conn.adapter
-    IO.inspect(adapter)
     socket = adapter.socket.socket
     transport = adapter.socket.transport_module
 
@@ -57,6 +56,7 @@ defmodule SSE do
     Process.flag(:trap_exit, true)
 
     {_, adapter} = conn.adapter
+    IO.inspect(adapter)
     socket = adapter.socket.socket
     transport = adapter.socket.transport_module
 
