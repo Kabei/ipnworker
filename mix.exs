@@ -48,7 +48,7 @@ defmodule Ipnworker.MixProject do
       {:postgrex, "~> 0.17.3"},
       {:ecto, "~> 3.10"},
       {:ecto_sql, "~> 3.10"},
-      {:bandit, "~> 1.2"},
+      {:bandit, "~> 1.4"},
       {:dnslib, git: "https://github.com/lateio/dnslib", branch: "master", override: true},
       {:phoenix_pubsub, "~> 2.1"},
       {:cafezinho, "~> 0.4.0"},
