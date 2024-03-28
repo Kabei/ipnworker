@@ -39,7 +39,7 @@ defmodule Ipnworker.NodeSync do
     builder_pid = Process.whereis(RoundBuilder)
     stats = Stats.cache()
     local_round_id = Stats.get(stats, "last_round", -1)
-    my_last_snap = Snapshot.last()
+    my_last_snap = Snapshot.last(stats)
 
     if is_nil(node) do
       IO.puts("NodeSync no init")
@@ -52,6 +52,8 @@ defmodule Ipnworker.NodeSync do
 
       cond do
         last_snap.id > my_last_snap.id ->
+          Logger.warning("Snapshot downloading: ##{last_snap.id}")
+
           case Snapshot.local_download(node.hostname, last_snap) do
             :ok ->
               Snapshot.restore(last_snap.id)
