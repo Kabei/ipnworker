@@ -159,7 +159,7 @@ defmodule Ippan.Func.Coin do
 
       true ->
         BalanceTrace.new(to, dets.balance)
-        |> BalanceTrace.requires!(@token, amount)
+        |> BalanceTrace.requires!(token_id, amount)
         |> BalanceTrace.output()
     end
   end

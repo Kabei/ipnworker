@@ -21,6 +21,15 @@ defmodule BalanceTrace do
     bt
   end
 
+  def exists!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token) do
+    key = DetsPlux.tuple(from, token)
+
+    unless DetsPlux.member_tx?(db, tx, key),
+      do: raise(IppanError, "Account balance does not exists")
+
+    bt
+  end
+
   def requires!(bt = %BalanceTrace{db: db, from: from, tx: tx}, token, value) do
     key = DetsPlux.tuple(from, token)
     DetsPlux.get_cache(db, tx, key, {0, %{}})
