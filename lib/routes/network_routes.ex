@@ -60,7 +60,7 @@ defmodule Ipnworker.NetworkRoutes do
       "hash" => Utils.encode16(hash),
       "id" => id,
       "jackpot" => TokenSupply.get(jackpot),
-      "snap" => Snapshot.last(stats),
+      "snapshot" => Snapshot.last(stats),
       "name" => @name,
       "services" => Stats.get(stats, "services"),
       "supply" => TokenSupply.get(supply),
