@@ -12,7 +12,7 @@ defmodule Ippan.Ecto.Round do
     field(:id, :decimal)
     field(:hash, :binary)
     field(:prev, :binary)
-    field(:creator, :integer)
+    field(:creator, :string)
     field(:signature, :binary)
     field(:reward, :decimal)
     field(:count, :integer)

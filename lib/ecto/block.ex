@@ -10,7 +10,7 @@ defmodule Ippan.Ecto.Block do
 
   schema "blocks" do
     field(:id, :decimal)
-    field(:creator, :integer)
+    field(:creator, :string)
     field(:height, :integer)
     field(:hash, :binary)
     field(:prev, :binary)
