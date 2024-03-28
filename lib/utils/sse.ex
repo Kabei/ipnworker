@@ -53,7 +53,6 @@ defmodule SSE do
     Process.flag(:trap_exit, true)
 
     {_, %{transport: %{socket: %{socket: socket, transport_module: transport}}}} = conn.adapter
-    IO.inspect(conn.adapter)
     transport.controlling_process(socket, self())
     transport.setopts(socket, [{:active, true}])
 
