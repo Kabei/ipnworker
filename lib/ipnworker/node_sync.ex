@@ -48,11 +48,13 @@ defmodule Ipnworker.NodeSync do
       {:ok, %{"id" => remote_round_id, "snap" => last_snap}} =
         ClusterNodes.call(node.id, "height", nil, @opts)
 
+      last_snap = Snapshot.to_map(last_snap)
+
       cond do
         last_snap.id > my_last_snap.id ->
           case Snapshot.local_download(node.hostname, last_snap) do
             :ok ->
-              Snapshot.restore(last_snap)
+              Snapshot.restore(last_snap.id)
 
             :error ->
               Logger.warning("Error snapshot downloading or verification hash")
