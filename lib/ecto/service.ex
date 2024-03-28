@@ -5,7 +5,7 @@ defmodule Ippan.Ecto.Service do
   require Sqlite
 
   @table "serv"
-  @select ~w(id name owner image descrip subs extra status created_at updated_at)a
+  @select ~w(id name owner image descrip extra subs status created_at updated_at)a
 
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
