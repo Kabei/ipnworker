@@ -147,7 +147,6 @@ defmodule RoundBuilder do
 
     run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
     run_jackpot(round, balance_pid, balance_tx, pg_conn)
-    IO.inspect(round)
 
     case status do
       1 ->
