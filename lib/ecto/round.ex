@@ -21,7 +21,7 @@ defmodule Ippan.Ecto.Round do
     field(:status, :integer)
     field(:timestamp, :integer)
     field(:blocks, :binary)
-    field(:extras, :binary)
+    field(:extra, :binary)
   end
 
   @select ~w(id hash prev creator signature reward count tx_count size status timestamp)a

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "size" BIGINT,
   "status" INTEGER,
   "timestamp" BIGINT,
-  "extras" BYTEA
+  "extra" BYTEA
 );
 
 CREATE TABLE IF NOT EXISTS history.jackpot(
