@@ -215,7 +215,7 @@ defmodule Ippan.TxHandler do
       case return do
         :error ->
           [
-            "error",
+            "err",
             var!(hash),
             var!(type),
             var!(from),
