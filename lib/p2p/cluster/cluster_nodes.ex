@@ -77,7 +77,7 @@ defmodule Ippan.ClusterNodes do
     :ets.insert(@bag, {node_id, map})
 
     if node_id == :persistent_term.get(:miner) do
-      NodeSync.start_link()
+      # NodeSync.start_link()
     end
   end
 
