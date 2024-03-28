@@ -148,6 +148,7 @@ defmodule RegPay do
               %{
                 "amount" => amount,
                 "from" => from,
+                "to" => to,
                 "nonce" => nonce,
                 "round" => round_id,
                 "token" => token,
