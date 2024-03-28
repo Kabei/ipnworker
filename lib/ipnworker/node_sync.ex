@@ -45,7 +45,7 @@ defmodule Ipnworker.NodeSync do
       IO.puts("NodeSync no init")
       {:stop, :normal, state}
     else
-      {:ok, %{"id" => remote_round_id, "snap" => last_snap}} =
+      {:ok, %{"id" => remote_round_id, "snapshot" => last_snap}} =
         ClusterNodes.call(node.id, "height", nil, @opts)
 
       last_snap = Snapshot.to_map(last_snap)
