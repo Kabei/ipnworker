@@ -107,6 +107,8 @@ defmodule Ipnworker.NodeSync do
           queue: ets_queue
         }
       ) do
+    d = :persistent_term.get(:local_conn)
+
     if round_id < target_id do
       {:ok, new_rounds} =
         ClusterNodes.call(node_id, "get_rounds", %{

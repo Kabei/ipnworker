@@ -104,12 +104,6 @@ defmodule Ippan.ClusterNodes do
 
   @impl Network
   def handle_message("validator.update", %{"id" => _vid, "args" => _args}, _state) do
-    # map = MapUtil.to_atoms(args)
-
-    # if :persistent_term.get(:vid) == vid do
-    #   validator = :persistent_term.get(:validator)
-    #   Validator.self(Map.merge(validator, map))
-    # end
     :ok
   end
 
