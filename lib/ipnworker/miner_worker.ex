@@ -152,7 +152,7 @@ defmodule MinerWorker do
           ])
         end
 
-        if @notify and synced and type != 307 do
+        if @notify and synced and type != 308 do
           PubSub.local_broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
@@ -175,7 +175,7 @@ defmodule MinerWorker do
 
         status = tx_status(result)
 
-        if @notify and synced and type != 307 do
+        if @notify and synced and type != 308 do
           PubSub.local_broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
@@ -222,7 +222,7 @@ defmodule MinerWorker do
 
         status = tx_status(result)
 
-        if @notify and synced and type != 307 do
+        if @notify and synced and type != 308 do
           PubSub.local_broadcast(@pubsub, "payments:#{from}", %{
             "hash" => Utils.encode16(hash),
             "nonce" => nonce,
