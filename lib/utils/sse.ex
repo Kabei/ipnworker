@@ -18,7 +18,7 @@ defmodule SSE do
     PubSub.subscribe(pubsub, topic)
     Process.flag(:trap_exit, true)
 
-    {_, %{transport: %{socket: socket, transport_module: transport}}} = conn.adapter
+    {_, %{transport: %{socket: %{socket: socket, transport_module: transport}}}} = conn.adapter
     transport.controlling_process(socket, self())
     transport.setopts(socket, [{:active, true}])
 
@@ -52,7 +52,7 @@ defmodule SSE do
 
     Process.flag(:trap_exit, true)
 
-    {_, %{transport: %{socket: socket, transport_module: transport}}} = conn.adapter
+    {_, %{transport: %{socket: %{socket: socket, transport_module: transport}}}} = conn.adapter
     IO.inspect(conn.adapter)
     transport.controlling_process(socket, self())
     transport.setopts(socket, [{:active, true}])
