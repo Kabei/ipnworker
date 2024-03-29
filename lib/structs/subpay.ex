@@ -48,14 +48,12 @@ defmodule SubPay do
   end
 
   def to_map([id, payer, token, lastPay, div, every, spent, extra, status, created_at]) do
-    extra = Jason.decode!(extra)
-
     %{
       id: id,
       payer: payer,
       token: token,
       created_at: created_at,
-      extra: extra,
+      extra: Jason.decode!(extra),
       lastPay: lastPay,
       div: div,
       every: every,

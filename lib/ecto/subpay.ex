@@ -52,10 +52,9 @@ defmodule Ippan.Ecto.SubPay do
       every: sp.every,
       extra: sp.extra,
       spent: sp.spent,
-      maxAmount: sp.maxAmount,
       status: sp.status,
       created_at: sp.created_at,
-      last_round: sp.lastPay,
+      lastPay: sp.lastPay,
       name: s.name,
       image: s.image
     })
@@ -65,7 +64,7 @@ defmodule Ippan.Ecto.SubPay do
     select(
       query,
       [sp],
-      map(sp, ~w(id payer token lastPay every spent maxAmount extra created_at)a)
+      map(sp, ~w(id payer token lastPay every spent extra created_at)a)
     )
   end
 
@@ -106,31 +105,32 @@ defmodule Ippan.Ecto.SubPay do
   defp sort(query, %{"sort" => "lessActive"}), do: order_by(query, [sp], asc: sp.last_round)
   defp sort(query, _), do: order_by(query, [sp], desc: sp.created_at)
 
-  defp to_map([id, payer, token, extra, created_at, last_round]) do
-    extra = :erlang.element(1, CBOR.Decoder.decode(extra))
-
+  defp to_map([id, payer, token, lastPay, every, spent, extra, created_at]) do
     %{
       id: id,
       payer: payer,
       token: token,
       created_at: created_at,
-      extra: extra,
-      last_round: last_round
+      spent: spent,
+      every: every,
+      extra: Jason.decode!(extra),
+      lastPay: lastPay
     }
   end
 
-  defp to_map([id, payer, token, extra, created_at, last_round, name, image]) do
-    extra = :erlang.element(1, CBOR.Decoder.decode(extra))
-
+  defp to_map([id, payer, token, every, extra, spent, status, created_at, lastPay, name, image]) do
     %{
       id: id,
       payer: payer,
       token: token,
       name: name,
       image: image,
+      spent: spent,
+      every: every,
+      status: status,
       created_at: created_at,
-      extra: extra,
-      last_round: last_round
+      extra: Jason.decode!(extra),
+      lastPay: lastPay
     }
   end
 end
