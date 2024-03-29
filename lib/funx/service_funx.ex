@@ -162,7 +162,6 @@ defmodule Ippan.Funx.Service do
         service_id,
         token_id,
         every,
-        maxAmount,
         extra
       ) do
     db = DetsPlux.get(:balance)
@@ -183,7 +182,6 @@ defmodule Ippan.Funx.Service do
           token_id,
           round_id,
           every,
-          maxAmount,
           extra
         )
 
