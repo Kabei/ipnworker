@@ -52,30 +52,24 @@ defmodule Ippan.Funx.Service do
     fees = Utils.calc_fees(fa, fb, size)
     db_ref = :persistent_term.get(:main_conn)
 
-    case PayService.exists?(db_ref, id) do
-      false ->
+    case BalanceStore.pay_fee(account_id, vOwner, fees) do
+      :error ->
         :error
 
-      true ->
-        case BalanceStore.pay_fee(account_id, vOwner, fees) do
-          :error ->
-            :error
+      _ ->
+        fields =
+          MapUtil.transform(map, "extra", fn val ->
+            case PayService.get(db_ref, id) do
+              nil ->
+                Jason.encode!(val)
 
-          _ ->
-            fields =
-              MapUtil.transform(map, "extra", fn val ->
-                case PayService.get(db_ref, id) do
-                  nil ->
-                    Jason.encode!(val)
+              %{extra: extra} ->
+                Map.merge(extra, val) |> Jason.encode!()
+            end
+          end)
+          |> Map.put("updated_at", round_id)
 
-                  %{extra: extra} ->
-                    Map.merge(extra, val) |> Jason.encode!()
-                end
-              end)
-              |> Map.put("updated_at", round_id)
-
-            PayService.update(db_ref, fields, id)
-        end
+        PayService.update(db_ref, fields, id)
     end
   end
 
