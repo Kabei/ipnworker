@@ -21,7 +21,7 @@ defmodule Ippan.Ecto.Node do
 
     result =
       params
-      |> MapUtil.require(~w(id hostname port class))
+      |> MapUtil.only(~w(id hostname port class))
       |> MapUtil.validate_hostname("hostname")
       |> MapUtil.validate_range("port", 1000..65535)
       |> MapUtil.validate_bytes_range("id", 0..255)

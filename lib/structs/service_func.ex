@@ -51,9 +51,10 @@ defmodule Ippan.Func.Service do
 
       true ->
         extra
-        |> MapUtil.only(~w(only_auth min_amount))
-        |> MapUtil.validate_integer("min_amount")
-        |> MapUtil.validate_value("min_amount", :gt, 0)
+        |> MapUtil.only(~w(onlyAuth minAmount))
+        |> MapUtil.validate_integer("minAmount")
+        |> MapUtil.validate_value("minAmount", :gt, 0)
+        |> MapUtil.validate_boolean("onlyAuth")
 
         price = EnvStore.service_price()
 
@@ -231,16 +232,16 @@ defmodule Ippan.Func.Service do
 
                 if min_amount > max_amount, do: raise(IppanError, "Invalid maxAmount parameter")
 
-              {key, value} when key in ~w(exp maxSpent) ->
-                if is_integer(value) and value < 0,
-                  do:
-                    raise(
-                      ArgumentError,
-                      "Invalid #{key} parameter, must be integer greater than zero"
-                    )
+              {key, value}
+              when key in ~w(exp maxSpent) and
+                     is_integer(value) and value < 0 ->
+                raise(
+                  ArgumentError,
+                  "Invalid #{key} parameter, must be integer greater than zero"
+                )
 
-              x ->
-                x
+              _x ->
+                :ok
             end)
 
             fees = Utils.calc_fees(fa, fb, size)

@@ -93,7 +93,7 @@ defmodule Ipnworker.Router do
                   send_resp(conn, 400, "Transaction already exists")
               end
             rescue
-              e in [IppanError, IppanHighError] ->
+              e in [IppanError, IppanHighError, ArgumentError] ->
                 Logger.debug(Exception.format(:error, e, __STACKTRACE__))
                 send_resp(conn, 400, e.message)
 
@@ -110,7 +110,7 @@ defmodule Ipnworker.Router do
                 |> put_resp_header("location", url)
                 |> send_resp(302, "")
 
-              e in [FunctionClauseError, ArgumentError] ->
+              e in FunctionClauseError ->
                 Logger.debug(Exception.format(:error, e, __STACKTRACE__))
                 send_resp(conn, 400, "Invalid arguments")
 
