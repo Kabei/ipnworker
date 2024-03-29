@@ -66,17 +66,16 @@ defmodule Ippan.Func.Service do
   def update(%{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}}, id, map)
       when is_map(map) do
     map
+    |> MapUtil.only(~w(name descrip extra image owner))
     |> MapUtil.validate_length("name", @name_max_length)
     |> MapUtil.validate_length_range("descrip", 0..255)
     |> MapUtil.validate_account("owner")
     |> MapUtil.validate_url("image")
-    |> MapUtil.validate(
-      fn
-        x when is_map(x) and map_size(x) <= 5 -> true
-        _x -> false
-      end,
-      "Invalid extra parameter"
-    )
+    |> MapUtil.into("extra", fn extra ->
+      extra
+      |> MapUtil.only(~w(minAmount))
+      |> MapUtil.validate_non_neg_integer("minAmount")
+    end)
 
     db_ref = :persistent_term.get(:main_conn)
 

@@ -74,14 +74,16 @@ defmodule Ippan.Func.Token do
         id,
         opts \\ %{}
       )
-      when byte_size(id) <= 10 do
-    map_filter = Map.take(opts, Token.editable())
+      when byte_size(id) <= 10 and map_size(opts) > 0 do
+    opts
+    |> MapUtil.only(Token.editable())
+    |> MapUtil.validate_length_range("name", 1..100)
+    |> MapUtil.validate_url("image")
+    |> MapUtil.validate_account("owner")
+
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
-      map_size(opts) == 0 or map_filter != opts ->
-        raise IppanError, "Invalid option field"
-
       not Token.owner?(id, account_id) ->
         raise IppanError, "Invalid owner"
 
@@ -91,11 +93,6 @@ defmodule Ippan.Func.Token do
         bt =
           BalanceTrace.new(account_id, dets.balance)
           |> BalanceTrace.requires!(@token, fees)
-
-        MapUtil.to_atoms(map_filter)
-        |> MapUtil.validate_length_range(:name, 1..100)
-        |> MapUtil.validate_url(:image)
-        |> MapUtil.validate_account(:owner)
 
         BalanceTrace.output(bt)
     end
