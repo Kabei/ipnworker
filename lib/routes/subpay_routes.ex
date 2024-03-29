@@ -28,6 +28,24 @@ defmodule Ipnworker.SubPayRoutes do
     |> send_json()
   end
 
+  head "/:id/:payer" do
+    db_ref = :persistent_term.get(:main_ro)
+
+    case SubPay.has?(db_ref, id, payer) do
+      true -> send_resp(conn, 200, "")
+      false -> send_resp(conn, 204, "")
+    end
+  end
+
+  head "/:id/:payer/:token" do
+    db_ref = :persistent_term.get(:main_ro)
+
+    case SubPay.has?(db_ref, id, payer, token) do
+      true -> send_resp(conn, 200, "")
+      false -> send_resp(conn, 204, "")
+    end
+  end
+
   match _ do
     send_resp(conn, 404, "Not found")
   end
