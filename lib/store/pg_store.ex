@@ -15,11 +15,11 @@ defmodule PgStore do
   @pool :pg_pool
   @repo Ipnworker.Repo
 
-  def child_spec(_args) do
+  def child_spec(args) do
     %{
       id: __MODULE__,
       restart: :permanent,
-      start: {__MODULE__, :start, []},
+      start: {__MODULE__, :start_link, [args]},
       type: :worker
     }
   end
@@ -38,7 +38,7 @@ defmodule PgStore do
 
   cond do
     Application.compile_env(@app, :history, false) ->
-      def start do
+      def start_link(_args) do
         opts = Application.get_env(@app, @repo)
         {:ok, pid} = Postgrex.start_link(opts ++ [after_connect: &prepare_state/1])
         :persistent_term.put(@pool, pid)
@@ -50,14 +50,14 @@ defmodule PgStore do
       end
 
     Application.compile_env(@app, :api, true) ->
-      def start do
+      def start_link(_args) do
         {:ok, pid} = Postgrex.start_link(opts)
         :persistent_term.put(@pool, pid)
         {:ok, pid}
       end
 
     true ->
-      def start do
+      def start_link(_args) do
         :ignore
       end
   end

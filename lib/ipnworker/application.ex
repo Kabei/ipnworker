@@ -117,7 +117,7 @@ defmodule Ipnworker.Application do
             System.put_env(key, value)
 
           _ ->
-            :ignored
+            :ignore
         end
       end)
     end

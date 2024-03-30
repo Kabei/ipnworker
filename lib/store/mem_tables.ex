@@ -1,15 +1,16 @@
 defmodule MemTables do
+  use GenServer
   # @set_opts [:set, :public, read_concurrency: true, write_concurrency: true]
   # @set_named_opts [:set, :named_table, :public, read_concurrency: true, write_concurrency: false]
 
-  @ordered_named_opts [
+  @ordered_options [
     :ordered_set,
     :named_table,
     :public,
     read_concurrency: true,
     write_concurrency: false
   ]
-  @set_named_concurrent_opts [
+  @set_options [
     :set,
     :named_table,
     :public,
@@ -17,30 +18,40 @@ defmodule MemTables do
     write_concurrency: true
   ]
 
-  @tables_opt %{
-    hash: @set_named_concurrent_opts,
-    dhash: @set_named_concurrent_opts,
-    dtx: @ordered_named_opts,
+  @tables %{
+    hash: @set_options,
+    dhash: @set_options,
+    dtx: @ordered_options,
     # cache
-    validator: @set_named_concurrent_opts,
-    token: @set_named_concurrent_opts
+    validator: @set_options,
+    token: @set_options
   }
 
-  def child_spec(args) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :init, [args]}
-    }
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def init(_args) do
-    for {table, opts} <- @tables_opt do
+  @impl true
+  def init(state) do
+    IO.puts("init mem")
+    for {table, opts} <- @tables do
       :ets.new(table, opts)
     end
 
     RegPay.init()
 
-    :ignore
+    Process.flag(:trap_exit, true)
+    {:ok, state, :hibernate}
+  end
+
+  @impl true
+  def terminate(_reason, _state) do
+    IO.puts("terminate mem")
+    for {table, _opts} <- @tables do
+      :ets.delete(table)
+    end
+
+    RegPay.terminate()
   end
 
   def clear_cache do
