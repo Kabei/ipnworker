@@ -4,8 +4,6 @@ defmodule Ipnworker.Application do
   require Logger
   alias Ippan.{ClusterNodes, DetsSup}
 
-  @app Mix.Project.config()[:app]
-
   @impl true
   def start(_type, _args) do
     load_env_file()
@@ -24,9 +22,9 @@ defmodule Ipnworker.Application do
         Ipnworker.Repo,
         :poolboy.child_spec(:minerpool, miner_config()),
         {Phoenix.PubSub, [name: :pubsub]},
-        ClusterNodes
-      ] ++
-        http_service()
+        ClusterNodes,
+        Ipnworker.HttpServer
+      ]
 
     opts = [strategy: :one_for_one, name: Ipnworker.Supervisor]
     Supervisor.start_link(children, opts)
@@ -89,19 +87,6 @@ defmodule Ipnworker.Application do
     File.mkdir(save_dir)
   end
 
-  defp http_service do
-    config = Application.get_env(@app, :http)
-    port = Keyword.get(config, :port, 0)
-
-    case port do
-      x when x > 0 ->
-        [{Bandit, config}]
-
-      _ ->
-        []
-    end
-  end
-
   defp load_env_file do
     path = System.get_env("ENV_FILE", "env_file")
 
@@ -125,5 +110,22 @@ defmodule Ipnworker.Application do
 
   defp miner_config do
     [name: {:local, :minerpool}, worker_module: MinerWorker, size: 5, max_overflow: 2]
+  end
+end
+
+defmodule Ipnworker.HttpServer do
+  @app Mix.Project.config()[:app]
+
+  def child_spec(_args) do
+    config = Application.get_env(@app, :http)
+    port = Keyword.get(config, :port, 0)
+
+    cond do
+      port == 0 ->
+        :ignore
+
+      true ->
+        Bandit.child_spec(config)
+    end
   end
 end
