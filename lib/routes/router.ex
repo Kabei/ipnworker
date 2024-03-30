@@ -18,6 +18,14 @@ defmodule Ipnworker.Router do
   plug(:dispatch)
 
   if @call do
+    # @shard Application.compile_env(@app, :shard, 0)
+    # @max_shard Application.compile_env(@app, :max_shard, 10000)
+    # defp is_shard(_from, 1), do: true
+
+    # defp is_shard(from, shards) do
+    #   :erlang.phash2(from, @max_shard) |> rem(shards) == @shard
+    # end
+
     post "/v1/call" do
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
@@ -32,7 +40,13 @@ defmodule Ipnworker.Router do
             has_from_nonce = :ets.insert_new(:hash, {from_nonce, nil})
 
             try do
-              case has_from_nonce do
+              cond do
+                not has_from_nonce ->
+                  send_resp(conn, 400, "Transaction already exists")
+
+                # not is_shard(from, :persistent_term.get(:shards, 1)) ->
+                #   send_resp(conn, 500, "Wrong shard")
+
                 true ->
                   db_ref = :persistent_term.get(:main_conn)
                   vid = :persistent_term.get(:vid)
@@ -88,9 +102,6 @@ defmodule Ipnworker.Router do
                           send_resp(conn, 503, "")
                       end
                   end
-
-                false ->
-                  send_resp(conn, 400, "Transaction already exists")
               end
             rescue
               e in [IppanError, IppanHighError, ArgumentError] ->
