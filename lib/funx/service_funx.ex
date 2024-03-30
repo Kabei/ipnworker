@@ -113,9 +113,6 @@ defmodule Ippan.Funx.Service do
           SubPay.reset_spent(db_ref, service_id, payer, token_id, interval, amount, round_id)
         end
 
-        # balance = DetsPlux.tuple(account, token)
-        # {_, map} = DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
-        # _interval = Map.get(extra, "interval", 0)
         BalanceStore.stream(account_id, payer, service_id, token_id, amount)
       end
     else
