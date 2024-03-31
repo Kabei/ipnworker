@@ -152,7 +152,7 @@ defmodule Ippan.Func.Service do
 
         cond do
           max_spent != 0 and
-            spent + amount > max_spent and
+            spent + amount >= max_spent and
               interval == current_interval ->
             raise IppanError, "Exceeded limit spent"
 
