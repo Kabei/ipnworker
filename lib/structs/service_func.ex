@@ -157,8 +157,8 @@ defmodule Ippan.Func.Service do
             raise IppanError, "You must wait at least 12 rounds to execute this function again"
 
           max_spent != 0 and
-            spent + amount > max_spent and
-              interval == current_interval ->
+              ((current_interval == interval and spent + amount > max_spent) or
+                 (current_interval > interval and spent > max_spent)) ->
             raise IppanError, "Exceeded limit spent"
 
           max_amount != 0 and amount > max_amount ->
