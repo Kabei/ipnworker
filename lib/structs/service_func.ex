@@ -150,10 +150,11 @@ defmodule Ippan.Func.Service do
         max_spent = Map.get(extra, "maxSpent", 0)
         round_id = Stats.get(stats, "last_round")
         current_interval = div(round_id, every)
+        diff = round_id - lastPay
 
         cond do
-          lastPay - round_id < 12 ->
-            raise IppanError, "You must wait 12 rounds to execute this function again"
+          diff < 12 ->
+            raise IppanError, "You must wait #{diff} rounds to execute this function again"
 
           max_spent != 0 and
             spent + amount > max_spent and
