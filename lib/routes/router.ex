@@ -89,10 +89,7 @@ defmodule Ipnworker.Router do
 
                     {:error, message} ->
                       :ets.delete(:hash, from_nonce)
-
-                      if dtx_key do
-                        :ets.delete(:dhash, dtx_key)
-                      end
+                      :ets.delete(:dhash, dtx_key)
 
                       case message do
                         message when is_binary(message) ->
