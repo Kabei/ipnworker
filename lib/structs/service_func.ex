@@ -140,6 +140,7 @@ defmodule Ippan.Func.Service do
       %{
         every: every,
         extra: extra,
+        lastPay: lastPay,
         spent: spent,
         div: interval
       } ->
@@ -151,6 +152,9 @@ defmodule Ippan.Func.Service do
         current_interval = div(round_id, every)
 
         cond do
+          lastPay - round_id < 12 ->
+            raise IppanError, "You must wait 12 rounds to execute this function again"
+
           max_spent != 0 and
             spent + amount > max_spent and
               interval == current_interval ->

@@ -7,7 +7,6 @@ defmodule Ipnworker.Application do
   @impl true
   def start(_type, _args) do
     load_env_file()
-    check_branch()
     start_node()
     make_folders()
     load_keys()
@@ -20,25 +19,30 @@ defmodule Ipnworker.Application do
         LocalStore,
         PgStore,
         Ipnworker.Repo,
-        :poolboy.child_spec(:minerpool, miner_config()),
+        :poolboy.child_spec(:minerpool,
+          name: {:local, :minerpool},
+          worker_module: MinerWorker,
+          size: 5,
+          max_overflow: 2
+        ),
         {Phoenix.PubSub, [name: :pubsub]},
         ClusterNodes,
-        Ipnworker.HttpServer
+        HttpServer
       ]
 
     opts = [strategy: :one_for_one, name: Ipnworker.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
-  defp check_branch do
-    try do
-      {branch, 0} = System.cmd("git", ["branch", "--show-current"])
-      :persistent_term.put(:branch, String.trim(branch))
-    catch
-      _ ->
-        Logger.error("Git is not installed")
-    end
-  end
+  # defp check_branch do
+  #   try do
+  #     {branch, 0} = System.cmd("git", ["branch", "--show-current"])
+  #     :persistent_term.put(:branch, String.trim(branch))
+  #   catch
+  #     _ ->
+  #       Logger.error("Git is not installed")
+  #   end
+  # end
 
   defp start_node do
     vid =
@@ -107,13 +111,9 @@ defmodule Ipnworker.Application do
       end)
     end
   end
-
-  defp miner_config do
-    [name: {:local, :minerpool}, worker_module: MinerWorker, size: 5, max_overflow: 2]
-  end
 end
 
-defmodule Ipnworker.HttpServer do
+defmodule HttpServer do
   @app Mix.Project.config()[:app]
 
   def child_spec(_args) do
@@ -125,7 +125,12 @@ defmodule Ipnworker.HttpServer do
         :ignore
 
       true ->
-        Bandit.child_spec(config)
+        %{
+          id: __MODULE__,
+          start: {Bandit, :start_link, [config]},
+          type: :supervisor,
+          restart: :permanent
+        }
     end
   end
 end

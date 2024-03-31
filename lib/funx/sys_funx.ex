@@ -9,6 +9,9 @@ defmodule Ippan.Funx.Sys do
           sup = Ipnworker.Supervisor
           Supervisor.terminate_child(sup, Ippan.DetsSup)
           Supervisor.terminate_child(sup, MainStore)
+          Supervisor.terminate_child(sup, LocalStore)
+          Supervisor.terminate_child(sup, HttpServer)
+          Supervisor.terminate_child(sup, Ippan.ClusterNodes)
           PgStore.reset()
           File.rm_rf(:persistent_term.get(:store_dir))
           :init.restart()
