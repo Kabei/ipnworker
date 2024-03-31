@@ -113,7 +113,7 @@ defmodule Ipnworker.Router do
                 db_ref = :persistent_term.get(:main_conn)
 
                 %{hostname: hostname} =
-                  Validator.get(:erlang.binary_to_integer(e.message))
+                  Validator.get(e.message)
 
                 url = "https://#{hostname}#{conn.request_path}"
 
