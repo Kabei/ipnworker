@@ -72,7 +72,7 @@ config :ipnworker, :p2p_client, [
 ]
 
 config :ipnworker, json: Jason
-config :blake3, rayon: true
+config :blake3, simd_mode: :neon, rayon: true
 
 if File.exists?("config/options.exs") do
   import_config "options.exs"
