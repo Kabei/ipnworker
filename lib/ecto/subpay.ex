@@ -64,7 +64,7 @@ defmodule Ippan.Ecto.SubPay do
     select(
       query,
       [sp],
-      map(sp, ~w(id payer token lastPay every spent extra created_at)a)
+      map(sp, ~w(id payer token lastPay every spent extra created_at div)a)
     )
   end
 
@@ -105,7 +105,7 @@ defmodule Ippan.Ecto.SubPay do
   defp sort(query, %{"sort" => "lessActive"}), do: order_by(query, [sp], asc: sp.last_round)
   defp sort(query, _), do: order_by(query, [sp], desc: sp.created_at)
 
-  defp to_map([id, payer, token, lastPay, every, spent, extra, created_at]) do
+  defp to_map([id, payer, token, lastPay, every, spent, extra, created_at, div]) do
     %{
       id: id,
       payer: payer,
@@ -114,7 +114,8 @@ defmodule Ippan.Ecto.SubPay do
       spent: spent,
       every: every,
       extra: Jason.decode!(extra),
-      lastPay: lastPay
+      lastPay: lastPay,
+      div: div
     }
   end
 
