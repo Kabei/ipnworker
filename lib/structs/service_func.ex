@@ -154,7 +154,7 @@ defmodule Ippan.Func.Service do
 
         cond do
           diff < 12 ->
-            raise IppanError, "You must wait #{diff} rounds to execute this function again"
+            raise IppanError, "You must wait at least 12 rounds to execute this function again"
 
           max_spent != 0 and
             spent + amount > max_spent and
