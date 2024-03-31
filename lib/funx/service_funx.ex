@@ -101,28 +101,50 @@ defmodule Ippan.Funx.Service do
     tx = DetsPlux.tx(db, :balance)
     db_ref = :persistent_term.get(:main_conn)
 
-    subpay = SubPay.get(db_ref, service_id, payer, token_id)
+    case SubPay.get(db_ref, service_id, payer, token_id) do
+      %{
+        every: every,
+        extra: extra,
+        spent: spent,
+        div: interval
+      } ->
+        max_spent = Map.get(extra, "maxSpent", 0)
+        current_interval = div(round_id, every)
 
-    if subpay do
-      max_spent = Map.get(subpay.extra, "maxSpent", 0)
+        if (max_spent == 0 or
+              spent + amount <= max_spent) and
+             current_interval >= interval do
+          BalanceStore.pay payer, token_id, amount do
+            if current_interval == interval do
+              SubPay.spent(
+                db_ref,
+                service_id,
+                payer,
+                token_id,
+                current_interval,
+                amount,
+                round_id
+              )
+            else
+              SubPay.reset_spent(
+                db_ref,
+                service_id,
+                payer,
+                token_id,
+                current_interval,
+                amount,
+                round_id
+              )
+            end
 
-      if max_spent == 0 or subpay.spent + amount <= max_spent do
-        BalanceStore.pay payer, token_id, amount do
-          interval = div(subpay.every, round_id)
-
-          if subpay.div == interval do
-            SubPay.spent(db_ref, service_id, payer, token_id, interval, amount, round_id)
-          else
-            SubPay.reset_spent(db_ref, service_id, payer, token_id, interval, amount, round_id)
+            BalanceStore.stream(account_id, payer, service_id, token_id, amount)
           end
-
-          BalanceStore.stream(account_id, payer, service_id, token_id, amount)
+        else
+          :error
         end
-      else
+
+      _ ->
         :error
-      end
-    else
-      :error
     end
   end
 
