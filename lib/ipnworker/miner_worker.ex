@@ -133,7 +133,7 @@ defmodule MinerWorker do
     synced = :persistent_term.get(:status) == :synced
 
     Enum.each(transactions, fn
-      ["error", hash, type, from, nonce, args, sig, size] ->
+      ["err", hash, type, from, nonce, args, sig, size] ->
         if @history do
           ix = :counters.get(cref, 1)
 
