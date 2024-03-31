@@ -348,11 +348,11 @@ defmodule BalanceStore do
             token: token
           ],
           location: :keep do
-      balance = DetsPlux.tuple(account, token)
+      balance = DetsPlux.tuple(service, token)
       DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
 
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.stream(var!(source), account, payer, token, amount)
+      RegPay.stream(var!(source), payer, service, token, amount)
     end
   end
 
