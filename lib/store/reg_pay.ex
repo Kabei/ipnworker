@@ -67,7 +67,7 @@ defmodule RegPay do
     def fees(%{id: account, nonce: nonce}, from, validator, token, amount) do
       :ets.insert(:persistent_term.get(@table), [
         {account, nonce, validator, 200, token, amount},
-        {account, nonce, from, 100, token, -amount}
+        {account, nonce, from, 200, token, -amount}
       ])
     end
 
