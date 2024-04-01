@@ -103,10 +103,10 @@ defmodule RegPay do
       :ets.insert(:persistent_term.get(@table), {nil, nil, to, 2, token, amount})
     end
 
-    def stream(%{id: account, nonce: nonce}, from, to, token, amount) do
+    def stream(%{id: account, nonce: nonce}, service, payer, token, amount) do
       :ets.insert(:persistent_term.get(@table), [
-        {account, nonce, to, 400, token, -amount},
-        {account, nonce, from, 400, token, amount}
+        {account, nonce, payer, 400, token, -amount},
+        {account, nonce, service, 400, token, amount}
       ])
     end
 

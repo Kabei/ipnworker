@@ -351,7 +351,7 @@ defmodule BalanceStore do
       DetsPlux.get_cache(var!(db), var!(tx), balance, {0, %{}})
 
       DetsPlux.update_counter(var!(tx), balance, {2, amount})
-      RegPay.stream(var!(source), payer, service, token, amount)
+      RegPay.stream(var!(source), service, payer, token, amount)
     end
   end
 
