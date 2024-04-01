@@ -162,18 +162,18 @@ defmodule Ippan.Funx.Service do
     tax = round(amount * Map.get(env, "service.tax", 0))
 
     BalanceStore.pay2 [{service_id, token_id, amount}, {account_id, @token, tfees}] do
-      total = amount - tax
+      received = amount - tax
 
-      if total > 0 do
-        BalanceStore.withdraw(service_id, account_id, token_id, total, amount)
+      if received > 0 do
+        BalanceStore.withdraw(service_id, account_id, token_id, received, tax)
       end
 
       reserve = Utils.calc_reserve(tfees)
       fees = tfees - reserve
 
       validator_balance = BalanceStore.load(vOwner, @token)
-      BalanceStore.fees(service_id, validator_balance, fees)
-      BalanceStore.reserve(service_id, reserve)
+      BalanceStore.fees(account_id, validator_balance, fees)
+      BalanceStore.reserve(account_id, reserve)
     end
   end
 

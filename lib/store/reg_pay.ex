@@ -110,10 +110,11 @@ defmodule RegPay do
       ])
     end
 
-    def withdraw(%{id: account, nonce: nonce}, to, token, total_spent, received) do
+    def withdraw(%{id: account, nonce: nonce}, service, token, amount, tax) do
       :ets.insert(:persistent_term.get(@table), [
-        {account, nonce, to, 401, token, received},
-        {account, nonce, account, 401, token, -total_spent}
+        {account, nonce, service, 401, token, -amount},
+        {account, nonce, service, 300, token, -tax},
+        {account, nonce, account, 401, token, amount}
       ])
     end
   else
