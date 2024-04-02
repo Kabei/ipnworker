@@ -58,6 +58,8 @@ config :ipnworker, Ipnworker.Repo,
   port: System.get_env("PGPORT", "5432") |> String.to_integer(),
   pool_size: System.get_env("PGPOOL", "4") |> String.to_integer(),
   prepare: :unnamed,
+  ssl: System.get_env("PGSSL") != nil,
+  ssl_opts: [certfile: System.get_env("PGCERT")],
   parameters: [plan_cache_mode: "force_custom_plan"]
 
 config :ipnworker, :x_http_port, x_http_port

@@ -20,17 +20,16 @@ IPPAN blockchain transaction pre-verification node.
 ### Generate env_file
 ```bash
 echo "
-NAME=worker1
-VID=<number>
-SECRET_KEY=<same-secret-key-from-ipncore>
-CLUSTER_KEY=<same-cluster-key-from-ipncore>
-MINER=<name@hostname>
-PGHOST=<hostname>
-PGDATABASE=<database>
-PGUSER=<username>
-PGPASSWORD=<secret>
-DATA_DIR=/usr/src/data
-NODES=<name@hostname>" > env_file
+name: workername
+vid: V-0
+secret_key: secret_in_base64
+cluster_key: secret_in_base64
+miner: miner
+pgHost: localhost
+pgDatabase: database
+pgUser: user
+pgPassword: secret
+data_dir: /usr/src/data" > env_file
 ```
 
 ### Download and execute script
