@@ -165,7 +165,7 @@ defmodule RegPay do
               }
               |> MapUtil.drop_nils()
 
-            Phoenix.PubSub.local_broadcast(@pubsub, "payments:#{to}", payload)
+            Phoenix.PubSub.local_broadcast(@pubsub, "pay:#{to}", payload)
           end
         end
       )

@@ -49,7 +49,7 @@ defmodule Ipnworker.EventRoutes do
   end
 
   get "/payments/:account" do
-    SSE.stream(conn, @pubsub, "payments:#{account}", once: false, timeout: :infinity)
+    SSE.stream(conn, @pubsub, "pay:#{account}", once: false, timeout: :infinity)
   end
 
   match _ do
