@@ -44,6 +44,7 @@ defmodule Ipnworker.MixProject do
       {:benchee, "~> 1.0", only: [:dev, :test]},
       {:poolboy, "~> 1.5.2"},
       {:jason, "~> 1.4"},
+      {:fast_yaml, "~> 1.0"},
       {:httpoison, "~> 2.0"},
       {:postgrex, "~> 0.17"},
       {:ecto, "~> 3.11"},

@@ -72,7 +72,7 @@ defmodule Ipnworker.Application do
 
   defp make_folders do
     # catch routes
-    data_dir = System.get_env("data_dir", "data")
+    data_dir = System.get_env("DATA_DIR", "data")
     block_dir = Path.join(data_dir, "blocks")
     decode_dir = Path.join(data_dir, "blocks/decoded")
     store_dir = Path.join(data_dir, "store")
@@ -95,20 +95,22 @@ defmodule Ipnworker.Application do
     path = System.get_env("ENV_FILE", "env_file")
 
     if File.exists?(path) do
-      File.stream!(path, [], :line)
-      |> Enum.each(fn text ->
-        text
-        |> String.trim()
-        |> String.replace(~r/\n|\r|#.+/, "")
-        |> String.split("=", parts: 2)
-        |> case do
-          [key, value] ->
-            System.put_env(key, value)
+      case :fast_yaml.decode_from_file(path) do
+        {:ok, [config]} ->
+          Enum.each(config, fn
+            {varname, value} when is_binary(value) ->
+              System.put_env(String.upcase(varname), value)
 
-          _ ->
-            :ignore
-        end
-      end)
+            {varname, value} ->
+              System.put_env(String.upcase(varname), inspect(value))
+
+            _ ->
+              :none
+          end)
+
+        {:error, error} ->
+          raise IppanStartUpError, "env_file yaml failed: #{inspect(error)}"
+      end
     end
   end
 end
