@@ -41,7 +41,7 @@ defmodule Ipnworker.EventRoutes do
     case params do
       %{"accounts" => array} ->
         accounts = Jason.decode!(array)
-        SSE.stream(conn, @pubsub, "payments", accounts, once: false, timeout: :infinity)
+        SSE.stream(conn, @pubsub, "pay", accounts, once: false, timeout: :infinity)
 
       _ ->
         send_resp(conn, 400, "Bad request")
