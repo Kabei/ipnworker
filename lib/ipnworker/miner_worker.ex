@@ -134,6 +134,8 @@ defmodule MinerWorker do
 
     Enum.each(transactions, fn
       ["err", hash, type, from, nonce, args, sig, size] ->
+        Account.gte_nonce(nonce_dets, nonce_tx, from, nonce)
+
         if @history do
           ix = :counters.get(cref, 1)
 
@@ -164,14 +166,9 @@ defmodule MinerWorker do
         end
 
       [hash, type, from, nonce, args, sig, size] ->
-        result =
-          case Account.update_nonce(nonce_dets, nonce_tx, from, nonce) do
-            :error ->
-              :error
+        Account.gte_nonce(nonce_dets, nonce_tx, from, nonce)
 
-            _true ->
-              TxHandler.regular()
-          end
+        result = TxHandler.regular()
 
         status = tx_status(result)
 
