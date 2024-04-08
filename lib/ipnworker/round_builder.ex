@@ -274,7 +274,6 @@ defmodule RoundBuilder do
 
   defp run_maintenance(round_id, db_ref) when rem(round_id, @maintenance) == 0 do
     Sqlite.step("expiry_refund", [round_id])
-    Sqlite.step("expiry_domain", [round_id])
   end
 
   defp run_maintenance(round_id, _db_ref) when rem(round_id, @snap_round) == 0 do
