@@ -4,6 +4,8 @@ defmodule Ippan.ClusterNodes do
   require Ippan.{Node}
   require Sqlite
   require BalanceStore
+  require Ippan.Round
+  alias Ippan.Round
 
   @app Mix.Project.config()[:app]
   @pubsub :pubsub
@@ -110,10 +112,13 @@ defmodule Ippan.ClusterNodes do
   @doc """
   Create a new round. Received from a IPNCORE
   """
-  def handle_message("round.new", msg_round, %{hostname: hostname} = _state) do
-    round = MapUtil.to_atoms(msg_round)
+  def handle_message("round.new", %{"id" => round_id} = msg_round, %{hostname: hostname} = _state) do
+    db_ref = :persistent_term.get(:main_conn)
 
-    GenServer.cast(RoundBuilder, {:build, round, hostname, true})
+    unless Round.exists?(round_id) do
+      round = MapUtil.to_atoms(msg_round)
+      GenServer.cast(RoundBuilder, {:build, round, hostname, true})
+    end
   end
 
   def handle_message("mempool", data, _state) do
