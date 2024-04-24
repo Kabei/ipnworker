@@ -167,8 +167,8 @@ defmodule Ippan.TxHandler do
     end
   end
 
-  @spec valid?(map()) :: {binary, tuple()} | no_return()
-  def valid?(%{
+  @spec valid!(map()) :: {binary, tuple()} | no_return()
+  def valid!(%{
         type:
           %{
             id: type_id,

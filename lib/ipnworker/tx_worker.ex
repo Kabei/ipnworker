@@ -38,43 +38,84 @@ defmodule TxWorker do
   end
 
   @impl true
-  def handle_cast(
-        {
-          :run,
-          {hash, _type_id, from, nonce, args, size, _signature},
-          %{fun: fun, modx: module}
-        },
-        state = %{cref: cref, validator: validator, block: block_id, round: round_id, refs: refs}
-      ) do
-    source = %{
-      hash: hash,
-      refs: refs,
-      from: from,
-      round: round_id,
-      block: block_id,
-      validator: validator,
-      nonce: nonce,
-      size: size
-    }
+  if @notify do
+    def handle_cast(
+          {
+            :run,
+            {hash, _type_id, from, nonce, args, size, _signature},
+            %{fun: fun, modx: module}
+          },
+          state = %{
+            cref: cref,
+            validator: validator,
+            block: block_id,
+            round: round_id,
+            refs: refs
+          }
+        ) do
+      source = %{
+        hash: hash,
+        refs: refs,
+        from: from,
+        round: round_id,
+        block: block_id,
+        validator: validator,
+        nonce: nonce,
+        size: size
+      }
 
-    # try do
-    case :erlang.apply(module, fun, [source | args]) do
-      :error ->
-        :counters.add(cref, 2, 1)
+      case :erlang.apply(module, fun, [source | args]) do
+        :error ->
+          :counters.add(cref, 2, 1)
 
-      {:error, _} ->
-        :counters.add(cref, 2, 1)
+        {:error, _} ->
+          :counters.add(cref, 2, 1)
 
-      _ ->
-        :counters.add(cref, 1, 1)
+        _ ->
+          :counters.add(cref, 1, 1)
+      end
+
+      {:noreply, state}
     end
+  else
+    def handle_cast(
+          {
+            :run,
+            {hash, _type_id, from, nonce, args, size, _signature},
+            %{fun: fun, modx: module}
+          },
+          state = %{
+            cref: cref,
+            validator: validator,
+            block: block_id,
+            round: round_id,
+            refs: refs
+          }
+        ) do
+      source = %{
+        hash: hash,
+        refs: refs,
+        from: from,
+        round: round_id,
+        block: block_id,
+        validator: validator,
+        nonce: nonce,
+        size: size
+      }
 
-    # rescue
-    #   _err ->
-    #     :counters.add(cref, 2, 1)
-    # end
+      case :erlang.apply(module, fun, [source | args]) do
+        :error ->
+          :counters.add(cref, 2, 1)
 
-    {:noreply, state}
+        {:error, _} ->
+          :counters.add(cref, 2, 1)
+
+        _ ->
+          :counters.add(cref, 1, 1)
+      end
+
+      {:noreply, state}
+    end
   end
 
   # def handle_cast(

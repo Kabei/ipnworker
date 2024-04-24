@@ -1,4 +1,5 @@
 defmodule Ippan.BlockHandler do
+  alias Ippan.Funcs
   alias Ippan.DetsSup
   alias Ippan.{Block, ClusterNodes, Round, Validator}
   # alias Phoenix.PubSub
@@ -109,60 +110,77 @@ defmodule Ippan.BlockHandler do
 
         case DownloadTask.start(url, output_path) do
           :ok ->
-            db_ref = :persistent_term.get(:main_conn)
-            wallet_dets = DetsPlux.get(:wallet)
-            wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)
-            nonce_dets = DetsPlux.get(:nonce)
-            nonce_tx = DetsPlux.tx(nonce_dets, dets.nonce)
-            validator = Validator.get(db_ref, creator_id)
-
             IO.inspect(output_path)
             IO.inspect("File.read")
+            db_ref = :persistent_term.get(:main_conn)
             {:ok, content} = File.read(output_path)
             %{"vsn" => vsn, "data" => messages} = decode_file!(content)
 
             IO.inspect("Version")
 
             if vsn == version do
-              ets = :ets.new(:temp, [:set])
+              ets = :ets.new(:hash, [:set])
 
-              IO.inspect("before check hash duplic")
+              refs = %{
+                dets: DetsSup.dets(),
+                tx: DetsSup.txs(),
+                db: db_ref
+              }
 
               try do
-                values =
-                  Enum.reduce(messages, [], fn [body, signature], acc ->
+                validator = Validator.get(db_ref, creator_id)
+
+                {values, errors} =
+                  Enum.reduce(messages, {[], []}, fn [body, signature],
+                                                     {acc_success, acc_errors} ->
                     hash = Blake3.hash(body)
                     size = byte_size(body) + byte_size(signature)
-                    [type, nonce, from | args] = @json.decode!(body)
+                    [type_id, nonce, from | args] = @json.decode!(body)
+                    type = Funcs.lookup(type_id)
 
                     try do
-                      result = TxHandler.decode_from_file!()
+                      map = %{
+                        args: args,
+                        hash: hash,
+                        ets: ets,
+                        refs: refs,
+                        type: type,
+                        size: size,
+                        validator: validator,
+                        sig: signature
+                      }
 
-                      case :ets.insert_new(ets, {{from, nonce}, nil}) do
-                        true ->
-                          [result | acc]
+                      {key, result} = TxHandler.valid!(map)
 
-                        false ->
-                          raise IppanHighError, "Invalid block transaction duplicated"
+                      case result do
+                        {"err", tx} ->
+                          {acc_success, [tx] ++ acc_errors}
+
+                        tx ->
+                          {[{type.priority, tx}] ++ acc_success, acc_errors}
                       end
                     rescue
                       IppanHighError ->
                         reraise IppanHighError, __STACKTRACE__
 
                       [IppanError, IppanRedirectError] ->
-                        [["err", hash, type, from, nonce, args, signature, size] | acc]
+                        {acc_success,
+                         [{hash, type_id, from, nonce, args, size, signature}] ++ acc_errors}
 
                       err ->
                         Logger.error(Exception.format(:error, err, __STACKTRACE__))
                     end
                   end)
-                  |> Enum.reverse()
+
+                  txs =
+                  Enum.reverse(values)
+                  |> Enum.group_by(fn {type, _tx} -> type end, )
 
                 :ets.delete(ets)
 
                 IO.inspect("after check hash duplic")
 
-                if count != Enum.count(values) do
+                if count != Enum.count(values) + Enum.count(errors) do
                   raise IppanError, "Invalid block messages count"
                 end
 
@@ -174,7 +192,7 @@ defmodule Ippan.BlockHandler do
 
                 File.write(
                   export_path,
-                  encode_file!(%{"data" => values, "vsn" => version})
+                  encode_file!(%{"txs" => values, "err" => errors, "vsn" => version})
                 )
               rescue
                 _ ->

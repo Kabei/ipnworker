@@ -45,6 +45,24 @@ defmodule Ippan.DetsSup do
     }
   end
 
+  def dets do
+    %{
+      balance: DetsPlux.get(:balance),
+      nonce: DetsPlux.get(:nonce),
+      stats: DetsPlux.get(:stats),
+      wallet: DetsPlux.get(:wallet)
+    }
+  end
+
+  def txs do
+    %{
+      balance: DetsPlux.tx(:balance),
+      nonce: DetsPlux.tx(:nonce),
+      stats: DetsPlux.tx(:stats),
+      wallet: DetsPlux.tx(:wallet)
+    }
+  end
+
   # a = Ippan.DetsSup.refs(0)
   # :persistent_term.put({:txs, :balance0}, :ets.new(:asd, [:set]))
   # Ippan.DetsSup.close(a)

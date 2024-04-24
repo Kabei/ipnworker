@@ -1,5 +1,7 @@
 defmodule Ipnworker.Router do
   use Plug.Router
+  alias Ippan.DetsSup
+  alias Ippan.Funcs
   alias Ippan.{ClusterNodes, TxHandler, Validator, Account}
   require Logger
   import Ippan.Utils, only: [json: 1]
@@ -16,90 +18,67 @@ defmodule Ipnworker.Router do
   plug(:dispatch)
 
   if @call do
-    # @shard Application.compile_env(@app, :shard, 0)
-    # @max_shard Application.compile_env(@app, :max_shard, 10000)
-    # defp is_shard(_from, 1), do: true
-
-    # defp is_shard(from, shards) do
-    #   :erlang.phash2(from, @max_shard) |> rem(shards) == @shard
-    # end
-
     post "/v1/call" do
       {:ok, body, conn} = Plug.Conn.read_body(conn, length: @max_size)
 
       if :persistent_term.get(:status) == :synced do
         case get_req_header(conn, "auth") do
           [sig64] ->
-            hash = Blake3.hash(body)
-            signature = Fast64.decode64(sig64)
-            size = byte_size(body) + byte_size(signature)
-            [type, nonce, from | args] = @json.decode!(body)
-            from_nonce = {from, nonce}
-            has_from_nonce = :ets.insert_new(:hash, {from_nonce, nil})
-
             try do
-              cond do
-                not has_from_nonce ->
-                  send_resp(conn, 400, "Transaction already exists")
+              db_ref = :persistent_term.get(:main_conn)
+              hash = Blake3.hash(body)
+              signature = Fast64.decode64(sig64)
+              size = byte_size(body) + byte_size(signature)
+              [type_id, nonce, from | args] = @json.decode!(body)
+              vid = :persistent_term.get(:vid)
 
-                # not is_shard(from, :persistent_term.get(:shards, 1)) ->
-                #   send_resp(conn, 500, "Wrong shard")
+              validator =
+                Validator.get(db_ref, vid) ||
+                  raise IppanError, "Node is not available yet"
 
-                true ->
-                  db_ref = :persistent_term.get(:main_conn)
-                  vid = :persistent_term.get(:vid)
+              type = Funcs.lookup(type_id)
+              ets = :ets.whereis(:hash)
 
-                  validator =
-                    Validator.get(db_ref, vid) ||
-                      raise IppanError, "Node is not available yet"
+              map = %{
+                args: args,
+                hash: hash,
+                ets: ets,
+                refs: %{
+                  dets: :persistent_term.get(:dets),
+                  tx: :persistent_term.get({:dets, :cache})
+                },
+                type: type,
+                size: size,
+                validator: validator,
+                sig: signature
+              }
 
-                  handle_result =
-                    [deferred, msg, _return] = TxHandler.decode!()
+              {key, result} = TxHandler.valid!(map)
+              miner_id = :persistent_term.get(:miner)
 
-                  dtx_key =
-                    if deferred do
-                      [hash, type, key | _rest] = msg
+              case ClusterNodes.call(miner_id, "tx", result) do
+                {:ok, %{"index" => index}} ->
+                  :ets.insert(ets, {key, result})
+                  nonce_dets = DetsPlux.get(:nonce)
+                  nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
+                  DetsPlux.put(nonce_tx, from, nonce)
 
-                      case :ets.insert_new(:dhash, {{type, key}, hash}) do
-                        true ->
-                          {type, key}
+                  json(%{
+                    "hash" => Base.encode16(hash, case: :lower),
+                    "index" => index
+                  })
 
-                        false ->
-                          :ets.delete(:hash, from_nonce)
-                          tx = DetsPlux.tx(:nonce, :cache_nonce)
-                          Account.revert_nonce(tx, from)
-                          raise IppanError, "Deferred transaction already exists"
-                      end
-                    end
+                {:error, message} ->
+                  case message do
+                    message when is_binary(message) ->
+                      send_resp(conn, 400, message)
 
-                  miner_id = :persistent_term.get(:miner)
-
-                  case ClusterNodes.call(miner_id, "new_msg", handle_result) do
-                    {:ok, %{"index" => index}} ->
-                      nonce_dets = DetsPlux.get(:nonce)
-                      nonce_tx = DetsPlux.tx(nonce_dets, :cache_nonce)
-                      DetsPlux.put(nonce_tx, from, nonce)
-
-                      json(%{
-                        "hash" => Base.encode16(hash, case: :lower),
-                        "index" => index
-                      })
-
-                    {:error, message} ->
-                      :ets.delete(:hash, from_nonce)
-                      :ets.delete(:dhash, dtx_key)
-
-                      case message do
-                        message when is_binary(message) ->
-                          send_resp(conn, 400, message)
-
-                        _ ->
-                          send_resp(conn, 503, "")
-                      end
+                    _ ->
+                      send_resp(conn, 503, "")
                   end
               end
             rescue
-              e in [IppanError, IppanHighError, ArgumentError] ->
+              e in [IppanError, MatchError, IppanHighError, ArgumentError] ->
                 Logger.debug(Exception.format(:error, e, __STACKTRACE__))
                 send_resp(conn, 400, e.message)
 
@@ -123,8 +102,6 @@ defmodule Ipnworker.Router do
               e ->
                 Logger.debug(Exception.format(:error, e, __STACKTRACE__))
                 send_resp(conn, 400, "Invalid operation")
-            after
-              if has_from_nonce, do: :ets.delete(:hash, from_nonce)
             end
 
           _ ->
