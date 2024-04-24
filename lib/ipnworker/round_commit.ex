@@ -1,6 +1,4 @@
 defmodule RoundCommit do
-  require Sqlite
-
   def sync(db_ref, tx_count, is_some_block_mine) do
     if tx_count > 0 do
       [

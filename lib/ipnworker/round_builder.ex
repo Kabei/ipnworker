@@ -1,10 +1,8 @@
 defmodule RoundBuilder do
   use GenServer
-  alias Ippan.{TxHandler, Round, Validator}
+  alias Ippan.{Round, Validator}
   alias Phoenix.PubSub
   alias Ipnworker.NodeSync
-  require Ippan.{Validator, Round, TxHandler}
-  require Sqlite
   require BalanceStore
   require Logger
 
@@ -22,7 +20,7 @@ defmodule RoundBuilder do
   @impl true
   def init(_init_arg) do
     db_ref = :persistent_term.get(:main_conn)
-    %{id: id} = Round.last()
+    %{id: id} = Round.last(db_ref)
     :persistent_term.put(:round, id)
 
     {:ok, nil}
@@ -118,7 +116,7 @@ defmodule RoundBuilder do
 
     for block = %{"creator" => block_creator_id} <- blocks do
       Task.async(fn ->
-        creator = Validator.get(block_creator_id)
+        creator = Validator.get(db_ref, block_creator_id)
 
         :poolboy.transaction(
           pool_pid,
@@ -140,10 +138,10 @@ defmodule RoundBuilder do
 
     # IO.inspect("step 2")
 
-    TxHandler.run_deferred_txs()
+    # TxHandler.run_deferred_txs()
 
     round_creator =
-      Validator.get(round_creator_id)
+      Validator.get(db_ref, round_creator_id)
 
     run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
     run_jackpot(round, balance_pid, balance_tx, pg_conn)
@@ -153,17 +151,17 @@ defmodule RoundBuilder do
         max = EnvStore.max_failures()
 
         if max != 0 do
-          number = Validator.incr_failure(round_creator, 1, round_id)
+          number = Validator.incr_failure(db_ref, round_creator, 1, round_id)
 
           if number != nil and rem(number, max) == 0 do
-            Validator.disable(round_creator, round_id)
+            Validator.disable(db_ref, round_creator, round_id)
           end
 
           Sqlite.sync(db_ref)
         end
 
       2 ->
-        Validator.delete(round_creator_id)
+        Validator.delete(db_ref, round_creator_id)
         Sqlite.sync(db_ref)
 
       _ ->
@@ -171,8 +169,7 @@ defmodule RoundBuilder do
     end
 
     # IO.inspect("step 3")
-    round_encode = Round.to_list(round)
-    Round.insert(round_encode)
+    Round.insert(db_ref, round)
 
     # Save balances
     run_save_balances(balance_tx, pg_conn)
@@ -190,7 +187,7 @@ defmodule RoundBuilder do
     # IO.inspect("step 4")
 
     if @history do
-      PgStore.insert_round(pg_conn, round_encode)
+      PgStore.insert_round(pg_conn, Round.to_list(round))
       |> then(fn
         {:ok, _} ->
           :ok
@@ -273,7 +270,7 @@ defmodule RoundBuilder do
   defp run_maintenance(0, _), do: nil
 
   defp run_maintenance(round_id, db_ref) when rem(round_id, @maintenance) == 0 do
-    Sqlite.step("expiry_refund", [round_id])
+    Sqlite.step(db_ref, "expiry_refund", [round_id])
   end
 
   defp run_maintenance(round_id, _db_ref) when rem(round_id, @snap_round) == 0 do

@@ -1,11 +1,7 @@
 defmodule Ippan.ClusterNodes do
-  alias Ippan.{Node, Network, BlockHandler}
+  alias Ippan.{Node, Network, BlockHandler, Round}
   alias Ipnworker.NodeSync
-  require Ippan.{Node}
-  require Sqlite
   require BalanceStore
-  require Ippan.Round
-  alias Ippan.Round
 
   @app Mix.Project.config()[:app]
   @pubsub :pubsub
@@ -35,7 +31,7 @@ defmodule Ippan.ClusterNodes do
     if is_nil(test) do
       miner = :persistent_term.get(:miner)
 
-      case Node.get(miner) do
+      case Node.get(db_ref, miner) do
         nil ->
           :ok
 
@@ -48,13 +44,13 @@ defmodule Ippan.ClusterNodes do
   @impl Network
   def fetch(id) do
     db_ref = :persistent_term.get(:local_conn)
-    Node.get(id)
+    Node.get(db_ref, id)
   end
 
   @impl Network
   def exists?(id) do
     db_ref = :persistent_term.get(:local_conn)
-    Node.exists?(id)
+    Node.exists?(db_ref, id)
   end
 
   @impl Network
@@ -115,7 +111,7 @@ defmodule Ippan.ClusterNodes do
   def handle_message("round.new", %{"id" => round_id} = msg_round, %{hostname: hostname} = _state) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless Round.exists?(round_id) do
+    unless Round.exists?(db_ref, round_id) do
       round = MapUtil.to_atoms(msg_round)
       GenServer.cast(RoundBuilder, {:build, round, hostname, true})
     end

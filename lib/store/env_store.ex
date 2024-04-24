@@ -1,8 +1,6 @@
 defmodule EnvStore do
-  require Sqlite
-
   def all(db_ref) do
-    data = Sqlite.all("all_env")
+    data = Sqlite.all(db_ref, "all_env")
 
     Enum.map(data, fn
       [name, value] ->
@@ -15,7 +13,7 @@ defmodule EnvStore do
   end
 
   def load(db_ref) do
-    data = Sqlite.all("all_env")
+    data = Sqlite.all(db_ref, "all_env")
 
     Enum.each(data, fn [name, value] ->
       :persistent_term.put({:env, name}, :erlang.binary_to_term(value))
@@ -25,7 +23,7 @@ defmodule EnvStore do
   def put(db_ref, name, value) do
     value = transform(name, value)
     :persistent_term.put({:env, name}, value)
-    Sqlite.step("insert_env", [name, :erlang.term_to_binary(value)])
+    Sqlite.step(db_ref, "insert_env", [name, :erlang.term_to_binary(value)])
   end
 
   def get(name, default \\ nil) do
@@ -34,7 +32,7 @@ defmodule EnvStore do
 
   def delete(db_ref, name) do
     :persistent_term.erase({:env, name})
-    Sqlite.step("delete_env", [name])
+    Sqlite.step(db_ref, "delete_env", [name])
   end
 
   def owner, do: :persistent_term.get({:env, "owner"}, nil)

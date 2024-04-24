@@ -2,7 +2,6 @@ defmodule Ippan.Ecto.SubPay do
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3, join: 5]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
-  require Sqlite
 
   @table "subpay"
   @table_service "serv"

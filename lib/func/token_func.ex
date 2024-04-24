@@ -1,8 +1,6 @@
 defmodule Ippan.Func.Token do
   alias Ippan.{Token, Utils}
   require BalanceStore
-  require Sqlite
-  require Token
 
   @app Mix.Project.config()[:app]
   @max_number 1_000_000_000_000_000_000_000_000_000
@@ -37,10 +35,10 @@ defmodule Ippan.Func.Token do
       map_filter != opts ->
         raise IppanError, "Invalid option arguments"
 
-      Token.exists?(id) ->
+      Token.exists?(db_ref, id) ->
         raise IppanError, "Token already exists"
 
-      @max_tokens != 0 and @max_tokens <= Token.total() ->
+      @max_tokens != 0 and @max_tokens <= Token.total(db_ref) ->
         raise IppanError, "Maximum tokens exceeded"
 
       true ->
@@ -84,7 +82,7 @@ defmodule Ippan.Func.Token do
     db_ref = :persistent_term.get(:main_conn)
 
     cond do
-      not Token.owner?(id, account_id) ->
+      not Token.owner?(db_ref, id, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
@@ -106,7 +104,7 @@ defmodule Ippan.Func.Token do
       TokenSupply.get(supply) != 0 ->
         raise IppanError, "Token is in use"
 
-      not Token.owner?(id, account_id) ->
+      not Token.owner?(db_ref, id, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
@@ -125,7 +123,7 @@ defmodule Ippan.Func.Token do
         prop
       ) do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(id)
+    token = Token.get(db_ref, id)
     props = if(is_list(prop), do: prop, else: [prop])
     allowed = Token.props()
 
@@ -165,7 +163,7 @@ defmodule Ippan.Func.Token do
         prop
       ) do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(id)
+    token = Token.get(db_ref, id)
     props = if(is_list(prop), do: prop, else: [prop])
 
     cond do
@@ -200,7 +198,7 @@ defmodule Ippan.Func.Token do
       )
       when byte_size(name) in 1..30 do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(id)
+    token = Token.get(db_ref, id)
 
     cond do
       size > 1024 ->
@@ -238,7 +236,7 @@ defmodule Ippan.Func.Token do
       )
       when is_binary(name) do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(id)
+    token = Token.get(db_ref, id)
 
     cond do
       token.owner != account_id ->

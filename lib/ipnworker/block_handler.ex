@@ -1,15 +1,11 @@
 defmodule Ippan.BlockHandler do
   alias Ippan.DetsSup
-  alias Ippan.{Block, ClusterNodes, Round, Validator, TxHandler}
+  alias Ippan.{Block, ClusterNodes, Round, Validator}
   # alias Phoenix.PubSub
 
   import Ippan.Block,
     only: [decode_file!: 1, encode_file!: 1]
 
-  require TxHandler
-  require Round
-  require Sqlite
-  require Validator
   require Logger
 
   @app Mix.Project.config()[:app]
@@ -118,7 +114,7 @@ defmodule Ippan.BlockHandler do
             wallet_tx = DetsPlux.tx(wallet_dets, dets.wallet)
             nonce_dets = DetsPlux.get(:nonce)
             nonce_tx = DetsPlux.tx(nonce_dets, dets.nonce)
-            validator = Validator.get(creator_id)
+            validator = Validator.get(db_ref, creator_id)
 
             IO.inspect(output_path)
             IO.inspect("File.read")

@@ -1,8 +1,6 @@
 defmodule Ipnworker.Router do
   use Plug.Router
   alias Ippan.{ClusterNodes, TxHandler, Validator, Account}
-  require Ippan.{Validator, TxHandler}
-  require Sqlite
   require Logger
   import Ippan.Utils, only: [json: 1]
 
@@ -52,7 +50,7 @@ defmodule Ipnworker.Router do
                   vid = :persistent_term.get(:vid)
 
                   validator =
-                    Validator.get(vid) ||
+                    Validator.get(db_ref, vid) ||
                       raise IppanError, "Node is not available yet"
 
                   handle_result =
@@ -110,7 +108,7 @@ defmodule Ipnworker.Router do
                 db_ref = :persistent_term.get(:main_conn)
 
                 %{hostname: hostname} =
-                  Validator.get(e.message)
+                  Validator.get(db_ref, e.message)
 
                 url = "https://#{hostname}#{conn.request_path}"
 
@@ -179,6 +177,7 @@ defmodule Ipnworker.Router do
     forward("/v1/event", to: Ipnworker.EventRoutes)
     forward("/v1/service", to: Ipnworker.ServiceRoutes)
     forward("/v1/subpay", to: Ipnworker.SubPayRoutes)
+    # forward "/v1/cluster", to: Ipnworker.NodeRoutes
     # forward "/v1/snap", to: Ipnworker.SnapRoutes
   end
 

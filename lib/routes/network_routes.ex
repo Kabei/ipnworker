@@ -1,8 +1,6 @@
 defmodule Ipnworker.NetworkRoutes do
   use Plug.Router
-  require Ippan.{Block, Round, Token, Validator}
   alias Ippan.{Token, Validator, Utils}
-  require Sqlite
   import Ippan.Utils, only: [json: 1]
 
   @app Mix.Project.config()[:app]
@@ -48,8 +46,8 @@ defmodule Ipnworker.NetworkRoutes do
     hash = Stats.get(stats, "last_hash", nil)
     blocks = Stats.get(stats, "blocks")
     txs = Stats.get(stats, "txs")
-    validators = Validator.total()
-    tokens = Token.total()
+    validators = Validator.total(db_ref)
+    tokens = Token.total(db_ref)
     accounts = DetsPlux.info(wallet, :size)
     jackpot = TokenSupply.cache("jackpot")
 

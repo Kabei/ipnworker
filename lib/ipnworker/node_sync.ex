@@ -1,8 +1,6 @@
 defmodule Ipnworker.NodeSync do
   use GenServer, restart: :trasient
   alias Ippan.{Node, ClusterNodes}
-  require Ippan.{Node, Round}
-  require Sqlite
   require Logger
 
   @ets_opts [
@@ -35,7 +33,7 @@ defmodule Ipnworker.NodeSync do
   def handle_continue(:prepare, state) do
     miner = :persistent_term.get(:miner)
     db_ref = :persistent_term.get(:local_conn)
-    node = Node.get(miner)
+    node = Node.get(db_ref, miner)
     builder_pid = Process.whereis(RoundBuilder)
     stats = Stats.cache()
     local_round_id = Stats.get(stats, "last_round", -1)

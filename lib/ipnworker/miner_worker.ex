@@ -4,11 +4,8 @@ defmodule MinerWorker do
   alias Ippan.Utils
   alias Ippan.{Block, TxHandler, Validator, Account}
   alias Phoenix.PubSub
-  require Sqlite
   require TxHandler
-  require Block
   require Logger
-  require Validator
 
   @app Mix.Project.config()[:app]
   @pubsub :pubsub
@@ -92,10 +89,10 @@ defmodule MinerWorker do
 
         if status > 0 do
           # delete validator
-          Validator.delete(creator_id)
+          Validator.delete(db_ref, creator_id)
           PubSub.local_broadcast(:pubsub, "validator.leave", %{"id" => creator_id})
           b = Block.cancel(block, round_id, count, 1)
-          :done = Block.insert(Block.to_list(b))
+          :done = Block.insert(db_ref, b)
         end
 
         {:reply, :error, state}
@@ -103,7 +100,7 @@ defmodule MinerWorker do
       IO.inspect("Bstep 4")
       b = Block.to_list(block)
 
-      Block.insert(b)
+      Block.insert(db_ref, b)
       |> IO.inspect()
 
       if @history do

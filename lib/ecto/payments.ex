@@ -4,8 +4,6 @@ defmodule Ippan.Ecto.Payments do
   alias Ippan.{Ecto.Round, Token, Utils}
   alias Ipnworker.Repo
   alias __MODULE__
-  require Token
-  require Sqlite
 
   @primary_key false
   @schema_prefix "history"
@@ -65,7 +63,7 @@ defmodule Ippan.Ecto.Payments do
       %{token: _token} -> true
     end)
     |> Enum.map(fn x ->
-      token = Token.get(x.token)
+      token = Token.get(db_ref, x.token)
 
       Map.merge(x, Map.take(token, @token_fields))
       |> MapUtil.drop_nils()

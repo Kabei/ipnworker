@@ -3,8 +3,6 @@ defmodule Ippan.Ecto.Validator do
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
-  require Sqlite
-  require Validator
 
   @table "validator"
   @select ~w(id hostname port name owner class pubkey net_pubkey image fa fb active failures env created_at updated_at subs)a
@@ -12,7 +10,7 @@ defmodule Ippan.Ecto.Validator do
   def me do
     db_ref = :persistent_term.get(:main_ro)
     vid = :persistent_term.get(:vid)
-    Validator.get(vid) |> fun()
+    Validator.get(db_ref, vid) |> fun()
   end
 
   def one(id) do
@@ -20,17 +18,17 @@ defmodule Ippan.Ecto.Validator do
 
     case Match.hostname?(id) do
       false ->
-        Validator.get(id)
+        Validator.get(db_ref, id)
 
       _ ->
-        Validator.get_host(id)
+        Validator.get_host(db_ref, id)
     end
     |> fun()
   end
 
   def exists?(id) do
     db_ref = :persistent_term.get(:main_ro)
-    Validator.exists?(id)
+    Validator.exists?(db_ref, id)
   end
 
   def exists_host?(hostname) do

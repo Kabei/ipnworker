@@ -1,8 +1,6 @@
 defmodule Ippan.Func.Account do
   alias Ippan.Utils
-  alias Ippan.{Address, Validator}
-  require Validator
-  require Sqlite
+  alias Ippan.Address
 
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)

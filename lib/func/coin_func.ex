@@ -1,8 +1,6 @@
 defmodule Ippan.Func.Coin do
   alias Ippan.{Token, Utils}
-  require Sqlite
   require BalanceStore
-  require Token
   require Logger
 
   @app Mix.Project.config()[:app]
@@ -56,7 +54,7 @@ defmodule Ippan.Func.Coin do
       )
       when length(outputs) > 0 do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(token_id)
+    token = Token.get(db_ref, token_id)
 
     cond do
       is_nil(token) ->
@@ -133,7 +131,7 @@ defmodule Ippan.Func.Coin do
       when is_integer(nonce) and nonce >= 0 do
     db_ref = :persistent_term.get(:main_conn)
 
-    case Sqlite.exists?("exists_refund", [sender, nonce, account_id]) do
+    case Sqlite.exists?(db_ref, "exists_refund", [sender, nonce, account_id]) do
       false ->
         raise IppanError, "Transaction does not exists"
 
@@ -145,7 +143,7 @@ defmodule Ippan.Func.Coin do
   def lock(%{id: account_id, dets: dets}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(token_id)
+    token = Token.get(db_ref, token_id)
 
     cond do
       is_nil(token) ->
@@ -167,7 +165,7 @@ defmodule Ippan.Func.Coin do
   def unlock(%{id: account_id, dets: dets}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(token_id)
+    token = Token.get(db_ref, token_id)
 
     cond do
       is_nil(token) ->
@@ -190,7 +188,7 @@ defmodule Ippan.Func.Coin do
   def drop(%{id: account_id, dets: dets}, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(token_id)
+    token = Token.get(db_ref, token_id)
 
     cond do
       Token.has_prop?(token, "burn") == false ->
@@ -206,7 +204,7 @@ defmodule Ippan.Func.Coin do
   def burn(%{id: account_id, dets: dets}, to, token_id, amount)
       when is_integer(amount) and amount > 0 do
     db_ref = :persistent_term.get(:main_conn)
-    token = Token.get(token_id)
+    token = Token.get(db_ref, token_id)
 
     cond do
       Token.has_prop?(token, "burn") == false ->
@@ -225,7 +223,7 @@ defmodule Ippan.Func.Coin do
   def reload(%{id: account_id, dets: dets}, token_id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    %{env: env, props: props} = Token.get(token_id)
+    %{env: env, props: props} = Token.get(db_ref, token_id)
 
     if "reload" not in props, do: raise(IppanError, "Reload property is missing")
 
@@ -275,7 +273,7 @@ defmodule Ippan.Func.Coin do
     db_ref = :persistent_term.get(:main_conn)
     wallet = DetsPlux.get(:wallet)
     tx = DetsPlux.tx(wallet, dets.wallet)
-    token = Token.get(token_id)
+    token = Token.get(db_ref, token_id)
 
     cond do
       is_nil(token) ->

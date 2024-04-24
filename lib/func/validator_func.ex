@@ -1,8 +1,6 @@
 defmodule Ippan.Func.Validator do
   import Guards
   alias Ippan.{Utils, Validator}
-  require Validator
-  require Sqlite
   require BalanceStore
 
   @app Mix.Project.config()[:app]
@@ -53,7 +51,7 @@ defmodule Ippan.Func.Validator do
       not Match.hostname?(hostname) and not Match.ipv4?(hostname) ->
         raise IppanError, "Invalid hostname"
 
-      Validator.exists_host?(hostname) ->
+      Validator.exists_host?(db_ref, hostname) ->
         raise IppanError, "Validator already exists"
 
       @max_validators <= next_id ->
@@ -88,7 +86,7 @@ defmodule Ippan.Func.Validator do
       map_size(opts) == 0 or map_filter != opts ->
         raise IppanError, "Invalid option field"
 
-      not Validator.owner?(id, account_id) ->
+      not Validator.owner?(db_ref, id, account_id) ->
         raise IppanError, "Invalid owner"
 
       true ->
@@ -133,7 +131,7 @@ defmodule Ippan.Func.Validator do
   def active(%{id: account_id, dets: dets, size: size, validator: %{fa: fa, fb: fb}}, id, active)
       when is_boolean(active) do
     db_ref = :persistent_term.get(:main_conn)
-    v = Validator.get(id)
+    v = Validator.get(db_ref, id)
 
     cond do
       is_nil(v) ->
@@ -157,7 +155,7 @@ defmodule Ippan.Func.Validator do
   def leave(%{id: account_id}, id) do
     db_ref = :persistent_term.get(:main_conn)
 
-    unless Validator.owner?(id, account_id) do
+    unless Validator.owner?(db_ref, id, account_id) do
       raise IppanError, "Invalid owner"
     end
   end
@@ -175,7 +173,7 @@ defmodule Ippan.Func.Validator do
       )
       when byte_size(name) in 1..30 do
     db_ref = :persistent_term.get(:main_conn)
-    validator = Validator.get(id)
+    validator = Validator.get(db_ref, id)
 
     cond do
       size > 1024 ->
@@ -210,7 +208,7 @@ defmodule Ippan.Func.Validator do
         name
       ) do
     db_ref = :persistent_term.get(:main_conn)
-    validator = Validator.get(id)
+    validator = Validator.get(db_ref, id)
 
     cond do
       validator.owner != account_id and

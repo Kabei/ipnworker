@@ -1,8 +1,6 @@
 defmodule Ippan.Func.Service do
   require BalanceStore
-  alias Ippan.{Token, Utils}
-  require Sqlite
-  require Token
+  alias Ippan.Utils
 
   @app Mix.Project.config()[:app]
   @token Application.compile_env(@app, :token)

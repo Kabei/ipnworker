@@ -3,8 +3,6 @@ defmodule Ippan.Ecto.Token do
   alias Ipnworker.Repo
   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
-  require Sqlite
-  require Token
 
   @table "token"
   @select ~w(id owner name image decimal symbol max_supply props env created_at updated_at)a
@@ -12,7 +10,7 @@ defmodule Ippan.Ecto.Token do
   def one(id) do
     db_ref = :persistent_term.get(:main_ro)
 
-    Token.get(id)
+    Token.get(db_ref, id)
   end
 
   def all(params) do

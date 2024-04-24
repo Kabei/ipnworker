@@ -3,8 +3,6 @@ defmodule Ippan.Ecto.Balance do
   import Ecto.Query, only: [from: 2, order_by: 3, select: 3, where: 3]
   alias Ipnworker.Repo
   alias Ippan.Token
-  require Ippan.Token
-  require Sqlite
   alias __MODULE__
 
   @primary_key false
@@ -55,7 +53,7 @@ defmodule Ippan.Ecto.Balance do
       %{token: _token} -> true
     end)
     |> Enum.map(fn x ->
-      token = Token.get(x.token)
+      token = Token.get(db_ref, x.token)
 
       Map.merge(x, Map.take(token, @token_fields))
       |> MapUtil.drop_nils()
