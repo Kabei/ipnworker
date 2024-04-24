@@ -1,13 +1,24 @@
 defmodule Ippan.Func do
+  @moduledoc """
+  * Priority
+     0. Maximum
+     1. Very high
+     2. High
+     3. Normal
+     4. Low
+     5. Minimum
+     d. deferred
+  """
   @type t :: %__MODULE__{
           id: non_neg_integer(),
           name: String.t(),
           mod: module(),
           modx: module(),
           fun: atom() | function(),
-          deferred: boolean(),
-          check: integer(),
-          key: integer() | nil
+          index: term(),
+          priority: non_neg_integer() | binary(),
+          origin: integer(),
+          flag: integer()
         }
 
   @enforce_keys [:id, :mod, :modx, :fun]
@@ -17,8 +28,9 @@ defmodule Ippan.Func do
     :mod,
     :modx,
     :fun,
-    :key,
-    deferred: false,
-    check: 1
+    origin: 0,
+    priority: 3,
+    index: 2,
+    flag: 0
   ]
 end

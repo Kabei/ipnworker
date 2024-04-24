@@ -1,5 +1,5 @@
 --name: insert_env
-REPLACE INTO main.env values(?1, ?2);
+INSERT OR REPLACE INTO main.env values(?1, ?2);
 
 --name: get_env
 SELECT value FROM main.env WHERE name=?1 LIMIT 1;
@@ -28,56 +28,6 @@ SELECT COUNT(1) FROM assets.token;
 
 --name: delete_token
 DELETE FROM assets.token WHERE id = ?1 AND owner = ?2;
-
-
--- --name: insert_domain
--- INSERT INTO dns.domain VALUES(?1,?2,?3,?4,?5,?6,?7,?8);
-
--- --name: get_domain
--- SELECT * FROM dns.domain WHERE name = ? LIMIT 1;
-
--- --name: exists_domain
--- SELECT 1 FROM dns.domain WHERE name = ? LIMIT 1;
-
--- --name: owner_domain
--- SELECT 1 FROM dns.domain WHERE name = ?1 AND owner = ?2 LIMIT 1;
-
--- --name: delete_domain
--- DELETE FROM dns.domain WHERE name = ?1 AND owner =?2;
-
--- --name: renew_domain
--- UPDATE dns.domain SET renewed_at = renewed_at + ?3, updated_at = ?4 WHERE name=?1 AND owner=?2;
-
--- --name: expiry_domain
--- DELETE FROM dns.domain WHERE renewed_at < ?;
-
-
--- --name: insert_dns
--- INSERT OR REPLACE INTO dns.dns VALUES(?1, ?2, ?3, ?4, ?5, ?6);
-
--- --name: get_dns
--- SELECT * FROM dns.dns WHERE domain=?1 AND hash=?2;
-
--- --name: exists_dns
--- SELECT 1 FROM dns.dns WHERE domain=?1 AND name=?2 LIMIT 1;
-
--- --name: exists_dns_type
--- SELECT 1 FROM dns.dns WHERE domain=?1 AND name=?2 AND type=?3 LIMIT 1;
-
--- --name: exists_dns_hash
--- SELECT 1 FROM dns.dns WHERE domain=?1 AND name=?2 AND hash=?3 LIMIT 1;
-
--- --name: delete_hash_dns
--- DELETE FROM dns.dns WHERE domain = ?1 AND name=?2 AND hash=?3;
-
--- --name: delete_type_dns
--- DELETE FROM dns.dns WHERE domain = ?1 AND name=?2 AND type=?3;
-
--- --name: delete_name_dns
--- DELETE FROM dns.dns WHERE domain = ?1 AND name=?2;
-
--- --name: delete_dns
--- DELETE FROM dns.dns WHERE domain = ?;
 
 
 --name: next_block_id
