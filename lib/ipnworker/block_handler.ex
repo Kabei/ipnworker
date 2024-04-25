@@ -174,7 +174,7 @@ defmodule Ippan.BlockHandler do
 
                   txs =
                   Enum.reverse(values)
-                  |> Enum.group_by(fn {type, _tx} -> type end, )
+                  |> Enum.group_by(fn {type, _tx} -> type end, fn {type, tx} -> tx end)
 
                 :ets.delete(ets)
 
