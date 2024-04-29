@@ -1,7 +1,10 @@
 defmodule TxWorker do
   use GenServer
   require Logger
+
   @module __MODULE__
+  @app Mix.Project.config()[:app]
+  @notify Application.compile_env(@app, :notify, false)
 
   def child_spec(args) do
     %{

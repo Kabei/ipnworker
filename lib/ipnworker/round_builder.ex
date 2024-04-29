@@ -114,34 +114,36 @@ defmodule RoundBuilder do
     # IO.inspect("step 1")
     is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
-    for block = %{"creator" => block_creator_id} <- blocks do
-      Task.async(fn ->
-        creator = Validator.get(db_ref, block_creator_id)
+    round_creator =
+      Validator.get(db_ref, round_creator_id)
 
-        :poolboy.transaction(
-          pool_pid,
-          fn pid ->
-            MinerWorker.mine(
-              pid,
-              round_id,
-              MapUtil.to_atoms(block),
-              hostname,
-              creator,
-              pg_conn
-            )
-          end,
-          :infinity
-        )
-      end)
-    end
-    |> Task.await_many(:infinity)
+    Ipncore.MinerWorker.build(round_id, blocks)
+
+    # for block = %{"creator" => block_creator_id} <- blocks do
+    #   Task.async(fn ->
+    #     creator = Validator.get(db_ref, block_creator_id)
+
+    #     :poolboy.transaction(
+    #       pool_pid,
+    #       fn pid ->
+    #         MinerWorker.mine(
+    #           pid,
+    #           round_id,
+    #           MapUtil.to_atoms(block),
+    #           hostname,
+    #           creator,
+    #           pg_conn
+    #         )
+    #       end,
+    #       :infinity
+    #     )
+    #   end)
+    # end
+    # |> Task.await_many(:infinity)
 
     # IO.inspect("step 2")
 
     # TxHandler.run_deferred_txs()
-
-    round_creator =
-      Validator.get(db_ref, round_creator_id)
 
     run_reward(round, round_creator, balance_pid, balance_tx, pg_conn)
     run_jackpot(round, balance_pid, balance_tx, pg_conn)
