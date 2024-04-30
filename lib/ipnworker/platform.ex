@@ -62,7 +62,7 @@ defmodule Platform do
               end
 
               Enum.each(values, fn x ->
-                Token.insert(db_ref, Token.to_list(x))
+                Token.insert(db_ref, x)
               end)
             end)
 

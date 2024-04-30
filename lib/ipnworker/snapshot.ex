@@ -23,7 +23,7 @@ defmodule Snapshot do
 
     # compute filehash
     hash =
-      compute_hashfile(filepath)
+      compute_filehash(filepath)
 
     # get filesize
     {:ok, fstat} = File.stat(filepath)
@@ -67,7 +67,7 @@ defmodule Snapshot do
     DownloadTask.start(url, filepath, max_size: snapshot.size)
 
     # snapshot hash verification
-    case compute_hashfile(filepath) == snapshot.hash do
+    case compute_filehash(filepath) == snapshot.hash do
       true -> :ok
       _ -> :error
     end
@@ -81,7 +81,7 @@ defmodule Snapshot do
     DownloadTask.start(url, filepath, max_size: snapshot.size)
 
     # snapshot hash verification
-    case compute_hashfile(filepath) == snapshot.hash do
+    case compute_filehash(filepath) == snapshot.hash do
       true -> :ok
       _ -> :error
     end
@@ -120,7 +120,7 @@ defmodule Snapshot do
   end
 
   @hash_module Blake3
-  defp compute_hashfile(path) do
+  defp compute_filehash(path) do
     state = @hash_module.new()
 
     File.stream!(path, [], 2048)

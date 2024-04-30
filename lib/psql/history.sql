@@ -1,7 +1,7 @@
- CREATE SCHEMA IF NOT EXISTS history;
+CREATE SCHEMA IF NOT EXISTS history;
 
 CREATE TABLE IF NOT EXISTS history.rounds(
-  "id" NUMERIC PRIMARY KEY NOT NULL,
+  "id" BIGINT PRIMARY KEY NOT NULL,
   "hash" BYTEA,
   "prev" BYTEA,
   "creator" TEXT,
@@ -15,21 +15,14 @@ CREATE TABLE IF NOT EXISTS history.rounds(
   "extra" BYTEA
 );
 
-CREATE TABLE IF NOT EXISTS history.jackpot(
-  "round_id" NUMERIC NOT NULL,
-  "winner" TEXT NOT NULL,
-  "amount" NUMERIC,
-  PRIMARY KEY("round_id", "winner")
-);
-
 CREATE TABLE IF NOT EXISTS history.snapshot(
-  "round_id" NUMERIC PRIMARY KEY NOT NULL,
+  "round_id" BIGINT PRIMARY KEY NOT NULL,
   "hash" BYTEA NOT NULL,
   "size" BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS history.blocks(
-  "id" NUMERIC PRIMARY KEY,
+  "id" BIGINT PRIMARY KEY,
   "creator" TEXT NOT NULL,
   "height" BIGINT NOT NULL,
   "hash" BYTEA NOT NULL,
@@ -87,12 +80,11 @@ CREATE INDEX IF NOT EXISTS payments_to_idx ON history.payments("to") WHERE "to" 
 DO $$
 BEGIN
 IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
-SELECT create_hypertable('history.rounds', 'id', chunk_time_interval => 151200, if_not_exists => TRUE);
-SELECT create_hypertable('history.jackpot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
-SELECT create_hypertable('history.snapshot', 'round_id', chunk_time_interval => 604800, if_not_exists => TRUE);
-SELECT create_hypertable('history.blocks', 'id', chunk_time_interval => 7560000, if_not_exists => TRUE);
-SELECT create_hypertable('history.txs', 'block', chunk_time_interval => 7560000, if_not_exists => TRUE);
-SELECT create_hypertable('history.payments', 'round', chunk_time_interval => 7560000, if_not_exists => TRUE);
+-- SELECT create_hypertable('history.rounds', 'id', chunk_time_interval => 350000, if_not_exists => TRUE);
+-- SELECT create_hypertable('history.snapshot', 'round_id', chunk_time_interval => 350000, if_not_exists => TRUE);
+-- SELECT create_hypertable('history.blocks', 'round', chunk_time_interval => 350000, if_not_exists => TRUE);
+-- SELECT create_hypertable('history.txs', 'block', chunk_time_interval => 1000000, if_not_exists => TRUE);
+-- SELECT create_hypertable('history.payments', 'round', chunk_time_interval => 350000, if_not_exists => TRUE);
 ELSE
 CREATE INDEX IF NOT EXISTS txs_block_idx ON history.txs("block", "ix" ASC);
 CREATE INDEX IF NOT EXISTS payments_round_idx ON history.payments("round");

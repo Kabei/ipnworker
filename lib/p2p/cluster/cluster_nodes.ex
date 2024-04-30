@@ -25,7 +25,7 @@ defmodule Ippan.ClusterNodes do
   end
 
   defp connect_to_miner do
-    db_ref = :persistent_term.get(:main_conn)
+    db_ref = :persistent_term.get(:local_conn)
     test = System.get_env("test")
 
     if is_nil(test) do
@@ -109,7 +109,7 @@ defmodule Ippan.ClusterNodes do
   Create a new round. Received from a IPNCORE
   """
   def handle_message("round.new", %{"id" => round_id} = msg_round, %{hostname: hostname} = _state) do
-    db_ref = :persistent_term.get(:main_conn)
+    db_ref = :persistent_term.get(:main_ro)
 
     unless Round.exists?(db_ref, round_id) do
       round = MapUtil.to_atoms(msg_round)

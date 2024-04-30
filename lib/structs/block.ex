@@ -169,8 +169,8 @@ defmodule Ippan.Block do
     |> @hash_module.hash()
   end
 
-  @spec compute_hashfile(Path.t()) :: binary()
-  def compute_hashfile(path) do
+  @spec compute_filehash(Path.t()) :: binary()
+  def compute_filehash(path) do
     state = @hash_module.new()
 
     File.stream!(path, [], 2048)

@@ -2,7 +2,7 @@ defmodule RoundBuilder do
   use GenServer
   alias Ippan.{Round, Validator}
   alias Phoenix.PubSub
-  alias Ipnworker.NodeSync
+  alias Ipnworker.{MinerWorker, NodeSync}
   require BalanceStore
   require Logger
 
@@ -27,54 +27,54 @@ defmodule RoundBuilder do
   end
 
   @impl true
-  def handle_cast({:build, round, hostname, check_sync}, state) do
-    prepare_build(round, hostname, check_sync)
+  def handle_cast({:build, round, check_sync}, state) do
+    prepare_build(round, check_sync)
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_call({:build, round, hostname, check_sync}, _from, state) do
-    prepare_build(round, hostname, check_sync)
+  def handle_call({:build, round, check_sync}, _from, state) do
+    prepare_build(round, check_sync)
     {:reply, :ok, state}
   end
 
-  @spec prepare_build(round :: map, hostname :: String.t(), check_sync :: boolean()) :: any()
+  @spec prepare_build(round :: map, check_sync :: boolean()) :: any()
   if @history do
-    defp prepare_build(round, hostname, false) do
+    defp prepare_build(round, false) do
       pgid = PgStore.pool()
 
       Postgrex.transaction(
         pgid,
         fn conn ->
-          build_round(round, hostname, conn)
+          build_round(round, conn)
         end,
         timeout: :infinity
       )
     end
 
-    defp prepare_build(round, hostname, true) do
+    defp prepare_build(round, true) do
       unless node_syncing?(round) do
         pgid = PgStore.pool()
 
         Postgrex.transaction(
           pgid,
           fn conn ->
-            build_round(round, hostname, conn)
+            build_round(round, conn)
           end,
           timeout: :infinity
         )
       end
     end
   else
-    defp prepare_build(round, hostname, true) do
+    defp prepare_build(round, true) do
       unless node_syncing?(round) do
-        build_round(round, hostname, nil)
+        build_round(round, nil)
       end
     end
 
-    defp prepare_build(round, hostname, false) do
-      build_round(round, hostname, nil)
+    defp prepare_build(round, false) do
+      build_round(round, nil)
     end
   end
 
@@ -88,7 +88,6 @@ defmodule RoundBuilder do
            status: status,
            tx_count: tx_count
          },
-         hostname,
          pg_conn
        ) do
     # IO.inspect("step 0")
@@ -110,14 +109,14 @@ defmodule RoundBuilder do
 
     IO.puts("##{round.id}")
 
-    pool_pid = Process.whereis(:minerpool)
+    # pool_pid = Process.whereis(:minerpool)
     # IO.inspect("step 1")
     is_some_block_mine = Enum.any?(round.blocks, fn x -> Map.get(x, "creator") == vid end)
 
     round_creator =
       Validator.get(db_ref, round_creator_id)
 
-    Ipncore.MinerWorker.build(round_id, blocks)
+    MinerWorker.build(round_id, blocks)
 
     # for block = %{"creator" => block_creator_id} <- blocks do
     #   Task.async(fn ->
@@ -238,7 +237,7 @@ defmodule RoundBuilder do
          pg_conn
        )
        when amount > 0 do
-    data = [round_id, winner, amount]
+    # data = [round_id, winner, amount]
     # :done = Sqlite.step("insert_jackpot", data)
     BalanceStore.income(dets, tx, winner, @token, amount)
     supply = TokenSupply.jackpot()
@@ -246,7 +245,7 @@ defmodule RoundBuilder do
 
     if pg_conn do
       RegPay.jackpot(winner, @token, amount)
-      PgStore.insert_jackpot(pg_conn, data)
+      # PgStore.insert_jackpot(pg_conn, data)
     end
 
     # Push event
