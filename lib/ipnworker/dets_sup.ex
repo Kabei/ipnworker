@@ -54,6 +54,15 @@ defmodule Ippan.DetsSup do
     }
   end
 
+  def cache_txs do
+    %{
+      balance: DetsPlux.tx(:cache_balance),
+      nonce: DetsPlux.tx(:cache_nonce),
+      stats: DetsPlux.tx(:cache_stats),
+      wallet: DetsPlux.tx(:cache_wallet)
+    }
+  end
+
   def txs do
     %{
       balance: DetsPlux.tx(:balance),

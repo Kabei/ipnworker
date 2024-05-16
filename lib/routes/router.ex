@@ -1,8 +1,7 @@
 defmodule Ipnworker.Router do
   use Plug.Router
-  alias Ippan.DetsSup
   alias Ippan.Funcs
-  alias Ippan.{ClusterNodes, TxHandler, Validator, Account}
+  alias Ippan.{ClusterNodes, TxHandler, Validator}
   require Logger
   import Ippan.Utils, only: [json: 1]
 

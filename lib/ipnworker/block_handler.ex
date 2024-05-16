@@ -1,7 +1,7 @@
 defmodule Ippan.BlockHandler do
   alias Ippan.Funcs
   alias Ippan.DetsSup
-  alias Ippan.{Block, ClusterNodes, Round, Validator}
+  alias Ippan.{Block, ClusterNodes, Validator, TxHandler}
   # alias Phoenix.PubSub
 
   import Ippan.Block,
@@ -123,7 +123,7 @@ defmodule Ippan.BlockHandler do
 
               refs = %{
                 dets: DetsSup.dets(),
-                tx: DetsSup.txs(),
+                tx: DetsSup.cache_txs(),
                 db: db_ref
               }
 
@@ -172,7 +172,7 @@ defmodule Ippan.BlockHandler do
                     end
                   end)
 
-                  txs =
+                txs =
                   Enum.reverse(values)
                   |> Enum.group_by(fn {type, _tx} -> type end, fn {type, tx} -> tx end)
 
