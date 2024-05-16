@@ -10,8 +10,8 @@ AS INSERT INTO history.blocks VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
 PREPARE insert_round(numeric, bytea, bytea, text, bytea, numeric, bigint, bigint, bigint, integer, bigint, bytea)
 AS INSERT INTO history.rounds VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12);
 
-PREPARE insert_jackpot(numeric, text, bigint)
-AS INSERT INTO history.jackpot VALUES($1,$2,$3);
+-- PREPARE insert_jackpot(numeric, text, bigint)
+-- AS INSERT INTO history.jackpot VALUES($1,$2,$3);
 
 PREPARE insert_snapshot(numeric, bytea, bigint)
 AS INSERT INTO history.snapshot VALUES($1,$2,$3);

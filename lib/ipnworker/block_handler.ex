@@ -150,7 +150,7 @@ defmodule Ippan.BlockHandler do
                         sig: signature
                       }
 
-                      {key, result} = TxHandler.valid!(map)
+                      {_key, result} = TxHandler.valid!(map)
 
                       case result do
                         {"err", tx} ->
@@ -174,7 +174,7 @@ defmodule Ippan.BlockHandler do
 
                 txs =
                   Enum.reverse(values)
-                  |> Enum.group_by(fn {type, _tx} -> type end, fn {type, tx} -> tx end)
+                  |> Enum.group_by(fn {type, _tx} -> type end, fn {_type, tx} -> tx end)
 
                 :ets.delete(ets)
 
@@ -192,7 +192,7 @@ defmodule Ippan.BlockHandler do
 
                 File.write(
                   export_path,
-                  encode_file!(%{"txs" => values, "err" => errors, "vsn" => version})
+                  encode_file!(%{"txs" => txs, "err" => errors, "vsn" => version})
                 )
               rescue
                 _ ->

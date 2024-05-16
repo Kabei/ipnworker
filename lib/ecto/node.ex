@@ -1,127 +1,127 @@
-# defmodule Ippan.Ecto.Node do
-#   alias Ippan.{ClusterNodes, Node}
-#   alias Ipnworker.Repo
-#   import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
-#   import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
-#   require Logger
+defmodule Ippan.Ecto.Node do
+  alias Ippan.{Node}
+  alias Ipnworker.Repo
+  import Ecto.Query, only: [from: 1, order_by: 3, select: 3, where: 3]
+  import Ippan.Ecto.Filters, only: [filter_limit: 2, filter_offset: 2]
+  require Logger
 
-#   @table "node"
-#   @select ~w(id hostname port class pubkey net_pubkey image created_at)a
+  @table "node"
+  @select ~w(id hostname port class pubkey net_pubkey image created_at)a
 
-#   def one(id) do
-#     db_ref = :persistent_term.get(:local_conn)
+  def one(id) do
+    db_ref = :persistent_term.get(:local_conn)
 
-#     Node.get(db_ref, id)
-#   end
+    Node.get(db_ref, id)
+  end
 
-#   def trigger("node.join", params) do
-#     timestamp = :erlang.system_time(:millisecond)
+  # def trigger("node.join", params) do
+  #   timestamp = :erlang.system_time(:millisecond)
 
-#     result =
-#       params
-#       |> MapUtil.only(~w(id hostname port class))
-#       |> MapUtil.validate_hostname("hostname")
-#       |> MapUtil.validate_range("port", 1000..65535)
-#       |> MapUtil.validate_bytes_range("id", 0..255)
-#       |> MapUtil.validate_bytes_range("image", 0..255)
-#       |> MapUtil.validate_text("class")
-#       |> Map.put(:created_at, timestamp)
-#       |> Map.put(:updated_at, timestamp)
-#       |> MapUtil.to_atoms()
+  #   result =
+  #     params
+  #     |> MapUtil.only(~w(id hostname port class))
+  #     |> MapUtil.validate_hostname("hostname")
+  #     |> MapUtil.validate_range("port", 1000..65535)
+  #     |> MapUtil.validate_bytes_range("id", 0..255)
+  #     |> MapUtil.validate_bytes_range("image", 0..255)
+  #     |> MapUtil.validate_text("class")
+  #     |> Map.put(:created_at, timestamp)
+  #     |> Map.put(:updated_at, timestamp)
+  #     |> MapUtil.to_atoms()
 
-#     db_ref = :persistent_term.get(:local_conn)
+  #   db_ref = :persistent_term.get(:local_conn)
 
-#     result
-#     |> Node.to_list(db_ref)
-#     |> Node.insert(db_ref)
-#     |> case do
-#       :done ->
-#         miner = :persistent_term.get(:miner)
-#         ClusterNodes.cast(miner, "node.join", result)
-#         :ok
+  #   result
+  #   |> Node.to_list(db_ref)
+  #   |> Node.insert(db_ref)
+  #   |> case do
+  #     :done ->
+  #       miner = :persistent_term.get(:miner)
+  #       ClusterNodes.cast(miner, "node.join", result)
+  #       :ok
 
-#       _ ->
-#         Logger.error("Node could not be recorded | #{inspect(result)}")
-#     end
-#   end
+  #     _ ->
+  #       Logger.error("Node could not be recorded | #{inspect(result)}")
+  #   end
+  # end
 
-#   def trigger(event = "node.update", %{"id" => id, "data" => params}) do
-#     db_ref = :persistent_term.get(:local_conn)
+  # def trigger(event = "node.update", %{"id" => id, "data" => params}) do
+  #   db_ref = :persistent_term.get(:local_conn)
 
-#     map =
-#       params
-#       |> Map.take(Node.optionals())
-#       |> MapUtil.validate_hostname("hostname")
-#       |> MapUtil.validate_range("port", 1000..65535)
-#       |> MapUtil.to_atoms()
+  #   map =
+  #     params
+  #     |> Map.take(Node.optionals())
+  #     |> MapUtil.validate_hostname("hostname")
+  #     |> MapUtil.validate_range("port", 1000..65535)
+  #     |> MapUtil.to_atoms()
 
-#     if Node.update(db_ref, map, id) == :done do
-#       miner = :persistent_term.get(:miner)
-#       ClusterNodes.cast(miner, event, %{"id" => id, "data" => map})
-#     else
-#       Logger.error("Node could not be updated | #{inspect(id)}")
-#     end
-#   end
+  #   if Node.update(db_ref, map, id) == :done do
+  #     miner = :persistent_term.get(:miner)
+  #     ClusterNodes.cast(miner, event, %{"id" => id, "data" => map})
+  #   else
+  #     Logger.error("Node could not be updated | #{inspect(id)}")
+  #   end
+  # end
 
-#   def trigger("node.leave", %{"id" => id}) do
-#     db_ref = :persistent_term.get(:local_conn)
+  # def trigger("node.leave", %{"id" => id}) do
+  #   db_ref = :persistent_term.get(:local_conn)
 
-#     if Node.delete(db_ref, id) == :done do
-#       miner = :persistent_term.get(:miner)
-#       ClusterNodes.cast(miner, "node.leave", id)
-#     else
-#       Logger.error("Node could not be deleted | #{inspect(id)}")
-#     end
-#   end
+  #   if Node.delete(db_ref, id) == :done do
+  #     miner = :persistent_term.get(:miner)
+  #     ClusterNodes.cast(miner, "node.leave", id)
+  #   else
+  #     Logger.error("Node could not be deleted | #{inspect(id)}")
+  #   end
+  # end
 
-#   def trigger(_, _), do: :undefined
+  # def trigger(_, _), do: :undefined
 
-#   def all(params) do
-#     q =
-#       from(@table)
-#       |> filter_offset(params)
-#       |> filter_limit(params)
-#       |> filter_search(params)
-#       |> filter_while(params)
-#       |> filter_select()
-#       |> sort(params)
+  def all(params) do
+    q =
+      from(@table)
+      |> filter_offset(params)
+      |> filter_limit(params)
+      |> filter_search(params)
+      |> filter_while(params)
+      |> filter_select()
+      |> sort(params)
 
-#     {sql, args} =
-#       Repo.to_sql(:all, q)
+    {sql, args} =
+      Repo.to_sql(:all, q)
 
-#     db_ro = :persistent_term.get(:local_conn)
+    db_ro = :persistent_term.get(:local_conn)
 
-#     case Sqlite.query(db_ro, sql, args) do
-#       {:ok, results} ->
-#         Enum.map(results, &Node.list_to_map(&1))
+    case Sqlite.query(db_ro, sql, args) do
+      {:ok, results} ->
+        Enum.map(results, &Node.list_to_map(&1))
 
-#       _ ->
-#         []
-#     end
-#   end
+      _ ->
+        []
+    end
+  end
 
-#   def total do
-#     db_ref = :persistent_term.get(:local_conn)
-#     Node.total(db_ref)
-#   end
+  def total do
+    db_ref = :persistent_term.get(:local_conn)
+    Node.total(db_ref)
+  end
 
-#   defp filter_select(query) do
-#     select(query, [t], map(t, @select))
-#   end
+  defp filter_select(query) do
+    select(query, [t], map(t, @select))
+  end
 
-#   defp filter_search(query, %{"q" => q}) do
-#     q = String.upcase("%#{q}%")
-#     where(query, [t], like(fragment("UPPER(?)", t.name), ^q))
-#   end
+  defp filter_search(query, %{"q" => q}) do
+    q = String.upcase("%#{q}%")
+    where(query, [t], like(fragment("UPPER(?)", t.name), ^q))
+  end
 
-#   defp filter_search(query, _), do: query
+  defp filter_search(query, _), do: query
 
-#   defp filter_while(query, %{"last_updated" => time}) do
-#     where(query, [t], t.updated_at > ^time)
-#   end
+  defp filter_while(query, %{"last_updated" => time}) do
+    where(query, [t], t.updated_at > ^time)
+  end
 
-#   defp filter_while(query, _), do: query
+  defp filter_while(query, _), do: query
 
-#   defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
-#   defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
-# end
+  defp sort(query, %{"sort" => "newest"}), do: order_by(query, [t], desc: t.created_at)
+  defp sort(query, _), do: order_by(query, [t], asc: t.created_at)
+end

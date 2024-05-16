@@ -19,13 +19,8 @@ defmodule Ipnworker.Application do
         LocalStore,
         PgStore,
         Ipnworker.Repo,
-        :poolboy.child_spec(:minerpool,
-          name: {:local, :minerpool},
-          worker_module: MinerWorker,
-          size: 5,
-          max_overflow: 2
-        ),
         {Phoenix.PubSub, [name: :pubsub]},
+        TxSupervisor,
         ClusterNodes,
         HttpServer
       ]
