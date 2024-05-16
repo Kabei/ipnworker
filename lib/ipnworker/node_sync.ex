@@ -41,7 +41,7 @@ defmodule Ipnworker.NodeSync do
     local_round_id = Stats.get(stats, "last_round", -1)
     my_last_snap = Snapshot.last(stats)
 
-    if is_nil(node) do
+    if is_nil(node) or not ClusterNodes.alive?(node.id) do
       IO.puts("NodeSync no init")
       {:stop, :normal, state}
     else
