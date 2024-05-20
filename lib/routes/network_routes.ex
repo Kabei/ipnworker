@@ -39,8 +39,8 @@ defmodule Ipnworker.NetworkRoutes do
   plug(:dispatch)
 
   get "/status" do
-    db_ref = :persistent_term.get(:main_conn)
-    wallet = DetsPlux.get(:wallet)
+    db_ref = :persistent_term.get(:main_ro)
+    wallet = DetsPlux.get(:cache_wallet)
     stats = Stats.cache()
     supply = TokenSupply.cache(@token)
 
