@@ -24,13 +24,13 @@ defmodule Ippan.Funx.Validator do
         opts \\ %{}
       ) do
     db_ref = :persistent_term.get(:main_conn)
-    next_id = Validator.next_id(db_ref)
+    total = Validator.total()
 
     cond do
       Validator.exists_host?(hostname) ->
         :error
 
-      next_id >= @max_validators ->
+      @max_validators <= total ->
         :error
 
       true ->
@@ -39,13 +39,15 @@ defmodule Ippan.Funx.Validator do
         net_pubkey = Fast64.decode64(net_pubkey)
         db = DetsPlux.get(:balance)
         tx = DetsPlux.tx(db, :balance)
-        price = Validator.calc_price(next_id)
+        price = Validator.calc_price(total)
 
         case BalanceStore.pay_burn(account_id, price) do
           :error ->
             :error
 
           _ ->
+            next_id = Validator.next_id(db_ref)
+
             validator =
               %Validator{
                 id: next_id,
