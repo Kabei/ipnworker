@@ -72,7 +72,7 @@ defmodule Ippan.Func.Coin do
         total =
           Enum.reduce(outputs, 0, fn [account, amount], acc ->
             cond do
-              not is_integer(amount) or amount < 0 or amount > @max_tx_amount ->
+              not is_integer(amount) or amount <= 0 or amount > @max_tx_amount ->
                 raise ArgumentError, "Invalid amount"
 
               not Match.account?(account) ->

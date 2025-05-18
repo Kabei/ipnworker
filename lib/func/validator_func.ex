@@ -29,7 +29,7 @@ defmodule Ippan.Func.Validator do
     pubkey = Fast64.decode64(pubkey)
     net_pubkey = Fast64.decode64(net_pubkey)
     db_ref = :persistent_term.get(:main_conn)
-    next_id = Validator.next_id()
+    next_id = Validator.next_id(db_ref)
 
     cond do
       fa < EnvStore.min_fa() or fa > @max_fees ->
@@ -56,8 +56,8 @@ defmodule Ippan.Func.Validator do
       Validator.exists_host?(hostname) ->
         raise IppanError, "Validator already exists"
 
-      @max_validators <= next_id ->
-        raise IppanError, "Maximum validators exceeded"
+      next_id >= @max_validators ->
+        raise IppanError, "Maximum number of validators reached #{@max_validators}"
 
       true ->
         MapUtil.to_atoms(map_filter)

@@ -54,7 +54,7 @@ defmodule Ipnworker.MixProject do
       {:phoenix_pubsub, "~> 2.1"},
       {:cafezinho, "~> 0.4.0"},
       {:ex_secp256k1, "~> 0.7.2"},
-      {:exqlite, "~> 0.20"},
+      {:exqlite, "~> 0.24.2"},
       {:blake3, "~> 1.0"},
       {:falcon, git: "https://kabei@github.com/kabei/falcon.git", branch: "master"},
       {:ntrukem, git: "https://kabei@github.com/kabei/ntrukem.git", branch: "master"},

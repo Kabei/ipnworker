@@ -24,13 +24,13 @@ defmodule Ippan.Funx.Validator do
         opts \\ %{}
       ) do
     db_ref = :persistent_term.get(:main_conn)
-    next_id = Validator.next_id()
+    next_id = Validator.next_id(db_ref)
 
     cond do
       Validator.exists_host?(hostname) ->
         :error
 
-      @max_validators <= next_id ->
+      next_id >= @max_validators ->
         :error
 
       true ->
@@ -46,8 +46,6 @@ defmodule Ippan.Funx.Validator do
             :error
 
           _ ->
-            next_id = Validator.next_id()
-
             validator =
               %Validator{
                 id: next_id,
