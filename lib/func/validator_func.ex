@@ -63,7 +63,7 @@ defmodule Ippan.Func.Validator do
         MapUtil.to_atoms(map_filter)
         |> MapUtil.validate_url(:image)
 
-        price = Validator.calc_price(next_id)
+        price = Validator.calc_price(total)
 
         BalanceTrace.new(account_id, dets.balance)
         |> BalanceTrace.requires!(@token, price)
